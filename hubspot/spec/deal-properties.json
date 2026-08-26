@@ -1,0 +1,60 @@
+{
+  "objectType": "deals",
+  "groupName": "mobiliario_urbano",
+  "groupLabel": "Mobiliario Urbano",
+  "inputs": [
+    {
+      "name": "estado_agente",
+      "label": "Estado del agente",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "description": "Semáforo del circuito automatizado. Evita que el agente procese dos veces el mismo lead.",
+      "options": [
+        { "label": "Pendiente", "value": "pendiente", "displayOrder": 0 },
+        { "label": "Generado", "value": "generado", "displayOrder": 1 },
+        { "label": "Aprobado", "value": "aprobado", "displayOrder": 2 },
+        { "label": "Enviado", "value": "enviado", "displayOrder": 3 }
+      ]
+    },
+    {
+      "name": "url_propuesta",
+      "label": "URL de la propuesta",
+      "groupName": "mobiliario_urbano",
+      "type": "string",
+      "fieldType": "text",
+      "description": "Enlace a la propuesta personalizada publicada."
+    },
+    {
+      "name": "url_mockup",
+      "label": "URL del mockup",
+      "groupName": "mobiliario_urbano",
+      "type": "string",
+      "fieldType": "text",
+      "description": "Enlace al configurador con el producto y acabado del lead."
+    },
+    {
+      "name": "motivo_perdida",
+      "label": "Motivo de pérdida",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "description": "Obligatorio al mover un negocio a «Descartado».",
+      "options": [
+        { "label": "Sin presupuesto", "value": "sin_presupuesto", "displayOrder": 0 },
+        { "label": "Ahora no", "value": "ahora_no", "displayOrder": 1 },
+        { "label": "Eligió otro", "value": "eligio_otro", "displayOrder": 2 },
+        { "label": "Sin respuesta", "value": "sin_respuesta", "displayOrder": 3 },
+        { "label": "Otro", "value": "otro", "displayOrder": 4 }
+      ]
+    },
+    {
+      "name": "fecha_reactivacion",
+      "label": "Fecha de reactivación",
+      "groupName": "mobiliario_urbano",
+      "type": "date",
+      "fieldType": "date",
+      "description": "Cuándo reabrir un «Descartado · ahora no». Sustituye a la etapa «Frío»."
+    }
+  ]
+}

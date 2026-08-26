@@ -1,0 +1,42 @@
+{
+  "objectType": "deals",
+  "label": "Mobiliario Urbano",
+  "displayOrder": 5,
+  "stages": [
+    {
+      "label": "Lead mobiliario",
+      "displayOrder": 0,
+      "metadata": { "probability": "0.1" }
+    },
+    {
+      "label": "Propuesta en preparación",
+      "displayOrder": 1,
+      "metadata": { "probability": "0.2" }
+    },
+    {
+      "label": "Propuesta entregada",
+      "displayOrder": 2,
+      "metadata": { "probability": "0.35" }
+    },
+    {
+      "label": "Reunión agendada",
+      "displayOrder": 3,
+      "metadata": { "probability": "0.55" }
+    },
+    {
+      "label": "Ajuste de propuesta",
+      "displayOrder": 4,
+      "metadata": { "probability": "0.75" }
+    },
+    {
+      "label": "Acuerdo firmado",
+      "displayOrder": 5,
+      "metadata": { "probability": "1.0" }
+    },
+    {
+      "label": "Descartado",
+      "displayOrder": 6,
+      "metadata": { "probability": "0.0" }
+    }
+  ]
+}

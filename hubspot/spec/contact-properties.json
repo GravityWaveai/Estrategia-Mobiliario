@@ -1,0 +1,70 @@
+{
+  "objectType": "contacts",
+  "groupName": "mobiliario_urbano",
+  "groupLabel": "Mobiliario Urbano",
+  "inputs": [
+    {
+      "name": "tipo_entidad",
+      "label": "Tipo de entidad",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "options": [
+        { "label": "Ayuntamiento", "value": "ayuntamiento", "displayOrder": 0 },
+        { "label": "Empresa", "value": "empresa", "displayOrder": 1 },
+        { "label": "Puerto", "value": "puerto", "displayOrder": 2 },
+        { "label": "Hotel / Resort", "value": "hotel_resort", "displayOrder": 3 },
+        { "label": "Otro", "value": "otro", "displayOrder": 4 }
+      ]
+    },
+    {
+      "name": "municipio",
+      "label": "Municipio / ciudad",
+      "groupName": "mobiliario_urbano",
+      "type": "string",
+      "fieldType": "text"
+    },
+    {
+      "name": "productos_interes",
+      "label": "Productos de interés",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "checkbox",
+      "options": [
+        { "label": "Banco", "value": "banco", "displayOrder": 0 },
+        { "label": "Mesa", "value": "mesa", "displayOrder": 1 },
+        { "label": "Papelera", "value": "papelera", "displayOrder": 2 },
+        { "label": "Taburete", "value": "taburete", "displayOrder": 3 },
+        { "label": "Letrero corpóreo", "value": "letrero_corporeo", "displayOrder": 4 },
+        { "label": "Otro", "value": "otro", "displayOrder": 5 }
+      ]
+    },
+    {
+      "name": "canal_origen",
+      "label": "Canal de origen",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "options": [
+        { "label": "Email ayuntamientos", "value": "email_ayuntamientos", "displayOrder": 0 },
+        { "label": "Instagram", "value": "instagram", "displayOrder": 1 },
+        { "label": "LinkedIn", "value": "linkedin", "displayOrder": 2 },
+        { "label": "Web directo", "value": "web_directo", "displayOrder": 3 },
+        { "label": "Otro", "value": "otro", "displayOrder": 4 }
+      ]
+    },
+    {
+      "name": "plazo_proyecto",
+      "label": "Plazo del proyecto",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "options": [
+        { "label": "Menos de 3 meses", "value": "menos_3_meses", "displayOrder": 0 },
+        { "label": "3–6 meses", "value": "3_6_meses", "displayOrder": 1 },
+        { "label": "6–12 meses", "value": "6_12_meses", "displayOrder": 2 },
+        { "label": "Sin definir", "value": "sin_definir", "displayOrder": 3 }
+      ]
+    }
+  ]
+}
