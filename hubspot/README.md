@@ -15,6 +15,7 @@ Documento operativo de referencia: artifact **«Embudo Mobiliario Urbano»**
 | 5 propiedades de contacto | `tipo_entidad`, `municipio`, `productos_interes`, `canal_origen`, `plazo_proyecto` | `spec/contact-properties.json` |
 | 5 propiedades de negocio | `estado_agente`, `url_propuesta`, `url_mockup`, `motivo_perdida`, `fecha_reactivacion` | `spec/deal-properties.json` |
 | Grupo de propiedades «Mobiliario Urbano» | En contactos y en negocios, para que las diez queden agrupadas | (implícito en las specs) |
+| Formulario «Lead mobiliario urbano — web» | El de la página `web/index.html`; se crea con `provision-form.sh` (scope extra: `forms`) | `spec/form-lead-mobiliario.json` |
 
 ## Cómo ejecutarlo
 
@@ -72,6 +73,24 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 Los nombres de etapa del pipeline nuevo no se repiten en ningún otro
 pipeline del portal: los informes cruzados no mezclan cosas distintas.
+
+## El formulario de la web
+
+`web/index.html` (la primera parte del embudo) envía a la **Forms API** de
+HubSpot sin necesidad de token en el navegador:
+
+```
+POST https://api.hsforms.com/submissions/v3/integration/submit/26243090/<GUID>
+```
+
+1. `./provision-form.sh` crea el formulario y devuelve el `<GUID>`.
+2. Pegar el GUID en `web/index.html` → `var HS_FORM_GUID = "...";`.
+3. Mientras el GUID esté vacío, el formulario cae a un `mailto:` prellenado a
+   info@thegravitywave.com: ningún lead se pierde, pero no entra solo en el CRM.
+
+La página calcula `canal_origen` a partir de `utm_source` (esquema UTM de
+abajo) y adjunta la cookie `hubspotutk` si el tracking de HubSpot está
+instalado en el dominio donde se publique.
 
 ## Después del aprovisionamiento (Paso 2 del plan)
 

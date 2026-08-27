@@ -1,0 +1,175 @@
+{
+  "name": "Lead mobiliario urbano — web",
+  "formType": "hubspot",
+  "archived": false,
+  "fieldGroups": [
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "firstname",
+          "label": "Nombre y apellidos",
+          "required": true,
+          "hidden": false,
+          "fieldType": "single_line_text"
+        },
+        {
+          "objectTypeId": "0-1",
+          "name": "email",
+          "label": "Email",
+          "required": true,
+          "hidden": false,
+          "fieldType": "email",
+          "validation": {
+            "blockedEmailDomains": [],
+            "useDefaultBlockList": false
+          }
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "tipo_entidad",
+          "label": "Tipo de entidad",
+          "required": true,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            { "label": "Ayuntamiento", "value": "ayuntamiento" },
+            { "label": "Empresa", "value": "empresa" },
+            { "label": "Puerto", "value": "puerto" },
+            { "label": "Hotel / Resort", "value": "hotel_resort" },
+            { "label": "Otro", "value": "otro" }
+          ]
+        },
+        {
+          "objectTypeId": "0-1",
+          "name": "municipio",
+          "label": "Municipio / ciudad",
+          "required": true,
+          "hidden": false,
+          "fieldType": "single_line_text"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "productos_interes",
+          "label": "Productos de interés",
+          "required": true,
+          "hidden": false,
+          "fieldType": "multiple_checkboxes",
+          "options": [
+            { "label": "Banco", "value": "banco" },
+            { "label": "Mesa", "value": "mesa" },
+            { "label": "Papelera", "value": "papelera" },
+            { "label": "Taburete", "value": "taburete" },
+            { "label": "Letrero corpóreo", "value": "letrero_corporeo" },
+            { "label": "Otro", "value": "otro" }
+          ]
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "plazo_proyecto",
+          "label": "Plazo del proyecto",
+          "required": false,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            { "label": "Menos de 3 meses", "value": "menos_3_meses" },
+            { "label": "3–6 meses", "value": "3_6_meses" },
+            { "label": "6–12 meses", "value": "6_12_meses" },
+            { "label": "Sin definir", "value": "sin_definir" }
+          ]
+        },
+        {
+          "objectTypeId": "0-1",
+          "name": "phone",
+          "label": "Teléfono",
+          "required": false,
+          "hidden": false,
+          "fieldType": "phone",
+          "validation": {
+            "minAllowedDigits": 7,
+            "maxAllowedDigits": 15
+          }
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "message",
+          "label": "¿Algo más que debamos saber?",
+          "required": false,
+          "hidden": false,
+          "fieldType": "multi_line_text"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "canal_origen",
+          "label": "Canal de origen",
+          "required": false,
+          "hidden": true,
+          "fieldType": "dropdown",
+          "options": [
+            { "label": "Email ayuntamientos", "value": "email_ayuntamientos" },
+            { "label": "Instagram", "value": "instagram" },
+            { "label": "LinkedIn", "value": "linkedin" },
+            { "label": "Web directo", "value": "web_directo" },
+            { "label": "Otro", "value": "otro" }
+          ]
+        }
+      ]
+    }
+  ],
+  "configuration": {
+    "language": "es",
+    "cloneable": true,
+    "editable": true,
+    "archivable": true,
+    "recaptchaEnabled": false,
+    "notifyContactOwner": true,
+    "notifyRecipients": [],
+    "createNewContactForNewEmail": true,
+    "prePopulateKnownValues": true,
+    "allowLinkToResetKnownValues": false,
+    "postSubmitAction": {
+      "type": "thank_you",
+      "value": "Recibido. En menos de 24 horas laborables tendrás tu propuesta con precios, mockups y fichas técnicas."
+    }
+  },
+  "displayOptions": {
+    "renderRawHtml": false,
+    "theme": "default_style",
+    "cssClass": null
+  },
+  "legalConsentOptions": {
+    "type": "none"
+  }
+}
