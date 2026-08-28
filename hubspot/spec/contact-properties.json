@@ -35,8 +35,23 @@
         { "label": "Mesa", "value": "mesa", "displayOrder": 1 },
         { "label": "Papelera", "value": "papelera", "displayOrder": 2 },
         { "label": "Taburete", "value": "taburete", "displayOrder": 3 },
-        { "label": "Letrero corpóreo", "value": "letrero_corporeo", "displayOrder": 4 },
-        { "label": "Otro", "value": "otro", "displayOrder": 5 }
+        { "label": "Parque infantil", "value": "parque_infantil", "displayOrder": 4 },
+        { "label": "Letrero corpóreo", "value": "letrero_corporeo", "displayOrder": 5 },
+        { "label": "Otro", "value": "otro", "displayOrder": 6 }
+      ]
+    },
+    {
+      "name": "unidades_estimadas",
+      "label": "Número de unidades (aprox.)",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "options": [
+        { "label": "1–5", "value": "1_5", "displayOrder": 0 },
+        { "label": "6–15", "value": "6_15", "displayOrder": 1 },
+        { "label": "16–50", "value": "16_50", "displayOrder": 2 },
+        { "label": "Más de 50", "value": "mas_50", "displayOrder": 3 },
+        { "label": "Sin definir", "value": "sin_definir", "displayOrder": 4 }
       ]
     },
     {

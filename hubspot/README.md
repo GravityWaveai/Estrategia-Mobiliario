@@ -12,7 +12,7 @@ Documento operativo de referencia: artifact **«Embudo Mobiliario Urbano»**
 | Pieza | Detalle | Spec |
 |---|---|---|
 | Pipeline de negocios «Mobiliario Urbano» | 7 etapas con probabilidades 10/20/35/55/75/100/0 % | `spec/pipeline-mobiliario-urbano.json` |
-| 5 propiedades de contacto | `tipo_entidad`, `municipio`, `productos_interes`, `canal_origen`, `plazo_proyecto` | `spec/contact-properties.json` |
+| 6 propiedades de contacto | `tipo_entidad`, `municipio`, `productos_interes`, `unidades_estimadas`, `canal_origen`, `plazo_proyecto` | `spec/contact-properties.json` |
 | 5 propiedades de negocio | `estado_agente`, `url_propuesta`, `url_mockup`, `motivo_perdida`, `fecha_reactivacion` | `spec/deal-properties.json` |
 | Grupo de propiedades «Mobiliario Urbano» | En contactos y en negocios, para que las diez queden agrupadas | (implícito en las specs) |
 | Formulario «Lead mobiliario urbano — web» | El de la página `web/index.html`; se crea con `provision-form.sh` (scope extra: `forms`) | `spec/form-lead-mobiliario.json` |

@@ -80,7 +80,27 @@ ensure_properties() { # objectType specFile
 
     split_response "$(hs GET "/crm/v3/properties/$obj/$name")"
     if [[ "$RESP_CODE" == "200" ]]; then
-      echo "  ✓ $obj.$name ya existe"
+      # Existe: si es enumeración, sincroniza las opciones con la spec
+      # (añade las nuevas, p. ej. parque_infantil; PATCH es idempotente).
+      if [[ "$(jq -r .type <<<"$prop")" == "enumeration" ]]; then
+        local spec_opts live_opts
+        spec_opts=$(jq -c '[.options[].value] | sort' <<<"$prop")
+        live_opts=$(jq -c '[.options[].value] | sort' <<<"$RESP_BODY")
+        if [[ "$spec_opts" != "$live_opts" ]]; then
+          split_response "$(hs PATCH "/crm/v3/properties/$obj/$name" \
+            "$(jq -c '{options: .options}' <<<"$prop")")"
+          if [[ "$RESP_CODE" == "200" ]]; then
+            echo "  ~ $obj.$name ya existía; opciones sincronizadas con la spec"
+          else
+            echo "  ✗ Error sincronizando opciones de $obj.$name ($RESP_CODE): $RESP_BODY" >&2
+            exit 1
+          fi
+        else
+          echo "  ✓ $obj.$name ya existe"
+        fi
+      else
+        echo "  ✓ $obj.$name ya existe"
+      fi
       continue
     fi
     split_response "$(hs POST "/crm/v3/properties/$obj" "$prop")"

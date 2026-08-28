@@ -71,11 +71,31 @@
           "fieldType": "multiple_checkboxes",
           "options": [
             { "label": "Banco", "value": "banco" },
-            { "label": "Mesa", "value": "mesa" },
             { "label": "Papelera", "value": "papelera" },
-            { "label": "Taburete", "value": "taburete" },
-            { "label": "Letrero corpóreo", "value": "letrero_corporeo" },
+            { "label": "Parque infantil", "value": "parque_infantil" },
+            { "label": "Letras de exterior", "value": "letrero_corporeo" },
             { "label": "Otro", "value": "otro" }
+          ]
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "unidades_estimadas",
+          "label": "Número de unidades (aprox.)",
+          "required": true,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            { "label": "1–5", "value": "1_5" },
+            { "label": "6–15", "value": "6_15" },
+            { "label": "16–50", "value": "16_50" },
+            { "label": "Más de 50", "value": "mas_50" },
+            { "label": "Sin definir", "value": "sin_definir" }
           ]
         }
       ]
