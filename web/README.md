@@ -55,16 +55,34 @@ queda completa.
 3. A partir de ahí aplican las reglas del pipeline (importe obligatorio,
    seguimientos 5/12/14 días, reactivaciones).
 
-## Cómo publicarla en thegravitywave.com
+## Cómo publicarla en thegravitywave.com (Elementor)
 
-- **WordPress**: crear página «Mobiliario urbano» con plantilla en blanco y
-  pegar el archivo en un bloque HTML personalizado, o subir `index.html` por
-  FTP a `/mobiliario-urbano/`. No necesita assets externos.
-- Cualquier otro hosting estático sirve igual: es un solo archivo.
+La web usa Elementor, y en un widget HTML **no** se puede pegar `index.html`
+entero (lleva `<!doctype>`, `<head>`…): para eso existe **`elementor.html`**,
+el mismo contenido como fragmento con todo el CSS acotado bajo `#gw-mob`
+para que el tema no lo pise.
+
+1. Páginas → Añadir nueva → **Editar con Elementor**.
+2. Engranaje (abajo izquierda) → Configuración de página → Diseño de página →
+   **Elementor Canvas** (sin cabecera ni pie del tema; la landing trae su
+   propia barra superior).
+3. Arrastrar un widget **HTML** y pegar dentro el contenido íntegro de
+   `elementor.html`.
+4. En la sección que lo contiene: ancho «Ancho completo» y padding 0
+   (pestaña Avanzado).
+5. Publicar (p. ej. en `/mobiliario-urbano/`).
+
+**No hay que subir nada a Medios**: fuentes e imágenes van embebidas en
+base64 dentro del propio HTML.
 
 ## Cómo regenerarla
 
-Las imágenes provienen del catálogo de Canva (recortadas y comprimidas) y
-las fuentes de `assets/fonts/*-latin.woff2`. Para tocar textos o estilos,
-editar `index.html` directamente; los bloques base64 están al principio
-(fuentes) y en los `src` de cada `<img>`.
+Fuente única: `src/landing-template.html` + `src/img/*.jpg` (recortes del
+catálogo de Canva re-exportado a 4K) + `assets/fonts/*-latin.woff2`.
+
+```bash
+python3 web/build.py   # regenera web/index.html y web/elementor.html
+```
+
+Para tocar textos o estilos, editar `src/landing-template.html` y regenerar
+— nunca los dos HTML generados a mano.

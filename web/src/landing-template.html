@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mobiliario Urbano Gravitec</title>
+<meta name="description" content="Diseñamos y fabricamos en España mobiliario urbano a partir de redes de pesca recuperadas del Mediterráneo. Bancos, papeleras, parques infantiles y letras de exterior. Pide tu propuesta en 24 horas.">
+<style>
+  @font-face{font-family:"Cera Pro";font-style:normal;font-weight:400;font-display:swap;
+    src:url(data:font/woff2;base64,{{FONT:CeraPro-Regular-latin}}) format("woff2")}
+  @font-face{font-family:"Cera Pro";font-style:normal;font-weight:500;font-display:swap;
+    src:url(data:font/woff2;base64,{{FONT:CeraPro-Medium-latin}}) format("woff2")}
+  @font-face{font-family:"Cera Pro";font-style:normal;font-weight:700;font-display:swap;
+    src:url(data:font/woff2;base64,{{FONT:CeraPro-Medium-latin}}) format("woff2")}
+  @font-face{font-family:"Cera Pro";font-style:normal;font-weight:900;font-display:swap;
+    src:url(data:font/woff2;base64,{{FONT:CeraPro-Black-latin}}) format("woff2")}
+
+  /* Marca: gravity-wave-marca + Catálogo Mobiliario Urbano 2026 (Canva DAHTUG63Aks).
+     Fondo #01313D siempre, Cera Pro incrustada, aqua con cuentagotas, degradados
+     scrim sobre foto real. Estructura y datos: los del catálogo. */
+  :root{
+    --bg:#01313D;
+    --panel:#0B3A44;
+    --sheet:#EDF4F3;
+    --aqua:#5FC9BD;
+    --aqua2:#93E0D7;
+    --foam:#CFEEEA;
+    --ink:#EAF6F4;
+    --muted:#8FB4B4;
+    --line:rgba(143,205,205,.18);
+    --err:#F0B9A8;
+    --f:"Cera Pro","Century Gothic",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);-webkit-font-smoothing:antialiased}
+  img{max-width:100%}
+  a{color:var(--aqua)}
+  :focus-visible{outline:2px solid var(--aqua);outline-offset:2px;border-radius:2px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+
+  .lbl{font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin:0;color:var(--aqua)}
+  .d1{font-weight:900;font-size:clamp(38px,6.4vw,72px);line-height:.95;letter-spacing:-.025em;margin:0;text-transform:uppercase;text-wrap:balance}
+  .d2{font-weight:900;font-size:clamp(26px,4.2vw,46px);line-height:.98;letter-spacing:-.02em;margin:0;text-transform:uppercase;text-wrap:balance}
+  .d3{font-weight:900;font-size:clamp(20px,2.6vw,29px);line-height:1.06;letter-spacing:-.015em;margin:0;text-wrap:balance}
+  .d4{font-weight:900;font-size:clamp(16px,1.8vw,19px);line-height:1.1;letter-spacing:-.01em;margin:0}
+  .tx{font-weight:400;font-size:clamp(15px,1.5vw,16.5px);line-height:1.6;margin:0;color:var(--foam);max-width:62ch}
+  .tx.s{font-size:clamp(13.5px,1.3vw,14.5px)}
+  .mu{color:var(--muted)}
+  .aq{color:var(--aqua)}
+
+  /* barra superior */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(1,49,61,.88);backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line)}
+  .topbar .in{display:flex;align-items:center;justify-content:space-between;padding:12px clamp(18px,4vw,40px);
+              max-width:1180px;margin:0 auto}
+  .lockup{display:flex;flex-direction:column;line-height:1;color:var(--ink);text-decoration:none}
+  .lockup .g{font-weight:900;font-size:13px;letter-spacing:.42em}
+  .lockup .w{font-weight:900;font-size:13px;letter-spacing:.14em;margin-top:2px}
+  .btn{display:inline-block;background:var(--aqua);color:#01313D;font-weight:900;font-family:var(--f);
+       font-size:14px;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;
+       padding:13px 22px;border-radius:3px;border:0;cursor:pointer;transition:background .15s}
+  .btn:hover{background:var(--aqua2)}
+  .btn.sm{padding:9px 16px;font-size:12px}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid rgba(234,246,244,.4)}
+  .btn.ghost:hover{border-color:var(--aqua);color:var(--aqua)}
+
+  /* héroe — portada del catálogo */
+  .hero{position:relative;min-height:min(88vh,780px);display:flex;overflow:hidden}
+  .hero .bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:72% 50%}
+  .hero .scrim{position:absolute;inset:0;
+    background:linear-gradient(90deg,rgba(1,49,61,.97) 0%,rgba(1,49,61,.85) 38%,rgba(1,49,61,.3) 70%,rgba(1,49,61,.06) 100%)}
+  .hero .scrim2{position:absolute;inset:0;
+    background:linear-gradient(0deg,rgba(1,49,61,1) 0%,rgba(1,49,61,0) 24%)}
+  .hero .in{position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+            padding:clamp(44px,7vh,90px) 0 clamp(40px,6vh,70px);width:100%}
+  .hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+  .trust{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+         font-size:12.5px;color:var(--muted)}
+  .trust b{color:var(--ink);font-weight:700}
+
+  section.blk{padding:clamp(52px,8vw,96px) 0;border-top:1px solid var(--line)}
+
+  /* del mar al público — la cadena del catálogo */
+  .chain{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-top:14px;
+         font-weight:900;font-size:clamp(14px,1.9vw,20px);letter-spacing:.04em;text-transform:uppercase;color:var(--aqua)}
+  .chain .arr{color:var(--muted);font-weight:400}
+  .pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,1.6vw,18px);margin-top:clamp(24px,3.6vw,38px)}
+  @media (max-width:760px){.pasos{grid-template-columns:1fr 1fr}}
+  .pasos figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  .pasos img{width:100%;aspect-ratio:9/8;object-fit:cover;border-radius:5px;display:block}
+  .pasos figcaption{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:500}
+
+  /* familias de producto — 01 / 02 / 03 del catálogo */
+  .fam{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,54px);align-items:center;
+       padding:clamp(36px,5vw,56px) 0}
+  .fam + .fam{border-top:1px solid var(--line)}
+  @media (max-width:860px){.fam{grid-template-columns:1fr}}
+  .fam .num{font-weight:900;font-size:12px;letter-spacing:.18em;color:var(--aqua)}
+  .fam .media{display:grid;gap:clamp(10px,1.4vw,16px)}
+  .fam .media.duo{grid-template-columns:1fr 1fr}
+  .fam .media img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block;background:var(--sheet)}
+  .fam .media.duo img{aspect-ratio:3/5}
+  .fam .media.solo img{aspect-ratio:16/11}
+  .kpis{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .kpi{background:var(--panel);border-radius:6px;padding:12px 18px;display:flex;flex-direction:column;gap:3px;min-width:118px}
+  .kpi b{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--aqua);font-weight:700}
+  .kpi span{font-weight:900;font-size:clamp(15px,1.8vw,19px);letter-spacing:-.01em}
+  .kpi span small{font-weight:400;font-size:12px;color:var(--muted)}
+  .refline{margin-top:16px;font-size:13.5px;line-height:1.6;color:var(--foam)}
+  .refline b{font-weight:700;color:var(--ink)}
+  .go{margin-top:20px}
+  .golink{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--aqua);text-decoration:none}
+  .golink:hover{color:var(--aqua2)}
+  .fino{font-size:11.5px;color:var(--muted);margin-top:14px}
+
+  /* acabados */
+  .swatches{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.8vw,20px);max-width:760px}
+  .swatches figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  .swatches img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:6px;display:block}
+  .swatches b{font-size:14px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+  .swatches span{font-size:12.5px;color:var(--muted)}
+
+  /* compra pública — franja compacta */
+  .razones{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(12px,1.6vw,20px);margin-top:clamp(22px,3vw,32px)}
+  @media (max-width:860px){.razones{grid-template-columns:1fr 1fr}}
+  .razon b{display:block;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--aqua);font-weight:700;margin-bottom:6px}
+  .razon p{margin:0;font-size:13px;line-height:1.5;color:var(--foam)}
+  .vias-line{margin-top:clamp(24px,3.4vw,36px);padding-top:18px;border-top:1px solid var(--line);
+             font-size:14px;line-height:1.7;color:var(--foam);max-width:74ch}
+  .vias-line b{color:var(--ink)}
+
+  /* formulario */
+  #propuesta{background:linear-gradient(180deg,var(--bg) 0%,#02222B 100%)}
+  .formgrid{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(28px,5vw,64px);align-items:start}
+  @media (max-width:900px){.formgrid{grid-template-columns:1fr}}
+  ul.tick{margin:18px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  ul.tick li{font-size:15px;line-height:1.45;color:var(--ink);padding-left:24px;position:relative}
+  ul.tick li::before{content:"";position:absolute;left:0;top:6px;width:9px;height:9px;border-radius:50%;background:var(--aqua)}
+  .formcard{background:var(--panel);border-radius:8px;padding:clamp(22px,3vw,34px);border:1px solid var(--line)}
+  .f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:560px){.f-row{grid-template-columns:1fr}}
+  .f-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .f-field label,.chips-label{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+  .f-field .req,.chips-label .req{color:var(--aqua)}
+  .f-field input,.f-field select,.f-field textarea{
+    background:var(--bg);border:1px solid var(--line);border-radius:4px;color:var(--ink);
+    font-family:var(--f);font-size:15px;padding:12px 13px;width:100%}
+  .f-field input::placeholder,.f-field textarea::placeholder{color:rgba(143,180,180,.55)}
+  .f-field input:focus,.f-field select:focus,.f-field textarea:focus{outline:none;border-color:var(--aqua)}
+  .f-field select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%235FC9BD' stroke-width='2'/></svg>");background-repeat:no-repeat;background-position:right 13px center}
+  .f-field.err input,.f-field.err select{border-color:var(--err)}
+  .f-msg{font-size:12.5px;color:var(--err);display:none}
+  .f-field.err .f-msg{display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips label{display:inline-flex;cursor:pointer}
+  .chips input{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+  .chips span{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:8px 15px;
+              font-size:13.5px;font-weight:500;color:var(--foam);transition:all .12s;user-select:none}
+  .chips input:checked+span{background:var(--aqua);border-color:var(--aqua);color:#01313D;font-weight:700}
+  .chips input:focus-visible+span{outline:2px solid var(--aqua);outline-offset:2px}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:4px 0 18px;font-size:13px;color:var(--muted);line-height:1.5}
+  .consent input{margin-top:3px;accent-color:var(--aqua);width:15px;height:15px;flex:none}
+  .f-send{width:100%;font-size:15px;padding:16px}
+  .f-note{margin-top:12px;font-size:12.5px;color:var(--muted);text-align:center}
+  .f-error{display:none;margin-top:14px;font-size:14px;line-height:1.5;color:var(--err);
+           border:1px solid rgba(240,185,168,.4);border-radius:4px;padding:12px 14px}
+  .ok{display:none}
+  .ok .okmark{width:52px;height:52px;border-radius:50%;background:var(--aqua);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .ok .okmark svg{width:26px;height:26px}
+
+  /* cierre */
+  .close{position:relative;overflow:hidden;border-top:1px solid var(--line)}
+  .close .bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 60%}
+  .close .scrim{position:absolute;inset:0;
+    background:linear-gradient(0deg,rgba(1,49,61,.95) 0%,rgba(1,49,61,.55) 50%,rgba(1,49,61,.35) 100%)}
+  .close .in{position:relative;padding:clamp(64px,10vw,120px) 0 clamp(40px,6vw,64px);
+             display:flex;flex-direction:column;align-items:center;text-align:center;gap:24px}
+  footer{position:relative;border-top:1px solid var(--line)}
+  footer .in{display:flex;flex-wrap:wrap;gap:14px 30px;justify-content:space-between;align-items:center;
+             padding:22px clamp(18px,4vw,40px);max-width:1180px;margin:0 auto;
+             font-size:12.5px;color:var(--muted)}
+  footer a{color:var(--muted);text-decoration:none}
+  footer a:hover{color:var(--aqua)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="in">
+    <a class="lockup" href="#top" aria-label="Gravity Wave">
+      <span class="g">GRAVITY</span><span class="w">WAVE</span>
+    </a>
+    <a class="btn sm" href="#propuesta">Pedir propuesta</a>
+  </div>
+</div>
+
+<!-- PORTADA -->
+<header class="hero" id="top">
+  <img class="bleed" src="data:image/jpeg;base64,{{IMG:hero_parque}}" alt="Parque infantil Serie Mar de Gravitec instalado frente al mar">
+  <div class="scrim"></div>
+  <div class="scrim2"></div>
+  <div class="wrap in">
+    <p class="lbl">Gravitec · Mobiliario urbano · Catálogo 2026</p>
+    <h1 class="d1" style="margin-top:16px;max-width:12ch">Mobiliario urbano</h1>
+    <p class="tx" style="margin-top:20px;max-width:50ch">Diseñamos y fabricamos en España mobiliario
+      urbano a partir de redes de pesca recuperadas del mar y puertos del Mediterráneo.</p>
+    <div class="ctas">
+      <a class="btn" href="#propuesta">Pedir propuesta en 24 h</a>
+      <a class="btn ghost" href="#producto">Ver el catálogo</a>
+    </div>
+    <div class="trust">
+      <span><b>Made in Spain</b></span>
+      <span><b>ISO</b> 9001 · 14001 · 45001</span>
+      <span><b>Normativa</b> EN 1186/3 · UNE-EN 1176 · UNE-EN 1177</span>
+      <span><b>Desde 265 €</b> por pieza</span>
+    </div>
+  </div>
+</header>
+
+<!-- DEL MAR AL PÚBLICO -->
+<section class="blk" id="origen">
+  <div class="wrap">
+    <h2 class="d2">Del mar al público</h2>
+    <p class="chain">Mar <span class="arr">→</span> Puerto <span class="arr">→</span> Recuperación
+      <span class="arr">→</span> Transformación <span class="arr">→</span> Producto</p>
+    <p class="tx" style="margin-top:16px">Recorremos los puertos del Mediterráneo para recuperar lo que
+      el mar ya no necesita y <span class="aq">devolverlo al espacio público convertido en
+      mobiliario</span>. Trazabilidad documentada e impacto ambiental cuantificable.</p>
+    <div class="pasos">
+      <figure><img src="data:image/jpeg;base64,{{IMG:paso_puerto}}" alt="Pescadores junto al contenedor de redes de pesca de Gravity Wave en el puerto"><figcaption>Puerto</figcaption></figure>
+      <figure><img src="data:image/jpeg;base64,{{IMG:paso_redes}}" alt="Redes de pesca recuperadas en la nave de tratamiento"><figcaption>Recuperación</figcaption></figure>
+      <figure><img src="data:image/jpeg;base64,{{IMG:paso_material}}" alt="Material triturado de redes de pesca listo para transformar"><figcaption>Transformación</figcaption></figure>
+      <figure><img src="data:image/jpeg;base64,{{IMG:paso_banco}}" alt="Banco fabricado con paneles Gravitec de redes recuperadas"><figcaption>Producto</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- FAMILIAS -->
+<section class="blk" id="producto" style="padding-bottom:clamp(24px,3vw,36px)">
+  <div class="wrap">
+    <p class="lbl">El impacto está en cada pieza</p>
+    <h2 class="d2" style="margin-top:14px">Tres familias,<br>tarifa oficial</h2>
+
+    <!-- 01 BANCOS Y PAPELERAS -->
+    <article class="fam">
+      <div>
+        <p class="num">01 · MOBILIARIO</p>
+        <h3 class="d3" style="margin-top:10px">Bancos y papeleras</h3>
+        <p class="tx s" style="margin-top:12px">Material reciclado procedente de redes marinas de
+          puertos mediterráneos. Pensado para exterior: bajo mantenimiento y características
+          antivandálicas.</p>
+        <div class="refline">
+          <b>Banco con respaldo · 654 €</b> — 1.800 × 630 × 680 mm, listones de HDPE reciclado,
+          anclaje por empotramiento (6 tornillos DIN 571).<br>
+          <b>Papelera cúbica · 265 €</b> — 33 litros, panel HDPE de redes marinas, con tapa para
+          zonas costeras. Conforme a EN 1186/3, UNE-EN 1176 y UNE-EN 1177.
+        </div>
+        <div class="kpis">
+          <div class="kpi"><b>Plazo</b><span>5–6 <small>semanas</small></span></div>
+          <div class="kpi"><b>Acabados</b><span style="font-size:15px">Formentera · Atenas</span></div>
+        </div>
+        <p class="go"><a class="golink" href="#propuesta" data-producto="banco">Pedir precio por volumen →</a></p>
+      </div>
+      <div class="media duo">
+        <img src="data:image/jpeg;base64,{{IMG:banco_studio}}" alt="Banco con respaldo Gravitec en acabado Atenas, foto de estudio">
+        <img src="data:image/jpeg;base64,{{IMG:papelera_studio}}" alt="Papelera cúbica Gravitec en acabado Formentera, foto de estudio">
+      </div>
+    </article>
+
+    <!-- 02 PARQUES INFANTILES -->
+    <article class="fam">
+      <div class="media solo">
+        <img src="data:image/jpeg;base64,{{IMG:parque_plaza}}" alt="Parque infantil Serie Mar con barco pirata instalado en una plaza">
+      </div>
+      <div>
+        <p class="num">02 · PARQUES</p>
+        <h3 class="d3" style="margin-top:10px">Parques infantiles · Serie Mar</h3>
+        <p class="tx s" style="margin-top:12px">El plástico que salió del puerto vuelve convertido en
+          juego. Dieciséis modelos con nombre de puerto — de Gandía a Altea, de la Barca al
+          Crucero — cada uno con su ahorro de CO₂ documentado.</p>
+        <div class="kpis">
+          <div class="kpi"><b>Desde</b><span>632 €</span></div>
+          <div class="kpi"><b>Hasta</b><span>21.164 €</span></div>
+          <div class="kpi"><b>Plazo</b><span>6–8 <small>semanas</small></span></div>
+        </div>
+        <p class="go"><a class="golink" href="#propuesta" data-producto="parque_infantil">Pedir información de la Serie Mar →</a></p>
+      </div>
+    </article>
+
+    <!-- 03 LETRAS DE EXTERIOR -->
+    <article class="fam">
+      <div>
+        <p class="num">03 · LETRAS</p>
+        <h3 class="d3" style="margin-top:10px">Letras de exterior</h3>
+        <p class="tx s" style="margin-top:12px">El nombre de tu municipio, hecho con material
+          reciclado. Letra de 1 m de altura y 80 mm de espesor con anclaje antivandálico incluido.
+          Para plazas, paseos marítimos, accesos y destinos turísticos.</p>
+        <div class="kpis">
+          <div class="kpi"><b>Precio</b><span>1.250 €<small>/letra</small></span></div>
+          <div class="kpi"><b>Pedido</b><span>6–10 <small>letras</small></span></div>
+          <div class="kpi"><b>Plazo</b><span>9–11 <small>semanas</small></span></div>
+        </div>
+        <p class="go"><a class="golink" href="#propuesta" data-producto="letrero_corporeo">Pedir precio de las letras →</a></p>
+      </div>
+      <div class="media solo">
+        <img src="data:image/jpeg;base64,{{IMG:letras_benidorm}}" alt="Letras BENIDORM de Gravitec instaladas en el paseo marítimo">
+      </div>
+    </article>
+
+    <p class="fino">* Los precios no incluyen IVA, transporte ni instalación. Cada referencia dispone
+      de ficha técnica con medidas, materiales, anclaje, normativa aplicable y plano acotado.</p>
+  </div>
+</section>
+
+<!-- ACABADOS -->
+<section class="blk" id="acabados">
+  <div class="wrap">
+    <p class="lbl">Acabados</p>
+    <h2 class="d3" style="margin-top:12px;max-width:30ch">Cada acabado tiene el color exacto de su red
+      de origen, sin tintes.</h2>
+    <div class="swatches" style="margin-top:clamp(22px,3vw,32px)">
+      <figure>
+        <img src="data:image/jpeg;base64,{{IMG:acabado_formentera}}" alt="Acabado Formentera: panel Gravitec verde jaspeado">
+        <b>Formentera</b><span>Redes de pesca verdes</span>
+      </figure>
+      <figure>
+        <img src="data:image/jpeg;base64,{{IMG:acabado_atenas}}" alt="Acabado Atenas: panel Gravitec azul jaspeado">
+        <b>Atenas</b><span>Redes de pesca azules</span>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- COMPRA PÚBLICA -->
+<section class="blk" id="compra" style="background:linear-gradient(180deg,var(--bg) 0%,#023844 60%,var(--bg) 100%)">
+  <div class="wrap">
+    <p class="lbl">Compra pública</p>
+    <h2 class="d2" style="margin-top:14px">Por qué lo puede comprar<br>un ayuntamiento</h2>
+    <div class="razones">
+      <div class="razon"><b>01 · Fabricación nacional</b><p>Fabricación y desarrollo en España.</p></div>
+      <div class="razon"><b>02 · Trazabilidad</b><p>Cada pieza lleva chapa con QR que cuenta el origen del material.</p></div>
+      <div class="razon"><b>03 · Documentación</b><p>Fichas técnicas, planos, materiales, anclajes y normativa aplicable.</p></div>
+      <div class="razon"><b>04 · Impacto medible</b><p>Ahorro de CO₂ indicado en la documentación oficial.</p></div>
+      <div class="razon"><b>05 · Mantenimiento</b><p>Materiales preparados para exterior y bajo mantenimiento.</p></div>
+    </div>
+    <p class="vias-line"><b>Tres vías de contratación:</b> compra o contrato menor · licitación pública ·
+      acuerdo marco o concesionaria. En las tres acompañamos la documentación técnica del producto,
+      la <span class="aq">tarifa oficial por referencia</span> y los datos ambientales disponibles.
+      MyParque, el fabricante, está certificado en ISO 9001, ISO 14001 e ISO 45001.</p>
+  </div>
+</section>
+
+<!-- FORMULARIO -->
+<section class="blk" id="propuesta">
+  <div class="wrap">
+    <div class="formgrid">
+      <div>
+        <p class="lbl">Empieza aquí · sin compromiso</p>
+        <h2 class="d2" style="margin-top:14px">Tu propuesta,<br>en 24 horas</h2>
+        <p class="tx" style="margin-top:20px">Cuéntanos qué necesitas en un minuto. En menos de
+          24 horas laborables recibirás en tu correo:</p>
+        <ul class="tick">
+          <li><b>Propuesta con precios por volumen</b> sobre la tarifa oficial.</li>
+          <li><b>Mockups de tu municipio</b> con las piezas ya colocadas.</li>
+          <li><b>Fichas técnicas y normativa</b> listas para el expediente.</li>
+        </ul>
+        <p class="tx s mu" style="margin-top:22px">Primero la propuesta; después tú decides si
+          quieres que hablemos.</p>
+      </div>
+
+      <div class="formcard">
+        <form id="leadform" novalidate>
+          <div class="f-row">
+            <div class="f-field">
+              <label for="f-nombre">Nombre y apellidos <span class="req">*</span></label>
+              <input id="f-nombre" name="firstname" type="text" autocomplete="name" required>
+              <span class="f-msg">Dinos tu nombre para dirigirnos a ti.</span>
+            </div>
+            <div class="f-field">
+              <label for="f-email">Email <span class="req">*</span></label>
+              <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required
+                     placeholder="nombre@ayuntamiento.es">
+              <span class="f-msg">Necesitamos un email válido para enviarte la propuesta.</span>
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="f-field">
+              <label for="f-entidad">Tipo de entidad <span class="req">*</span></label>
+              <select id="f-entidad" name="tipo_entidad" required>
+                <option value="" selected disabled>Elige una opción</option>
+                <option value="ayuntamiento">Ayuntamiento</option>
+                <option value="empresa">Empresa</option>
+                <option value="puerto">Puerto</option>
+                <option value="hotel_resort">Hotel / Resort</option>
+                <option value="otro">Otro</option>
+              </select>
+              <span class="f-msg">Elige el tipo de entidad.</span>
+            </div>
+            <div class="f-field">
+              <label for="f-municipio">Municipio / ciudad <span class="req">*</span></label>
+              <input id="f-municipio" name="municipio" type="text" autocomplete="address-level2" required
+                     placeholder="Para preparar tus mockups">
+              <span class="f-msg">El municipio nos sirve para preparar los mockups.</span>
+            </div>
+          </div>
+          <div class="f-field">
+            <span class="chips-label" id="lbl-prods">¿Qué te interesa? <span class="req">*</span></span>
+            <div class="chips" role="group" aria-labelledby="lbl-prods">
+              <label><input type="checkbox" name="productos_interes" value="banco"><span>Banco</span></label>
+              <label><input type="checkbox" name="productos_interes" value="papelera"><span>Papelera</span></label>
+              <label><input type="checkbox" name="productos_interes" value="parque_infantil"><span>Parque infantil</span></label>
+              <label><input type="checkbox" name="productos_interes" value="letrero_corporeo"><span>Letras de exterior</span></label>
+              <label><input type="checkbox" name="productos_interes" value="otro"><span>Otro</span></label>
+            </div>
+            <span class="f-msg">Marca al menos un producto.</span>
+          </div>
+          <div class="f-row">
+            <div class="f-field">
+              <label for="f-unidades">Número de unidades <span class="req">*</span></label>
+              <select id="f-unidades" name="unidades_estimadas" required>
+                <option value="" selected disabled>Aproximado</option>
+                <option value="1_5">1–5</option>
+                <option value="6_15">6–15</option>
+                <option value="16_50">16–50</option>
+                <option value="mas_50">Más de 50</option>
+                <option value="sin_definir">Sin definir</option>
+              </select>
+              <span class="f-msg">Indica cuántas unidades, aunque sea aproximado.</span>
+            </div>
+            <div class="f-field">
+              <label for="f-plazo">¿Para cuándo?</label>
+              <select id="f-plazo" name="plazo_proyecto">
+                <option value="sin_definir" selected>Sin definir</option>
+                <option value="menos_3_meses">Menos de 3 meses</option>
+                <option value="3_6_meses">3–6 meses</option>
+                <option value="6_12_meses">6–12 meses</option>
+              </select>
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="f-field">
+              <label for="f-tel">Teléfono <span class="mu" style="text-transform:none;letter-spacing:0">(opcional)</span></label>
+              <input id="f-tel" name="phone" type="tel" autocomplete="tel" inputmode="tel">
+            </div>
+            <div class="f-field">
+              <label for="f-msg">¿Algo más? <span class="mu" style="text-transform:none;letter-spacing:0">(opcional)</span></label>
+              <input id="f-msg" name="message" type="text" placeholder="Ubicación, fechas, dudas…">
+            </div>
+          </div>
+          <label class="consent">
+            <input type="checkbox" id="f-consent" required>
+            <span>Acepto que Gravity Wave trate mis datos para responder a esta solicitud.
+              <a href="https://thegravitywave.com/politica-de-privacidad/" target="_blank" rel="noopener">Política de privacidad</a>. <span class="req" style="color:var(--aqua)">*</span></span>
+          </label>
+          <button class="btn f-send" type="submit" id="f-btn">Enviar y recibir mi propuesta</button>
+          <p class="f-note">Te responde el equipo de Gravity Wave en menos de 24 horas laborables.</p>
+          <div class="f-error" id="f-error"></div>
+        </form>
+
+        <div class="ok" id="f-ok" role="status">
+          <div class="okmark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5.5 5.5L20 6.5" stroke="#01313D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="d3">Recibido. Ya estamos con tu propuesta.</h3>
+          <p class="tx" style="margin-top:14px">En menos de 24 horas laborables tendrás en
+            <b id="ok-email"></b> la propuesta con precios, los mockups de tu municipio y las
+            fichas técnicas para el expediente.</p>
+          <p class="tx s mu" style="margin-top:12px">Si no la ves, revisa la carpeta de spam o
+            escríbenos a <a href="mailto:info@thegravitywave.com">info@thegravitywave.com</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CIERRE -->
+<section class="close">
+  <img class="bleed" src="data:image/jpeg;base64,{{IMG:cierre_puerto}}" alt="" aria-hidden="true">
+  <div class="scrim"></div>
+  <div class="wrap in">
+    <h2 class="d1">¿Te unes a la ola?</h2>
+    <a class="btn" href="#propuesta">Pedir mi propuesta en 24 h</a>
+    <p class="tx s" style="text-align:center">Gravitec by Gravity Wave · fabricado por MyParque<br>
+      <a href="https://www.thegravitywave.com">thegravitywave.com</a> ·
+      <a href="mailto:info@thegravitywave.com">info@thegravitywave.com</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="in">
+    <span><b style="color:var(--ink)">Gravity Wave</b> · Calpe, Alicante · Plastic Free Oceans</span>
+    <span>Fabricado por MyParque · Valverde del Majano, Segovia</span>
+    <span><a href="https://thegravitywave.com/politica-de-privacidad/" target="_blank" rel="noopener">Privacidad</a></span>
+  </div>
+</footer>
+
+<script>
+// ——— Configuración HubSpot ———————————————————————————————
+// El formulario envía a la Forms API de HubSpot (portal 26243090).
+// FORM_GUID se obtiene ejecutando hubspot/provision-form.sh (ver README).
+// Mientras esté vacío, el formulario cae a un mailto prellenado: ningún lead se pierde.
+var HS_PORTAL_ID = "26243090";
+var HS_FORM_GUID = "";
+// ————————————————————————————————————————————————————————————
+
+(function () {
+  "use strict";
+
+  // Scroll suave a las anclas también cuando la página vive incrustada
+  // (p. ej. dentro de Elementor, donde no controlamos el <html>)
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var t = document.getElementById(a.getAttribute("href").slice(1));
+    if (!t) return;
+    e.preventDefault();
+    t.scrollIntoView({
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+  });
+
+  // Canal de origen a partir de las UTM de la URL (esquema del embudo)
+  function canalOrigen() {
+    var p = new URLSearchParams(location.search);
+    var src = (p.get("utm_source") || "").toLowerCase();
+    if (src === "instagram") return "instagram";
+    if (src === "linkedin") return "linkedin";
+    if (src === "email") return "email_ayuntamientos";
+    return "web_directo";
+  }
+
+  // Cookie de seguimiento de HubSpot (el tracking ya vive en thegravitywave.com)
+  function hutk() {
+    var m = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);
+    return m ? m[1] : null;
+  }
+
+  // Los enlaces «Pedir precio…» preseleccionan el producto en el formulario
+  document.querySelectorAll("[data-producto]").forEach(function (a) {
+    a.addEventListener("click", function () {
+      var v = a.getAttribute("data-producto");
+      var box = document.querySelector('.chips input[value="' + v + '"]');
+      if (box) box.checked = true;
+    });
+  });
+
+  var form = document.getElementById("leadform");
+  var btn = document.getElementById("f-btn");
+  var errBox = document.getElementById("f-error");
+
+  function fieldWrap(el) { return el.closest(".f-field"); }
+
+  function validate() {
+    var ok = true;
+    errBox.style.display = "none";
+    ["f-nombre", "f-email", "f-entidad", "f-municipio", "f-unidades"].forEach(function (id) {
+      var el = document.getElementById(id);
+      var bad = !el.value || (el.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value));
+      fieldWrap(el).classList.toggle("err", bad);
+      if (bad) ok = false;
+    });
+    var prods = form.querySelectorAll('input[name="productos_interes"]:checked');
+    var chipsField = form.querySelector(".chips").closest(".f-field");
+    chipsField.classList.toggle("err", prods.length === 0);
+    if (prods.length === 0) ok = false;
+    var consent = document.getElementById("f-consent");
+    if (!consent.checked) {
+      ok = false;
+      errBox.textContent = "Marca la casilla de privacidad para que podamos responderte.";
+      errBox.style.display = "block";
+    }
+    return ok;
+  }
+
+  function payload() {
+    var prods = Array.prototype.map.call(
+      form.querySelectorAll('input[name="productos_interes"]:checked'),
+      function (i) { return i.value; }
+    ).join(";");
+    var fields = [
+      { name: "firstname", value: document.getElementById("f-nombre").value.trim() },
+      { name: "email", value: document.getElementById("f-email").value.trim() },
+      { name: "tipo_entidad", value: document.getElementById("f-entidad").value },
+      { name: "municipio", value: document.getElementById("f-municipio").value.trim() },
+      { name: "productos_interes", value: prods },
+      { name: "unidades_estimadas", value: document.getElementById("f-unidades").value },
+      { name: "plazo_proyecto", value: document.getElementById("f-plazo").value },
+      { name: "canal_origen", value: canalOrigen() }
+    ];
+    var tel = document.getElementById("f-tel").value.trim();
+    if (tel) fields.push({ name: "phone", value: tel });
+    var msg = document.getElementById("f-msg").value.trim();
+    if (msg) fields.push({ name: "message", value: msg });
+    var body = {
+      fields: fields,
+      context: { pageUri: location.href, pageName: document.title },
+      legalConsentOptions: {
+        consent: {
+          consentToProcess: true,
+          text: "Acepto que Gravity Wave trate mis datos para responder a esta solicitud."
+        }
+      }
+    };
+    var tk = hutk();
+    if (tk) body.context.hutk = tk;
+    return body;
+  }
+
+  function mailtoFallback() {
+    var d = payload().fields.reduce(function (acc, f) { acc[f.name] = f.value; return acc; }, {});
+    var cuerpo = "Solicitud de propuesta de mobiliario urbano Gravitec\n\n" +
+      "Nombre: " + d.firstname + "\nEmail: " + d.email +
+      "\nTipo de entidad: " + d.tipo_entidad + "\nMunicipio: " + d.municipio +
+      "\nProductos: " + d.productos_interes + "\nUnidades: " + d.unidades_estimadas +
+      "\nPlazo: " + d.plazo_proyecto +
+      (d.phone ? "\nTeléfono: " + d.phone : "") +
+      (d.message ? "\nMensaje: " + d.message : "") +
+      "\nCanal: " + d.canal_origen;
+    location.href = "mailto:info@thegravitywave.com" +
+      "?subject=" + encodeURIComponent("Solicitud de propuesta — mobiliario Gravitec") +
+      "&body=" + encodeURIComponent(cuerpo);
+  }
+
+  function showOk() {
+    document.getElementById("ok-email").textContent = document.getElementById("f-email").value.trim();
+    form.style.display = "none";
+    document.getElementById("f-ok").style.display = "block";
+    document.querySelector(".formcard").scrollIntoView({ block: "center" });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    if (!HS_FORM_GUID) { mailtoFallback(); showOk(); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
+    fetch("https://api.hsforms.com/submissions/v3/integration/submit/" + HS_PORTAL_ID + "/" + HS_FORM_GUID, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload())
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      showOk();
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Enviar y recibir mi propuesta";
+      errBox.innerHTML = "No hemos podido registrar tu solicitud ahora mismo. " +
+        'Escríbenos directamente a <a href="mailto:info@thegravitywave.com">info@thegravitywave.com</a> ' +
+        "o vuelve a intentarlo en unos minutos.";
+      errBox.style.display = "block";
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
