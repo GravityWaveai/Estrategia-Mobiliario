@@ -34,9 +34,11 @@ def inline_assets(html: str) -> str:
         kind, name = m.groups()
         if kind == "FONT":
             return b64(ROOT / "assets" / "fonts" / f"{name}.woff2")
+        if kind == "SVG":
+            return (SRC / f"{name}.svg").read_text().strip()
         return b64(SRC / "img" / f"{name}.jpg")
 
-    out = re.sub(r"\{\{(FONT|IMG):([A-Za-z0-9_-]+)\}\}", sub, html)
+    out = re.sub(r"\{\{(FONT|IMG|SVG):([A-Za-z0-9_-]+)\}\}", sub, html)
     missing = re.findall(r"\{\{[^}]+\}\}", out)
     assert not missing, f"Placeholders sin resolver: {missing}"
     return out
