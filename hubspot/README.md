@@ -62,6 +62,29 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 | Acuerdo firmado (ganado) | 100 % | Pedido confirmado por escrito | — | — |
 | Descartado (perdido) | 0 % | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
 
+## Estado: aprovisionado y verificado (31/08/2026)
+
+Conexión comprobada contra el portal 26243090 (EU1, Europe/Madrid, EUR).
+El pipeline y las diez propiedades existen y coinciden con las specs de
+`spec/` — nombres internos, etiquetas, tipos y opciones, valor a valor.
+
+IDs reales en el portal (los necesitan los agentes y automatizaciones):
+
+| Pieza | ID |
+|---|---|
+| Pipeline «Mobiliario Urbano» | `4080461018` |
+| Etapa «Lead mobiliario» | `5948376264` |
+| Etapa «Propuesta en preparación» | `5948376265` |
+| Etapa «Propuesta entregada» | `5948376266` |
+| Etapa «Reunión agendada» | `5948376267` |
+| Etapa «Ajuste de propuesta» | `5948376268` |
+| Etapa «Acuerdo firmado» (ganado) | `5948376269` |
+| Etapa «Descartado» (perdido) | `5948376270` |
+
+Pendiente de configurar en UI (no cubierto por API): las tres reglas del
+apartado siguiente (importe obligatorio, `motivo_perdida` obligatorio) y
+los pasos 2–3 del plan post-aprovisionamiento.
+
 ## Datos fijos del portal
 
 | Dato | Valor |
