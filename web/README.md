@@ -27,7 +27,9 @@ conserva aunque se pierda el CSS adicional de WordPress.
 - **Sin precio por escalado**: mismo precio por unidad pidas 1 o 20 piezas
   (enlaces, bullets del formulario y nota de tarifa reescritos).
 - **Parques**: carrusel de 6 imágenes + botón «Ver el catálogo completo»
-  → Canva `https://www.canva.com/d/3T3mVTnTxFje-qr`.
+  → Canva `https://www.canva.com/d/FUitvSGwoVAaL5s` (vista pública del
+  diseño «GRAVITEC · Catálogo Mobiliario Urbano 2026»). Si una imagen del
+  carrusel aún no está subida a Medios, se retira sola del carrusel.
 - **Letras**: pedido mínimo **6 letras** (fuera el «6–10»).
 - **Parques**: eliminado el KPI «Hasta 21.164 €».
 - **Acabados**: tarjetas grandes con etiqueta, degradado y hover.

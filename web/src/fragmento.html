@@ -247,7 +247,7 @@
           <button type="button" class="carr-btn carr-next" aria-label="Imagen siguiente">›</button>
           <div class="carr-dots" role="tablist" aria-label="Ir a la imagen"></div>
         </div>
-        <p class="carr-cta"><a class="btn ghost" href="https://www.canva.com/d/3T3mVTnTxFje-qr" target="_blank" rel="noopener">Ver el catálogo completo</a></p>
+        <p class="carr-cta"><a class="btn ghost" href="https://www.canva.com/d/FUitvSGwoVAaL5s" target="_blank" rel="noopener">Ver el catálogo completo</a></p>
       </div>
       <div>
         <p class="num">02 · PARQUES</p>
@@ -510,20 +510,32 @@ var HS_FORM_GUID = "";
     var slides = track.children;
     var dotsBox = carr.querySelector(".carr-dots");
     var i = 0;
-    for (var n = 0; n < slides.length; n++) {
-      var d = document.createElement("button");
-      d.type = "button";
-      d.className = "carr-dot" + (n === 0 ? " on" : "");
-      d.setAttribute("aria-label", "Imagen " + (n + 1) + " de " + slides.length);
-      d.dataset.i = n;
-      dotsBox.appendChild(d);
+    function renderDots() {
+      dotsBox.innerHTML = "";
+      for (var n = 0; n < slides.length; n++) {
+        var d = document.createElement("button");
+        d.type = "button";
+        d.className = "carr-dot" + (n === i ? " on" : "");
+        d.setAttribute("aria-label", "Imagen " + (n + 1) + " de " + slides.length);
+        d.dataset.i = n;
+        dotsBox.appendChild(d);
+      }
     }
-    var dots = dotsBox.children;
     function go(n) {
       i = (n + slides.length) % slides.length;
       track.style.transform = "translateX(-" + (i * 100) + "%)";
+      var dots = dotsBox.children;
       for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
     }
+    renderDots();
+    // Si una imagen aún no existe en Medios, se retira del carrusel.
+    track.addEventListener("error", function (e) {
+      if (e.target.tagName !== "IMG" || slides.length <= 1) return;
+      e.target.remove();
+      if (i >= slides.length) i = 0;
+      renderDots();
+      go(i);
+    }, true);
     carr.querySelector(".carr-prev").addEventListener("click", function () { go(i - 1); });
     carr.querySelector(".carr-next").addEventListener("click", function () { go(i + 1); });
     dotsBox.addEventListener("click", function (e) {
