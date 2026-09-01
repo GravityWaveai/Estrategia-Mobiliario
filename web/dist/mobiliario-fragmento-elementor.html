@@ -247,7 +247,7 @@
           <button type="button" class="carr-btn carr-next" aria-label="Imagen siguiente">›</button>
           <div class="carr-dots" role="tablist" aria-label="Ir a la imagen"></div>
         </div>
-        <p class="carr-cta"><a class="btn ghost" href="/wp-content/uploads/2026/08/catalogo-mobiliario-urbano-2026.pdf" target="_blank" rel="noopener">Ver el catálogo completo</a></p>
+        <p class="carr-cta"><a class="btn ghost" href="/wp-content/uploads/2026/09/catalogomobiliariourbano2026.pdf" target="_blank" rel="noopener">Ver el catálogo completo</a></p>
       </div>
       <div>
         <p class="num">02 · PARQUES</p>
@@ -473,11 +473,27 @@
 </footer>
 
 <script>
-// Ruta de las imágenes en Medios de WordPress. Si al subirlas la URL
-// resultante es otra (año/mes distinto), cambiar SOLO esta línea.
-var GW_IMG_BASE = "/wp-content/uploads/2026/08/";
+// Carpetas de Medios donde viven las imágenes (WordPress guarda por mes:
+// las de agosto en 2026/08, las del carrusel en 2026/09). Cada imagen
+// prueba las carpetas en orden; si se sube una tanda nueva en otro mes,
+// añadir esa carpeta a la lista.
+var GW_IMG_BASES = ["/wp-content/uploads/2026/08/", "/wp-content/uploads/2026/09/"];
 document.querySelectorAll('#gw-mob [data-gw]').forEach(function (im) {
-  im.src = GW_IMG_BASE + im.getAttribute('data-gw');
+  var n = 0;
+  im.addEventListener("error", function () {
+    n++;
+    if (n < GW_IMG_BASES.length) {
+      im.src = GW_IMG_BASES[n] + im.getAttribute("data-gw");
+      return;
+    }
+    // Agotadas las carpetas: si es una imagen del carrusel, se retira.
+    var track = im.closest && im.closest(".carr-track");
+    if (track && track.children.length > 1) {
+      im.remove();
+      document.dispatchEvent(new CustomEvent("gw:carr-changed"));
+    }
+  });
+  im.src = GW_IMG_BASES[0] + im.getAttribute("data-gw");
 });
 </script>
 <script>
@@ -528,14 +544,13 @@ var HS_FORM_GUID = "";
       for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
     }
     renderDots();
-    // Si una imagen aún no existe en Medios, se retira del carrusel.
-    track.addEventListener("error", function (e) {
-      if (e.target.tagName !== "IMG" || slides.length <= 1) return;
-      e.target.remove();
+    // El cargador de imágenes retira del carrusel las que no existan en
+    // Medios y avisa con este evento para recalcular puntos y posición.
+    document.addEventListener("gw:carr-changed", function () {
       if (i >= slides.length) i = 0;
       renderDots();
       go(i);
-    }, true);
+    });
     carr.querySelector(".carr-prev").addEventListener("click", function () { go(i - 1); });
     carr.querySelector(".carr-next").addEventListener("click", function () { go(i + 1); });
     dotsBox.addEventListener("click", function (e) {

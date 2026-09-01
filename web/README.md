@@ -27,11 +27,11 @@ conserva aunque se pierda el CSS adicional de WordPress.
 - **Sin precio por escalado**: mismo precio por unidad pidas 1 o 20 piezas
   (enlaces, bullets del formulario y nota de tarifa reescritos).
 - **Parques**: carrusel de 6 imágenes + botón «Ver el catálogo completo»
-  → `/wp-content/uploads/2026/08/catalogo-mobiliario-urbano-2026.pdf`
+  → `/wp-content/uploads/2026/09/catalogomobiliariourbano2026.pdf`
   (PDF exportado del Canva «GRAVITEC · Catálogo Mobiliario Urbano 2026»,
-  alojado en Medios: los enlaces de Canva salen como privados para el
-  público). Si una imagen del carrusel aún no está subida a Medios, se
-  retira sola del carrusel.
+  alojado en Medios — los enlaces de Canva salen como privados para el
+  público; WordPress renombró el archivo al subirlo, sin guiones). Si una
+  imagen del carrusel no está en Medios, se retira sola del carrusel.
 - **Letras**: pedido mínimo **6 letras** (fuera el «6–10»).
 - **Parques**: eliminado el KPI «Hasta 21.164 €».
 - **Acabados**: tarjetas grandes con etiqueta, degradado y hover.
@@ -64,8 +64,10 @@ blanco sin tratar): `banco_studio.jpg` y `papelera_studio.jpg` — exportar
 a ≥1200 px de ancho; con el nuevo CSS el fondo blanco queda como marco,
 pero la resolución hay que subirla en el archivo.
 
-Si WordPress las guarda en otra carpeta (año/mes distinto), cambiar solo
-la línea `GW_IMG_BASE` del primer `<script>` del fragmento.
+Las imágenes de agosto viven en `2026/08` y las del carrusel en `2026/09`
+(WordPress guarda por mes de subida). El fragmento prueba ambas carpetas
+por imagen; si se sube una tanda nueva en otro mes, añadir esa carpeta a
+la lista `GW_IMG_BASES` del primer `<script>` del fragmento.
 
 ## HubSpot
 
