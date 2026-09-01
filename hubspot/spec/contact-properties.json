@@ -31,13 +31,11 @@
       "type": "enumeration",
       "fieldType": "checkbox",
       "options": [
-        { "label": "Banco", "value": "banco", "displayOrder": 0 },
-        { "label": "Mesa", "value": "mesa", "displayOrder": 1 },
+        { "label": "Parque infantil", "value": "parque_infantil", "displayOrder": 0 },
+        { "label": "Banco", "value": "banco", "displayOrder": 1 },
         { "label": "Papelera", "value": "papelera", "displayOrder": 2 },
-        { "label": "Taburete", "value": "taburete", "displayOrder": 3 },
-        { "label": "Parque infantil", "value": "parque_infantil", "displayOrder": 4 },
-        { "label": "Letrero corpóreo", "value": "letrero_corporeo", "displayOrder": 5 },
-        { "label": "Otro", "value": "otro", "displayOrder": 6 }
+        { "label": "Otro", "value": "otro", "displayOrder": 3 },
+        { "label": "Letras de exterior", "value": "letrero_corporeo", "displayOrder": 4 }
       ]
     },
     {

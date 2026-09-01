@@ -93,11 +93,11 @@
           "hidden": false,
           "fieldType": "multiple_checkboxes",
           "options": [
+            { "label": "Parque infantil", "value": "parque_infantil" },
             { "label": "Banco", "value": "banco" },
             { "label": "Papelera", "value": "papelera" },
-            { "label": "Parque infantil", "value": "parque_infantil" },
-            { "label": "Letrero corpóreo", "value": "letrero_corporeo" },
-            { "label": "Otro", "value": "otro" }
+            { "label": "Otro", "value": "otro" },
+            { "label": "Letras de exterior", "value": "letrero_corporeo" }
           ]
         }
       ]

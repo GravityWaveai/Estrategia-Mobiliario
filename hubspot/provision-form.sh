@@ -68,23 +68,22 @@ fi
 
 echo
 echo "== 2. Opciones de contacts.productos_interes =="
+# La spec es la lista definitiva (Parque infantil · Banco · Papelera · Otro ·
+# Letras de exterior). El valor interno de «Letras de exterior» sigue siendo
+# letrero_corporeo porque es el que envía la página web. Las opciones que no
+# están en la spec (mesa, taburete) se retiran: solo las usaban contactos de
+# prueba.
 SPEC_OPTS=$(jq -c '.inputs[] | select(.name == "productos_interes") | .options' "$CONTACT_SPEC")
 split_response "$(hs GET "/crm/v3/properties/contacts/productos_interes")"
 [[ "$RESP_CODE" == "200" ]] || { echo "  ✗ No puedo leer la propiedad ($RESP_CODE): $RESP_BODY" >&2; exit 1; }
-CURRENT_OPTS=$(jq -c '[.options[] | {label, value, displayOrder}]' <<<"$RESP_BODY")
-MISSING=$(jq -n --argjson spec "$SPEC_OPTS" --argjson cur "$CURRENT_OPTS" \
-  '[$spec[] | select(.value as $v | ($cur | map(.value) | index($v)) == null)]')
-if [[ "$(jq length <<<"$MISSING")" == "0" ]]; then
-  echo "  ✓ Todas las opciones de la spec ya existen"
+CURRENT_OPTS=$(jq -c '[.options[] | {label, value, displayOrder}] | sort_by(.displayOrder)' <<<"$RESP_BODY")
+if [[ "$(jq -c 'map({label, value})' <<<"$CURRENT_OPTS")" == "$(jq -c 'map({label, value})' <<<"$SPEC_OPTS")" ]]; then
+  echo "  ✓ Las opciones ya coinciden con la spec"
 else
-  # Fusiona: conserva las opciones existentes (hay contactos con mesa/taburete)
-  # y añade las que faltan al final.
-  MERGED=$(jq -n --argjson cur "$CURRENT_OPTS" --argjson add "$MISSING" \
-    '($cur + $add) | to_entries | map(.value + {displayOrder: .key})')
   split_response "$(hs PATCH "/crm/v3/properties/contacts/productos_interes" \
-    "$(jq -n --argjson o "$MERGED" '{options: $o}')")"
+    "$(jq -n --argjson o "$SPEC_OPTS" '{options: $o}')")"
   if [[ "$RESP_CODE" == "200" ]]; then
-    echo "  + Añadidas: $(jq -r 'map(.value) | join(", ")' <<<"$MISSING")"
+    echo "  + Opciones sincronizadas: $(jq -r 'map(.label) | join(" · ")' <<<"$SPEC_OPTS")"
   else
     echo "  ✗ Error actualizando opciones ($RESP_CODE): $RESP_BODY" >&2
     exit 1
