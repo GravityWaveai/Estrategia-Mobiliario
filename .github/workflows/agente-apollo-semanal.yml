@@ -1,0 +1,54 @@
+name: Agente Apollo semanal
+
+on:
+  schedule:
+    # Lunes 06:00 UTC (08:00 CEST / 07:00 CET) — antes del informe semanal
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Solo mostrar lo que haría, sin escribir ni tocar HubSpot"
+        type: boolean
+        default: false
+      lote:
+        description: "Municipios a procesar (vacío = el de config.json)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  agente:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install openpyxl
+
+      - name: Ejecutar agente
+        env:
+          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+          HUBSPOT_PRIVATE_APP_TOKEN: ${{ secrets.HUBSPOT_PRIVATE_APP_TOKEN }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ -n "${{ inputs.lote }}" ]; then ARGS="$ARGS --lote ${{ inputs.lote }}"; fi
+          python3 agent/apollo_agent.py $ARGS
+
+      - name: Commit de los contactos nuevos
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "agente-apollo"
+          git config user.email "info@thegravitywave.com"
+          if git diff --quiet; then
+            echo "Sin contactos nuevos esta semana"
+            exit 0
+          fi
+          git add data/ agent/state.json
+          git commit -m "Agente Apollo: contactos nuevos de la semana $(date +%G-S%V)"
+          git push

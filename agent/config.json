@@ -1,0 +1,24 @@
+{
+  "provincias_objetivo": [
+    "Girona", "Barcelona", "Tarragona",
+    "Castellón", "Valencia", "Alicante",
+    "Illes Balears", "Las Palmas", "Santa Cruz de Tenerife"
+  ],
+  "cargos_objetivo": [
+    "Alcalde", "Alcaldesa",
+    "Concejal de Medio Ambiente", "Concejala de Medio Ambiente",
+    "Concejal de Urbanismo", "Concejala de Urbanismo",
+    "Concejal de Contratación",
+    "Técnico de Medio Ambiente",
+    "Técnico de Contratación",
+    "Responsable de Compras",
+    "Secretario General", "Secretaria General"
+  ],
+  "municipios_por_ejecucion": 25,
+  "max_contactos_por_municipio": 3,
+  "hubspot": {
+    "tipo_entidad": "ayuntamiento",
+    "canal_origen": "email_ayuntamientos",
+    "hubspot_owner_id": "681386458"
+  }
+}
