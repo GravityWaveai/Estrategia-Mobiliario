@@ -16,6 +16,36 @@ Documento operativo de referencia: artifact **«Embudo Mobiliario Urbano»**
 | 5 propiedades de negocio | `estado_agente`, `url_propuesta`, `url_mockup`, `motivo_perdida`, `fecha_reactivacion` | `spec/deal-properties.json` |
 | Grupo de propiedades «Mobiliario Urbano» | En contactos y en negocios, para que las diez queden agrupadas | (implícito en las specs) |
 
+## Estado de la integración (auditoría 01/09/2026)
+
+| Comprobación | Estado |
+|---|---|
+| 5 propiedades de contacto | ✓ Creadas en el portal, idénticas a la spec |
+| 5 propiedades de negocio | ✓ Creadas |
+| Pipeline «Mobiliario Urbano» | ✓ Creado (id `4080461018`) |
+| Formulario de HubSpot | ✗ **No existe**: la página tiene `HS_FORM_GUID = ""` y cae al fallback de mailto — ningún lead se sincroniza aún |
+| Propiedad `unidades_estimadas` | ✗ La página la envía pero no existía en la spec ni en el portal (añadida a la spec; la crea `provision-form.sh`) |
+| Opción `parque_infantil` en `productos_interes` | ✗ La página la ofrece pero el enumerado no la tenía (añadida a la spec; la añade `provision-form.sh`) |
+| `municipio` | La página no la pide como campo propio (va en el mensaje libre) |
+
+Para cerrar la integración: ejecutar `provision-form.sh` (abajo) y pegar el
+GUID resultante en la página.
+
+## Formulario de la web
+
+La página `/mobiliario-urbano/` envía directamente a la Forms API v3
+(`api.hsforms.com/submissions/v3/integration/submit/26243090/<GUID>`), con
+cookie `hubspotutk` y consentimiento GDPR incluidos. El formulario se crea con:
+
+```bash
+export HUBSPOT_PRIVATE_APP_TOKEN=pat-eu1-...   # necesita además el scope `forms`
+./provision-form.sh
+```
+
+El script es idempotente, imprime el GUID y la línea exacta
+(`var HS_FORM_GUID = "…";`) a pegar en la página. La definición del
+formulario vive en `spec/form-mobiliario-urbano.json`.
+
 ## Cómo ejecutarlo
 
 El conector de HubSpot de Claude puede leer y crear **registros**, pero no
