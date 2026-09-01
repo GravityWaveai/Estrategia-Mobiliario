@@ -108,7 +108,10 @@ done
 if [[ -n "$GUID" ]]; then
   echo "  ✓ El formulario «$FORM_NAME» ya existe"
 else
-  split_response "$(hs POST "/marketing/v3/forms/" "$(jq -c . "$FORM_SPEC")")"
+  # La API exige createdAt/updatedAt en el POST aunque luego los sobrescribe
+  NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  split_response "$(hs POST "/marketing/v3/forms/" \
+    "$(jq -c --arg t "$NOW" '. + {createdAt: $t, updatedAt: $t}' "$FORM_SPEC")")"
   if [[ "$RESP_CODE" == "201" || "$RESP_CODE" == "200" ]]; then
     GUID=$(jq -r .id <<<"$RESP_BODY")
     echo "  + Formulario creado"
