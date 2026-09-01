@@ -27,9 +27,11 @@ conserva aunque se pierda el CSS adicional de WordPress.
 - **Sin precio por escalado**: mismo precio por unidad pidas 1 o 20 piezas
   (enlaces, bullets del formulario y nota de tarifa reescritos).
 - **Parques**: carrusel de 6 imágenes + botón «Ver el catálogo completo»
-  → Canva `https://www.canva.com/d/FUitvSGwoVAaL5s` (vista pública del
-  diseño «GRAVITEC · Catálogo Mobiliario Urbano 2026»). Si una imagen del
-  carrusel aún no está subida a Medios, se retira sola del carrusel.
+  → `/wp-content/uploads/2026/08/catalogo-mobiliario-urbano-2026.pdf`
+  (PDF exportado del Canva «GRAVITEC · Catálogo Mobiliario Urbano 2026»,
+  alojado en Medios: los enlaces de Canva salen como privados para el
+  público). Si una imagen del carrusel aún no está subida a Medios, se
+  retira sola del carrusel.
 - **Letras**: pedido mínimo **6 letras** (fuera el «6–10»).
 - **Parques**: eliminado el KPI «Hasta 21.164 €».
 - **Acabados**: tarjetas grandes con etiqueta, degradado y hover.
@@ -40,11 +42,18 @@ conserva aunque se pierda el CSS adicional de WordPress.
   sobre fondo blanco con margen, para que el fondo blanco quede enmarcado
   y no recortado/pixelado.
 
-## Imágenes a subir a Medios (carpeta 2026/08)
+## Archivos a subir a Medios (carpeta 2026/08)
 
-Nuevas, para el carrusel de parques (elegir 5 fotos buenas del catálogo):
+Nuevos (recortados del catálogo Canva 2026, ya listos en `web/src/img/`):
 
-- `parque_carrusel_01.jpg` … `parque_carrusel_05.jpg`
+- `parque_carrusel_01.jpg` — modelo Barco frente al mar (portada del catálogo)
+- `parque_carrusel_02.jpg` — parque con tobogán entre árboles
+- `parque_carrusel_03.jpg` — tobogán y balancín al atardecer
+- `parque_carrusel_04.jpg` — Crucero pirata en plaza urbana
+- `parque_carrusel_05.jpg` — parque en paseo marítimo con palmeras
+- `catalogo-mobiliario-urbano-2026.pdf` — catálogo completo (16 páginas),
+  destino del botón «Ver el catálogo completo» (no está en el repo por
+  tamaño; se exporta del Canva)
 
 Ya existentes (se reutilizan): `hero_parque_hd-scaled.jpg`, `paso_*.jpg`,
 `banco_studio.jpg`, `papelera_studio.jpg`, `parque_plaza.jpg`,
