@@ -42,7 +42,24 @@ Baleares y Canarias; 156 con email institucional, 67 sin email localizado.
 Cuando todos los municipios han tenido su turno, la rotación se reinicia y
 vuelve a repasarlos (cargos cambian tras elecciones, altas nuevas en Apollo).
 
-## Puesta en marcha (una sola vez)
+## Modo principal: Rutina de Claude (sin API keys)
+
+Con Apollo y HubSpot conectados a Claude (cuenta julen@thegravitywave.com),
+existe la Rutina **«Agente Apollo semanal — Ayuntamientos costeros»**
+(`trig_01CBmh4A2VpDTAdauzLx7oHf`): cada lunes a las 06:00 UTC despierta la
+sesión de Claude que tiene los conectores y ejecuta el ciclo completo con
+los conectores de Apollo y HubSpot — sin necesidad de API key de Apollo ni
+token de HubSpot.
+
+Estado: **pausada** hasta el arranque de la campaña. Para activarla:
+decirle a Claude «activa el agente Apollo» o activarla en claude.ai →
+Routines. Para pararla, lo mismo a la inversa.
+
+Primera verificación real (02/09/2026): Santa Susanna (municipio sin email)
+→ Joan Campolier, Alcalde, ajuntament@stasusanna.org (verificado), añadido
+a la BBDD.
+
+## Alternativa: GitHub Actions con API key (una sola vez)
 
 1. **Apollo**: en apollo.io → Settings → Integrations → API → crear API key.
    Requiere un plan con acceso a API (los planes gratuitos no lo incluyen).
