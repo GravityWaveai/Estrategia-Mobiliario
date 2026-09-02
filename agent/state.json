@@ -1,15 +1,23 @@
 {
   "procesados": [
-    "santa susanna",
+    "arta",
+    "barcelona",
     "caldes d'estrac",
-    "vilassar de mar",
+    "felanitx",
+    "mao",
     "montgat",
+    "pilar de la horadada",
     "sant adria de besos",
-    "barcelona"
+    "sant llorenc des cardassar",
+    "santa margalida",
+    "santa susanna",
+    "viladecans",
+    "vilassar de mar"
   ],
   "ultima_ejecucion": "2026-09-02",
   "nuevos_ultima_ejecucion": 1,
   "notas": {
-    "barcelona": "en Apollo la organización se llama 'Barcelona City Council' (dominio barcelona.cat); buscar también por dominio si el nombre no da resultado"
+    "barcelona": "en Apollo la organización se llama 'Barcelona City Council' (dominio barcelona.cat); buscar también por dominio si el nombre no da resultado",
+    "batch_por_dominios": "en municipios pequeños, buscar personas agrupando q_organization_domains_list de todo el lote con contact_email_status=verified; mucho más eficiente que ir uno a uno"
   }
 }
