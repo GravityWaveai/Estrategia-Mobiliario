@@ -32,7 +32,11 @@ Baleares y Canarias; 156 con email institucional, 67 sin email localizado.
    municipio) y descarta emails ya presentes en la BBDD.
 4. Añade los nuevos al CSV con `origen=apollo`, regenera el Excel y hace
    commit al repo.
-5. Da de alta cada contacto en HubSpot (upsert por email) con
+5. Guarda cada contacto nuevo en la lista de Apollo de la campaña
+   **«OUTBOUND - MOBILIARIO URBANO»**
+   (https://app.apollo.io/#/lists/6a983205f242c800107386c8), la que
+   alimenta las secuencias de outbound. Apollo deduplica por email.
+6. Da de alta cada contacto en HubSpot (upsert por email) con
    `tipo_entidad=ayuntamiento`, `municipio` y
    `canal_origen=email_ayuntamientos` — las propiedades que ya usa el
    embudo, de modo que los workflows de HubSpot siguen desde ahí.
