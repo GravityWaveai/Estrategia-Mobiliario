@@ -1,0 +1,15 @@
+{
+  "procesados": [
+    "santa susanna",
+    "caldes d'estrac",
+    "vilassar de mar",
+    "montgat",
+    "sant adria de besos",
+    "barcelona"
+  ],
+  "ultima_ejecucion": "2026-09-02",
+  "nuevos_ultima_ejecucion": 1,
+  "notas": {
+    "barcelona": "en Apollo la organización se llama 'Barcelona City Council' (dominio barcelona.cat); buscar también por dominio si el nombre no da resultado"
+  }
+}

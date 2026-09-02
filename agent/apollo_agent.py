@@ -104,7 +104,7 @@ def apollo_headers():
 def buscar_organizacion(municipio):
     """Devuelve el id de organización Apollo del ayuntamiento, o None."""
     candidatos = [f"Ayuntamiento de {municipio}", f"Ajuntament de {municipio}",
-                  f"Concello de {municipio}", municipio]
+                  f"Concello de {municipio}", f"{municipio} City Council", municipio]
     for nombre in candidatos:
         status, data = http_json(
             "POST", f"{APOLLO_API}/mixed_companies/search",
