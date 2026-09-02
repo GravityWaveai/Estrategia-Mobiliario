@@ -172,3 +172,45 @@ INBOUND 0/3/4/5/6 días · OUTBOUND 0/5/5/6/7 días.
   en el artifact «Copys Mobiliario Urbano» y hay que **pegarlo a mano en los
   pasos de las dos secuencias**: la Sequences API es de solo lectura
   (`PUT`/`PATCH`/`POST` devuelven 405).
+
+## Ejecución de correo en Apollo (02/09/2026)
+
+Con la acción `0-46510720` («Inscribir en secuencia») también bloqueada en la UI
+por suscripción, la ejecución de correo se traslada a Apollo. HubSpot se queda
+como CRM y pipeline.
+
+**Por qué Apollo y no otra vía**: HubSpot no expone escritura de secuencias
+(`POST /automation/v4/sequences` → 405; `/automation/v3/sequences` → 404;
+`/sequences/v2/` → 401, endpoint interno de la UI) ni de plantillas de ventas,
+así que Zapier/Make tampoco pueden crearlas: son envoltorios de esa misma API.
+La API de Apollo sí crea secuencias completas, con asunto y cuerpo de cada paso.
+
+### Secuencias creadas por API
+
+| Secuencia | Id | Cadencia (días laborables) |
+|---|---|---|
+| INBOUND · Mobiliario Urbano — Lead web | `6a9844b94208650014fc4754` | 0 · 3 · 4 · 5 · 6 |
+| OUTBOUND · Mobiliario Urbano — Ayuntamientos | `6a9844f7d0bf520010f72cc1` | 0 · 5 · 5 · 6 · 7 |
+
+Ambas inactivas, horario «De 10 a 13 Europa» (`6780eebd4c847a01b0f7c509`),
+firma de Apollo desactivada (el cuerpo ya firma) y pie legal en los diez
+correos. OUTBOUND lleva `max_emails_per_day: 50` por paso.
+
+### Integración Apollo ↔ HubSpot
+
+- Pull HubSpot → Apollo: automático cada 15 min, no desactivable.
+- Push Apollo → HubSpot: solo `Primary email status = Verified`; sella
+  `hs_sourced_contact_origin = APOLLO` (propiedad nativa de HubSpot).
+- Push de correo: solo los enviados desde Apollo y sus respuestas. Deja fuera
+  la bandeja personal del remitente.
+- Mapeo añadido: Apollo `City` → HubSpot `municipio`, que es la propiedad que
+  usa el workflow de creación de negocios para nombrarlos.
+
+### Datos pendientes de arreglar en la lista OUTBOUND (137 contactos)
+
+Muestreo de 10 registros: ninguno tiene nombre, `city` está vacío en la mayoría
+y `organization_name` es poco fiable (aparecen «Europa», «Inst», dominios
+sueltos). Por eso el copy aprobado se creó **sin el token de municipio**: con
+estos datos habría enviado asuntos truncados. El campo personalizado
+`Provincia` sí está relleno y es fiable.
+
