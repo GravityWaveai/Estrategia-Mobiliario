@@ -214,3 +214,65 @@ sueltos). Por eso el copy aprobado se creó **sin el token de municipio**: con
 estos datos habría enviado asuntos truncados. El campo personalizado
 `Provincia` sí está relleno y es fiable.
 
+
+## Estado final del embudo (02/09/2026)
+
+### Reparto de responsabilidades
+
+| | Apollo | HubSpot |
+|---|---|---|
+| Envío de los correos | ✓ | — |
+| Cadencia y parada por respuesta | ✓ | — |
+| Contactos, negocios, pipeline | — | ✓ |
+| Etapas del negocio | — | ✓ |
+| Parada por reunión agendada | — | HubSpot lo detecta, el puente lo ejecuta en Apollo |
+
+### Propiedades de contacto añadidas
+
+| Propiedad | Tipo | Quién la rellena |
+|---|---|---|
+| `provincia` | texto | La integración de Apollo, desde su campo personalizado «Provincia». Es el dato que personaliza los correos OUTBOUND |
+| `apollo_estado` | lista | El puente |
+| `apollo_fecha_respuesta` | fecha/hora | El puente |
+
+`apollo_estado` y `apollo_fecha_respuesta` existen también en negocios: los
+workflows de etapa son de objeto negocio y no pueden filtrar por propiedades
+del contacto, así que el puente escribe en los dos.
+
+### Workflows
+
+| Id | Nombre | Qué hace ahora |
+|---|---|---|
+| `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio |
+| `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Ídem + añade a la lista 2841 |
+| `4839142587` | MU · Propuesta enviada | Sin cambios |
+| `4839860441` | MU · Respuesta o reunión → Muestra interés | 6 ramales: los 4 nativos + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
+| `4839928017` | MU · Reunión agendada | 3 ramales: los 2 nativos + `apollo_estado = reunion_agendada` |
+| `4839041253` | MU · Reunión realizada → Negociación | Sin cambios |
+
+Los dos primeros perdieron el paso de inscripción en secuencia: esa acción
+también está bloqueada por suscripción en la UI. La inscripción la hace el
+puente (`bridge/`).
+
+Los seis están **desactivados** a la espera de la prueba de punta a punta.
+
+### Limpieza hecha
+
+- Retirada la exclusión de la lista 2923 del workflow de reseteo mensual
+  `939189697` (sus tres ramales vuelven a 469, 1568 y 2120). Con Apollo
+  enviando, los leads de mobiliario ya no consumen contactos de marketing, así
+  que protegerlos del reseteo solo gastaba cupo. La reinscripción mensual queda
+  intacta.
+- Borrada la lista 2923, que ya no la referenciaba ningún workflow.
+
+### Pendiente de hacer a mano
+
+1. Conectar el buzón de Amaia en Apollo (hoy el único conectado es el de Julen).
+2. En Apollo, pestaña **Fields**: mapear su campo `Provincia` → HubSpot
+   `provincia`. La API de la integración no expone los mapeos.
+3. Borrar los 10 correos de marketing huérfanos y «ZZ prueba viabilidad». El
+   token no tiene los scopes `marketing.email.*`.
+4. Confirmar en el editor de Apollo que `{{provincia}}` sale como variable
+   reconocida y no como texto plano.
+5. Rotar el token de la app privada de HubSpot: se expuso durante la
+   configuración.
