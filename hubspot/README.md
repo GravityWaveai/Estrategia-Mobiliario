@@ -121,3 +121,54 @@ Con la estructura creada, Claude:
 | Campaña ayuntamientos | `email` | `email` | `mobiliario-ayuntamientos-2026` |
 | Instagram | `instagram` | `social` | `mobiliario-2026` |
 | LinkedIn | `linkedin` | `social` | `mobiliario-2026` |
+
+## Restricción de suscripción: sin Marketing Hub Pro (02/09/2026)
+
+El portal 26243090 tiene **Sales Hub Professional** (asientos `core`,
+`sales-pro`, `partner`, `view-only`) pero **no Marketing Hub Pro**. Eso
+invalida la acción de workflow «Enviar correo de marketing»
+(`actionTypeId 0-4`): la API la acepta al crearla, pero la UI la marca como
+*«Las acciones de correo necesitan una suscripción a Marketing Hub Pro o
+superior para usarse en Workflows»* y el workflow no la ejecutaría.
+
+El único workflow del portal que usa `0-4` y sigue activo (`1410639086`,
+«Enviar correo luego del envío de formularios») es un seguimiento heredado
+de formulario, no una vía reutilizable para una cadencia de 5 correos.
+
+### Solución adoptada — secuencias, sin cambiar de suscripción
+
+Las **secuencias sí entran en Sales Hub Pro**, y tres workflows activos del
+portal ya inscriben en secuencia (`2242763970`, `2349356246`, `2349356262`),
+así que la acción `0-46510720` está disponible y probada aquí.
+
+Los dos workflows de cadencia se han reconstruido sustituyendo la cadena
+`0-4` + `0-1` (correo + espera) por una sola inscripción en secuencia:
+
+| Workflow | Id | Pasos |
+|---|---|---|
+| MU · INBOUND — Lead web (secuencia) | `4839947487` | propietario → `inbound__outbound` → `lifecyclestage` → crear negocio → inscribir en secuencia `855582936` |
+| MU · OUTBOUND — Ayuntamientos (secuencia) | `4840005827` | propietario → `inbound__outbound` → `lifecyclestage` → añadir a lista 2841 → crear negocio → inscribir en secuencia `855582933` |
+
+Remitente de ambas: Amaia (`userId` 49211842,
+`amaia@thegravitywave.com`), con `shouldUseContactTimeZone`.
+
+Las cadencias de las secuencias coinciden con las que tenían los workflows:
+INBOUND 0/3/4/5/6 días · OUTBOUND 0/5/5/6/7 días.
+
+### Efectos secundarios de volver a secuencias
+
+- **Se elimina el paso «marcar como contacto de marketing»** (`0-31`) de
+  ambos workflows: las secuencias salen de la bandeja de Amaia y no
+  consumen contactos de marketing. Desaparece el conflicto con el cupo de
+  4.000 y con el reseteo mensual.
+- La exclusión de la lista 2923 en el workflow de reseteo `939189697` deja
+  de ser necesaria (protege contactos que ya no hace falta proteger). No se
+  ha retirado: hay que quitarla a mano si se quiere recuperar ese cupo.
+- La detección de respuesta sigue funcionando: `4839860441`
+  («MU · Respuesta o reunión → Muestra interés») ya contempla
+  `hs_latest_sales_email_reply_date`, que es la propiedad que rellenan las
+  secuencias, además de las de reunión.
+- Los 10 correos de marketing creados quedan sin uso. El copy aprobado está
+  en el artifact «Copys Mobiliario Urbano» y hay que **pegarlo a mano en los
+  pasos de las dos secuencias**: la Sequences API es de solo lectura
+  (`PUT`/`PATCH`/`POST` devuelven 405).
