@@ -6,18 +6,29 @@ titular, un precio o el nombre de un municipio sin tocar código.
 
 **Carpeta:** [Gravity Wave · Mobiliario urbano 2026](https://www.canva.com/folder/FAHUKI1WIvo)
 
-| Cód. | Pieza | Pág. | Editar |
-|---|---|---|---|
-| P01 | Teaser | 1 | [Abrir](https://www.canva.com/d/ksp0FKU0JIusoR2) |
-| P02 | El bucle en tres pasos | 4 | [Abrir](https://www.canva.com/d/9MI2FtqgJjDZ0Hj) |
-| P03 | Carrusel héroe de lanzamiento | 8 | [Abrir](https://www.canva.com/d/XfxuESBtsJlswHn) |
-| P04 | Manifiesto | 1 | [Abrir](https://www.canva.com/d/iOrnX0iVtsecmsf) |
-| P05 | El catálogo pieza a pieza | 7 | [Abrir](https://www.canva.com/d/pHvVAK_VU-FFE1V) |
-| P06 | Los doce acabados | 1 | [Abrir](https://www.canva.com/d/EoDCcI1jk6DYS5e) |
-| P07 | Cómo lo compra un ayuntamiento (LinkedIn) | 6 | [Abrir](https://www.canva.com/d/SY8eIYYMTOBWJ0y) |
-| P08 | Tarjeta de cita (post de fundadora) | 1 | [Abrir](https://www.canva.com/d/FckpTQg6o3Bm8uQ) |
-| P09 | Stories | 3 | [Abrir](https://www.canva.com/d/6qkmJJNQp54cYXk) |
-| P10 | Plantilla por municipio | 1 | [Abrir](https://www.canva.com/d/OphKDK_75o4Mh9S) |
+| Cód. | Pieza | Pág. | ID del diseño | Editar |
+|---|---|---|---|---|
+| P01 | Teaser | 1 | `DAHUKIMfwaU` | [Abrir](https://www.canva.com/design/DAHUKIMfwaU/edit) |
+| P02 | El bucle en tres pasos | 4 | `DAHUKKbZT4A` | [Abrir](https://www.canva.com/design/DAHUKKbZT4A/edit) |
+| P03 | Carrusel héroe de lanzamiento | 8 | `DAHUKGztVYI` | [Abrir](https://www.canva.com/design/DAHUKGztVYI/edit) |
+| P04 | Manifiesto | 1 | `DAHUKGmzbqY` | [Abrir](https://www.canva.com/design/DAHUKGmzbqY/edit) |
+| P05 | El catálogo pieza a pieza | 7 | `DAHUKI-v5s0` | [Abrir](https://www.canva.com/design/DAHUKI-v5s0/edit) |
+| P06 | Los doce acabados | 1 | `DAHUKLjsSgc` | [Abrir](https://www.canva.com/design/DAHUKLjsSgc/edit) |
+| P07 | Cómo lo compra un ayuntamiento (LinkedIn) | 6 | `DAHUKOUw73s` | [Abrir](https://www.canva.com/design/DAHUKOUw73s/edit) |
+| P08 | Tarjeta de cita (post de fundadora) | 1 | `DAHUKKWzLmo` | [Abrir](https://www.canva.com/design/DAHUKKWzLmo/edit) |
+| P09 | Stories | 3 | `DAHUKCcdk8k` | [Abrir](https://www.canva.com/design/DAHUKCcdk8k/edit) |
+| P10 | Plantilla por municipio | 1 | `DAHUKE-U0xE` | [Abrir](https://www.canva.com/design/DAHUKE-U0xE/edit) |
+
+> **Ojo con los enlaces.** La API de Canva devuelve URLs cortas del tipo
+> `canva.com/d/XXXX`, pero son **tokens de un solo uso**: cambian en cada
+> llamada y a otra persona le salen como documento privado. La dirección
+> estable de un diseño es siempre `canva.com/design/<ID>/edit`, que es la de
+> la tabla.
+
+Si aun así sale «privado», es que el navegador está en una cuenta de Canva
+distinta de la que tiene conectada Claude. Los diseños son de la cuenta
+conectada; entra con esa, o busca las piezas en **Proyectos** (son los diez
+diseños más recientes) o directamente en la carpeta de arriba.
 
 ## Qué usar y cuándo
 
