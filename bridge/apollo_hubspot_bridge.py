@@ -48,6 +48,37 @@ PIPELINE = "4080461018"
 ETAPA_LEAD = "5948376264"   # «Lead mobiliario», la primera
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 
+# Campos personalizados de Apollo (contacto) donde se vuelca lo que el lead
+# contó en el formulario web, para que los correos de INBOUND lo citen de
+# verdad en vez de hablar en genérico. HubSpot guarda el valor interno
+# ("banco", "6_15"...); estos diccionarios lo traducen a la etiqueta legible
+# antes de escribirlo en Apollo.
+CAMPOS_APOLLO_INBOUND = {
+    "productos_interes": "6a9993622c2d76000c949670",
+    "unidades_estimadas": "6a9993775f82df000c6e1af6",
+    "plazo_proyecto": "6a9993d8743850001cfa814f",
+    "tipo_entidad": "6a9993caa7323a001c0c786c",
+    "message": "6a9993bcc96c2d001cdc2d5b",
+}
+
+ETIQUETAS_PRODUCTOS_INTERES = {
+    "banco": "Banco", "mesa": "Mesa", "papelera": "Papelera",
+    "taburete": "Taburete", "letrero_corporeo": "Letrero corpóreo",
+    "parque_infantil": "Parque infantil", "otro": "Otro",
+}
+ETIQUETAS_UNIDADES_ESTIMADAS = {
+    "1_5": "1–5", "6_15": "6–15", "16_50": "16–50",
+    "mas_50": "Más de 50", "sin_definir": "sin definir",
+}
+ETIQUETAS_PLAZO_PROYECTO = {
+    "menos_3_meses": "menos de 3 meses", "3_6_meses": "3–6 meses",
+    "6_12_meses": "6–12 meses", "sin_definir": "sin definir",
+}
+ETIQUETAS_TIPO_ENTIDAD = {
+    "ayuntamiento": "Ayuntamiento", "empresa": "Empresa", "puerto": "Puerto",
+    "hotel_resort": "Hotel / Resort", "otro": "Otro",
+}
+
 # Estados de Apollo que HubSpot no puede deducir por su cuenta. La respuesta
 # NO está aquí a propósito: la detecta HubSpot (ver sync_replies).
 ESTADO_SOLO_APOLLO = {
@@ -174,6 +205,14 @@ def hs_stamp(contact_id, props):
 # --------------------------------------------------------------------------
 # Tareas
 
+def _etiquetas(valor_hubspot, mapa):
+    """Traduce uno o varios valores internos de HubSpot (separados por ';')
+    a sus etiquetas legibles, para que el correo cite algo con sentido."""
+    if not valor_hubspot:
+        return ""
+    return ", ".join(mapa.get(v, v) for v in valor_hubspot.split(";") if v)
+
+
 def enroll_inbound(sender_id):
     """Leads del formulario web que aún no están en la secuencia."""
     desde = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -184,16 +223,37 @@ def enroll_inbound(sender_id):
             {"propertyName": "apollo_estado", "operator": "NOT_HAS_PROPERTY"},
             {"propertyName": "createdate", "operator": "GTE", "value": desde},
         ]}],
-        ["email", "firstname", "apollo_estado"],
+        ["email", "firstname", "apollo_estado", "productos_interes",
+         "unidades_estimadas", "plazo_proyecto", "tipo_entidad", "message"],
     )
     log(f"INBOUND: {len(leads)} lead(s) pendientes de inscribir")
     for lead in leads:
-        email = lead["properties"]["email"]
+        props = lead["properties"]
+        email = props["email"]
         contacto = apollo_find_by_email(email)
         if not contacto:
             # El pull de HubSpot->Apollo tarda hasta 15 min; se reintenta luego.
             log(f"  {email}: todavía no está en Apollo, se reintenta en la próxima pasada")
             continue
+
+        # Vuelca lo que contó en el formulario a los campos personalizados de
+        # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
+        # en genérico. Tiene que ir antes de inscribirlo: el primer correo
+        # sale nada más entrar.
+        campos = {
+            CAMPOS_APOLLO_INBOUND["productos_interes"]:
+                _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES),
+            CAMPOS_APOLLO_INBOUND["unidades_estimadas"]:
+                _etiquetas(props.get("unidades_estimadas"), ETIQUETAS_UNIDADES_ESTIMADAS),
+            CAMPOS_APOLLO_INBOUND["plazo_proyecto"]:
+                _etiquetas(props.get("plazo_proyecto"), ETIQUETAS_PLAZO_PROYECTO),
+            CAMPOS_APOLLO_INBOUND["tipo_entidad"]:
+                _etiquetas(props.get("tipo_entidad"), ETIQUETAS_TIPO_ENTIDAD),
+            CAMPOS_APOLLO_INBOUND["message"]: props.get("message") or "",
+        }
+        write(f"volcar datos del formulario de {email} en Apollo",
+              lambda c=contacto, cf=campos: apollo("PATCH", f"/contacts/{c['id']}",
+                                                    {"typed_custom_fields": cf}))
         write(f"inscribir {email} en INBOUND",
               lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
         hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA})
