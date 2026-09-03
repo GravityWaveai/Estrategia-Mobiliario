@@ -1,0 +1,41 @@
+name: Puente Apollo ↔ HubSpot
+
+# Apollo envía los correos y HubSpot lleva el pipeline. Este job es lo único
+# que los une: inscribe leads en las secuencias, trae el estado de vuelta y
+# corta la cadencia cuando alguien agenda reunión con Amaia.
+#
+# Arranca en simulacro: hasta que la variable BRIDGE_ENABLED valga "1" el
+# script solo escribe en el log lo que haría.
+
+on:
+  schedule:
+    - cron: '20 * * * *'      # cada hora, en el minuto 20
+  workflow_dispatch:
+    inputs:
+      enabled:
+        description: 'Escribir de verdad (1) o solo simular (0)'
+        required: false
+        default: '0'
+
+concurrency:
+  group: apollo-bridge         # nunca dos pasadas a la vez
+  cancel-in-progress: false
+
+jobs:
+  puente:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Ejecutar el puente
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+          BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
+          OUTBOUND_DAILY_CAP: ${{ vars.OUTBOUND_DAILY_CAP || '50' }}
+        run: python3 bridge/apollo_hubspot_bridge.py

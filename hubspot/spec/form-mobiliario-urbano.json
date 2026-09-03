@@ -1,0 +1,352 @@
+{
+  "name": "Mobiliario Urbano — Web (thegravitywave.com/mobiliario-urbano)",
+  "formType": "hubspot",
+  "fieldGroups": [
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "firstname",
+          "label": "Nombre",
+          "required": true,
+          "hidden": false,
+          "fieldType": "single_line_text"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "lastname",
+          "label": "Apellidos",
+          "required": true,
+          "hidden": false,
+          "fieldType": "single_line_text"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "email",
+          "label": "Email",
+          "required": true,
+          "hidden": false,
+          "fieldType": "email",
+          "validation": {
+            "blockedEmailDomains": [],
+            "useDefaultBlockList": false
+          }
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "phone",
+          "label": "Teléfono",
+          "required": true,
+          "hidden": false,
+          "fieldType": "phone",
+          "useCountryCodeSelect": false
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "tipo_entidad",
+          "label": "Tipo de entidad",
+          "required": true,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            {
+              "label": "Ayuntamiento",
+              "value": "ayuntamiento",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "Empresa",
+              "value": "empresa",
+              "displayOrder": 1,
+              "description": ""
+            },
+            {
+              "label": "Puerto",
+              "value": "puerto",
+              "displayOrder": 2,
+              "description": ""
+            },
+            {
+              "label": "Hotel / Resort",
+              "value": "hotel_resort",
+              "displayOrder": 3,
+              "description": ""
+            },
+            {
+              "label": "Otro",
+              "value": "otro",
+              "displayOrder": 4,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "productos_interes",
+          "label": "Productos de interés",
+          "required": true,
+          "hidden": false,
+          "fieldType": "multiple_checkboxes",
+          "options": [
+            {
+              "label": "Parque infantil",
+              "value": "parque_infantil",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "Banco",
+              "value": "banco",
+              "displayOrder": 1,
+              "description": ""
+            },
+            {
+              "label": "Papelera",
+              "value": "papelera",
+              "displayOrder": 2,
+              "description": ""
+            },
+            {
+              "label": "Otro",
+              "value": "otro",
+              "displayOrder": 3,
+              "description": ""
+            },
+            {
+              "label": "Letras de exterior",
+              "value": "letrero_corporeo",
+              "displayOrder": 4,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "unidades_estimadas",
+          "label": "Unidades estimadas",
+          "required": true,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            {
+              "label": "1–5",
+              "value": "1_5",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "6–15",
+              "value": "6_15",
+              "displayOrder": 1,
+              "description": ""
+            },
+            {
+              "label": "16–50",
+              "value": "16_50",
+              "displayOrder": 2,
+              "description": ""
+            },
+            {
+              "label": "Más de 50",
+              "value": "mas_50",
+              "displayOrder": 3,
+              "description": ""
+            },
+            {
+              "label": "Sin definir",
+              "value": "sin_definir",
+              "displayOrder": 4,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "plazo_proyecto",
+          "label": "Plazo del proyecto",
+          "required": false,
+          "hidden": false,
+          "fieldType": "dropdown",
+          "options": [
+            {
+              "label": "Sin definir",
+              "value": "sin_definir",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "Menos de 3 meses",
+              "value": "menos_3_meses",
+              "displayOrder": 1,
+              "description": ""
+            },
+            {
+              "label": "3–6 meses",
+              "value": "3_6_meses",
+              "displayOrder": 2,
+              "description": ""
+            },
+            {
+              "label": "6–12 meses",
+              "value": "6_12_meses",
+              "displayOrder": 3,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "canal_origen",
+          "label": "Canal de origen",
+          "required": false,
+          "hidden": true,
+          "fieldType": "dropdown",
+          "options": [
+            {
+              "label": "Email ayuntamientos",
+              "value": "email_ayuntamientos",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "Instagram",
+              "value": "instagram",
+              "displayOrder": 1,
+              "description": ""
+            },
+            {
+              "label": "LinkedIn",
+              "value": "linkedin",
+              "displayOrder": 2,
+              "description": ""
+            },
+            {
+              "label": "Web directo",
+              "value": "web_directo",
+              "displayOrder": 3,
+              "description": ""
+            },
+            {
+              "label": "Otro",
+              "value": "otro",
+              "displayOrder": 4,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
+          "name": "message",
+          "label": "Mensaje",
+          "required": false,
+          "hidden": false,
+          "fieldType": "multi_line_text",
+          "placeholder": "Municipio, ubicación, fechas, dudas…"
+        }
+      ]
+    }
+  ],
+  "configuration": {
+    "language": "es",
+    "cloneable": true,
+    "editable": true,
+    "archivable": true,
+    "recaptchaEnabled": false,
+    "notifyContactOwner": false,
+    "notifyRecipients": [],
+    "createNewContactForNewEmail": false,
+    "prePopulateKnownValues": true,
+    "allowLinkToResetKnownValues": false,
+    "postSubmitAction": {
+      "type": "thank_you",
+      "value": "Gracias. Te enviamos la propuesta en breve."
+    }
+  },
+  "displayOptions": {
+    "renderRawHtml": false,
+    "theme": "default_style",
+    "submitButtonText": "Recibir propuesta",
+    "style": {
+      "labelTextColor": "#33475b",
+      "labelTextSize": "13px",
+      "legalConsentTextColor": "#33475b",
+      "legalConsentTextSize": "14px",
+      "backgroundWidth": "100%",
+      "fontFamily": "arial, helvetica, sans-serif",
+      "submitAlignment": "left",
+      "submitFontColor": "#ffffff",
+      "submitColor": "#ff7a59",
+      "submitSize": "12px"
+    }
+  },
+  "legalConsentOptions": {
+    "type": "explicit_consent_to_process",
+    "communicationConsentText": "Gravity Wave se compromete a proteger y respetar tu privacidad.",
+    "communicationsCheckboxes": [],
+    "consentToProcessText": "Acepto que Gravity Wave trate mis datos para responder a esta solicitud.",
+    "consentToProcessCheckboxLabel": "Acepto que Gravity Wave trate mis datos para responder a esta solicitud.",
+    "privacyText": "Puedes darte de baja de estas comunicaciones en cualquier momento."
+  }
+}
