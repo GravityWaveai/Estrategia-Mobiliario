@@ -8,12 +8,14 @@ Apollo envía los correos; HubSpot es el CRM y el pipeline. Este script es la
   1. INBOUND  — inscribe en la secuencia de Apollo los leads que han entrado
                 por el formulario de la web y aún no están inscritos.
   2. OUTBOUND — inscribe hasta 50 ayuntamientos al día desde la lista de Apollo.
-  3. ESTADO   — trae de Apollo el estado de cada contacto (enviado, abierto,
-                respondido, rebotado…) y lo escribe en HubSpot, en el contacto
-                y en su negocio. De ahí tiran los workflows de etapa.
+  3. RESPUESTA— la detecta HubSpot, no Apollo: cuando la propiedad nativa
+                `hs_sales_email_last_replied` se rellena, el puente marca
+                `apollo_estado = respondido` y saca al contacto de la secuencia.
   4. PARADA   — si en HubSpot consta una reunión agendada (calendario de Amaia),
                 saca al contacto de la secuencia de Apollo. Apollo no ve ese
                 calendario, así que la parada tiene que venir de aquí.
+  5. REBOTES  — lo único que sigue viniendo de Apollo, porque HubSpot no puede
+                saberlo: un correo que no llegó nunca no genera actividad.
 
 Es idempotente: `apollo_estado` en HubSpot hace de memoria, así que se puede
 relanzar sin duplicar inscripciones.
@@ -43,16 +45,16 @@ SEQ_OUTBOUND = "6a9844f7d0bf520010f72cc1"
 LIST_OUTBOUND = "6a983205f242c800107386c8"
 CAMPANA = "mobiliario_urbano"
 
-# Estado de Apollo -> valor de la propiedad apollo_estado de HubSpot
-ESTADO = {
-    "active": "enviado",
-    "paused": "enviado",
-    "finished": "finalizado",
+# Estados de Apollo que HubSpot no puede deducir por su cuenta. La respuesta
+# NO está aquí a propósito: la detecta HubSpot (ver sync_replies).
+ESTADO_SOLO_APOLLO = {
     "bounced": "rebotado",
     "hard_bounced": "rebotado",
     "spam_blocked": "rebotado",
-    "not_sent": "enviado",
 }
+
+# Estados desde los que todavía se puede pasar a «respondido»
+EN_CURSO = ["enviado", "abierto"]
 
 
 def _req(url, method, headers, body=None):
@@ -219,41 +221,73 @@ def enroll_outbound(sender_id):
               lambda: apollo_enroll(SEQ_OUTBOUND, pendientes, sender_id))
 
 
-def sync_status():
-    """Trae el estado de Apollo y lo escribe en HubSpot."""
-    vistos, page = 0, 1
+def _apollo_sequences_of(email):
+    """Secuencias en las que el contacto sigue activo, si está en Apollo."""
+    c = apollo_find_by_email(email)
+    return (c, c.get("emailer_campaign_ids") or []) if c else (None, [])
+
+
+def sync_replies():
+    """La respuesta la capta HubSpot; aquí solo se actúa sobre ella.
+
+    `hs_sales_email_last_replied` es una propiedad nativa: HubSpot la rellena
+    al registrar la respuesta a un correo de ventas, que es justo lo que Apollo
+    empuja al CRM. No dependemos de ningún campo indocumentado de Apollo.
+    """
+    respondieron = hs_search_contacts(
+        [{"filters": [
+            {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+            {"propertyName": "hs_sales_email_last_replied", "operator": "HAS_PROPERTY"},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+            {"propertyName": "email", "operator": "HAS_PROPERTY"},
+        ]}],
+        ["email", "apollo_estado", "hs_sales_email_last_replied"],
+    )
+    log(f"RESPUESTA: {len(respondieron)} contacto(s) han respondido")
+    for h in respondieron:
+        props = h["properties"]
+        hs_stamp(h["id"], {
+            "apollo_estado": "respondido",
+            "apollo_fecha_respuesta": props["hs_sales_email_last_replied"],
+        })
+        # Apollo suele parar solo al detectar la respuesta, pero si el correo
+        # entró por otra vía (respondieron a Amaia directamente) no se entera.
+        contacto, activas = _apollo_sequences_of(props["email"])
+        for seq in (SEQ_INBOUND, SEQ_OUTBOUND):
+            if seq in activas:
+                write(f"sacar {props['email']} de {seq}",
+                      lambda s=seq, c=contacto: apollo_stop(s, [c["id"]]))
+
+
+def sync_bounces():
+    """Lo único que HubSpot no puede saber: el correo que nunca llegó."""
+    marcados, page = 0, 1
     while True:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
         if not lote:
             break
         for c in lote:
-            estados = [s for s in (c.get("contact_campaign_statuses") or [])
-                       if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)]
-            if not estados:
+            estado = next(
+                (ESTADO_SOLO_APOLLO[s["status"]]
+                 for s in (c.get("contact_campaign_statuses") or [])
+                 if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
+                 and s.get("status") in ESTADO_SOLO_APOLLO),
+                None)
+            if not estado or not c.get("email"):
                 continue
-            s = estados[-1]
-            # Apollo no expone la respuesta con un nombre estable; se prueban
-            # las variantes conocidas y se registra el objeto si ninguna encaja.
-            respondido = s.get("replied_at") or s.get("last_replied_at")
-            props = {"apollo_estado": "respondido" if respondido
-                     else ESTADO.get(s.get("status"), "enviado")}
-            if respondido:
-                props["apollo_fecha_respuesta"] = respondido
-            email = c.get("email")
-            if not email:
-                continue
-            hits = hs_search_contacts(
-                [{"filters": [{"propertyName": "email", "operator": "EQ", "value": email}]}],
-                ["email", "apollo_estado"])
-            for h in hits:
-                if h["properties"].get("apollo_estado") != props["apollo_estado"]:
-                    hs_stamp(h["id"], props)
-                    vistos += 1
+            for h in hs_search_contacts(
+                    [{"filters": [
+                        {"propertyName": "email", "operator": "EQ", "value": c["email"]},
+                        {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+                    ]}],
+                    ["email", "apollo_estado"]):
+                hs_stamp(h["id"], {"apollo_estado": estado})
+                marcados += 1
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
         page += 1
-    log(f"ESTADO: {vistos} contacto(s) actualizados en HubSpot")
+    log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
 
 
 def stop_on_meeting():
@@ -285,10 +319,13 @@ def main():
     if not ENABLED:
         log("=== SIMULACRO: no se escribe nada. Define BRIDGE_ENABLED=1 para activar. ===")
     sender_id = apollo_sender_account_id()
-    stop_on_meeting()      # antes de inscribir, para no escribir a quien ya tiene reunión
+    # Primero lo que corta, luego lo que inscribe: así nunca se escribe a
+    # alguien que ya ha respondido o tiene reunión.
+    sync_replies()
+    stop_on_meeting()
     enroll_inbound(sender_id)
     enroll_outbound(sender_id)
-    sync_status()
+    sync_bounces()
     log("Listo.")
 
 
