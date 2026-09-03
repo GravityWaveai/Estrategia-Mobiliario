@@ -61,6 +61,13 @@ CAMPOS_APOLLO_INBOUND = {
     "message": "6a9993bcc96c2d001cdc2d5b",
 }
 
+# Campo personalizado de Apollo con el municipio, verificado a mano contra el
+# dominio de cada ayuntamiento (el "city" que calcula Apollo solo no es fiable
+# para pueblos pequeños). El workflow OUTBOUND de HubSpot usa el "municipio"
+# del contacto para el nombre del negocio, así que el puente lo copia también
+# a HubSpot en vez de fiarse de que la integración nativa lo traiga bien.
+CAMPO_APOLLO_MUNICIPIO = "6a999f44b6a7d5001357d023"
+
 ETIQUETAS_PRODUCTOS_INTERES = {
     "banco": "Banco", "mesa": "Mesa", "papelera": "Papelera",
     "taburete": "Taburete", "letrero_corporeo": "Letrero corpóreo",
@@ -261,7 +268,7 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
-    pendientes, emails, page = [], [], 1
+    pendientes, municipio_de, page = [], {}, 1
     while len(pendientes) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
@@ -273,7 +280,7 @@ def enroll_outbound(sender_id):
             if not c.get("email"):
                 continue          # sin correo no hay nada que enviar
             pendientes.append(c["id"])
-            emails.append(c["email"])
+            municipio_de[c["email"]] = (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
             if len(pendientes) >= CAP:
                 break
         if page >= res.get("pagination", {}).get("total_pages", 1):
@@ -292,14 +299,27 @@ def enroll_outbound(sender_id):
     # Solo se puede marcar a quien Apollo ya haya empujado a HubSpot; el resto
     # queda para la siguiente pasada, cuando el pull automático (cada 15 min)
     # los haya traído.
+    #
+    # También se copia "municipio": el nombre del negocio lo genera el
+    # workflow con {{ enrolled_object.municipio }}, y la integración nativa
+    # Apollo-HubSpot solo trae el "city" que calcula Apollo automáticamente
+    # -no fiable para pueblos pequeños-, no el campo "Municipio" verificado
+    # a mano. Sin este paso, varios negocios saldrían con el nombre del
+    # pueblo mal o en blanco aunque el correo esté perfecto.
     en_hubspot = hs_search_contacts(
-        [{"filters": [{"propertyName": "email", "operator": "IN", "values": emails}]}],
-        ["email", "campana_apollo"],
+        [{"filters": [{"propertyName": "email", "operator": "IN", "values": list(municipio_de)}]}],
+        ["email", "campana_apollo", "municipio"],
     )
     marcados = 0
     for h in en_hubspot:
+        props = {}
         if h["properties"].get("campana_apollo") != CAMPANA:
-            hs_stamp(h["id"], {"campana_apollo": CAMPANA})
+            props["campana_apollo"] = CAMPANA
+        municipio = municipio_de.get(h["properties"]["email"])
+        if municipio and h["properties"].get("municipio") != municipio:
+            props["municipio"] = municipio
+        if props:
+            hs_stamp(h["id"], props)
             marcados += 1
     log(f"OUTBOUND: {marcados}/{len(pendientes)} ya estaban en HubSpot y quedan "
         f"marcados; el resto se marca en cuanto Apollo los empuje")

@@ -11,7 +11,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
 | **PARADA** | Cuatro señales, ver abajo | Saca al contacto de la secuencia |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` en los que ya estén en HubSpot |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -76,6 +76,14 @@ siguiente pasada — igual que ya hacía `enroll_inbound` con los suyos.
 La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
 veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
 (acción 4), y eso lo saca automáticamente de la 2845.
+
+Por el mismo motivo se copia también `municipio`: el nombre del negocio lo
+genera el workflow con `{{ enrolled_object.municipio }}`, y la integración
+nativa Apollo-HubSpot solo trae el `city` que calcula Apollo automáticamente
+-nada fiable para pueblos pequeños-, no el campo personalizado "Municipio"
+que se rellenó a mano y verificado contra el dominio de cada ayuntamiento.
+Sin este paso, varios negocios saldrían con el nombre del pueblo mal o en
+blanco aunque el correo llegue perfecto.
 
 ## Personalización de los correos
 
