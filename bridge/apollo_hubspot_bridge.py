@@ -44,6 +44,8 @@ SEQ_INBOUND = "6a9844b94208650014fc4754"
 SEQ_OUTBOUND = "6a9844f7d0bf520010f72cc1"
 LIST_OUTBOUND = "6a983205f242c800107386c8"
 CAMPANA = "mobiliario_urbano"
+PIPELINE = "4080461018"
+ETAPA_LEAD = "5948376264"   # «Lead mobiliario», la primera
 
 # Estados de Apollo que HubSpot no puede deducir por su cuenta. La respuesta
 # NO está aquí a propósito: la detecta HubSpot (ver sync_replies).
@@ -290,27 +292,86 @@ def sync_bounces():
     log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
 
 
-def stop_on_meeting():
-    """Reunión en el calendario de Amaia -> fuera de la secuencia."""
-    con_reunion = hs_search_contacts(
+def hs_search_deals(filter_groups, properties):
+    out, after = [], None
+    while True:
+        body = {"filterGroups": filter_groups, "properties": properties, "limit": 100}
+        if after:
+            body["after"] = after
+        res = hs("POST", "/crm/v3/objects/deals/search", body)
+        out += res.get("results", [])
+        after = res.get("paging", {}).get("next", {}).get("after")
+        if not after:
+            return out
+
+
+def hs_contact_ids_of_deal(deal_id):
+    res = hs("GET", f"/crm/v4/objects/deals/{deal_id}/associations/contacts")
+    return [r["toObjectId"] for r in res.get("results", [])]
+
+
+def _sacar_de_apollo(email, motivo):
+    contacto = apollo_find_by_email(email)
+    if not contacto:
+        return
+    for seq in (SEQ_INBOUND, SEQ_OUTBOUND):
+        if seq in (contacto.get("emailer_campaign_ids") or []):
+            write(f"sacar {email} de la secuencia — {motivo}",
+                  lambda s=seq, c=contacto: apollo_stop(s, [c["id"]]))
+
+
+def stop_when_engaged():
+    """Corta la cadencia en cuanto hay contacto real, venga por donde venga.
+
+    Tres señales, y ninguna depende de que Apollo hile bien la conversación:
+
+      a) Reunión agendada en el calendario de Amaia. Apollo no lo ve.
+      b) El negocio ha salido de la primera etapa. Da igual el motivo: si
+         Amaia movió la ficha es que ha pasado algo, aunque fuera una llamada.
+      c) Alguien marcó el estado a mano en HubSpot. La válvula manual: Amaia
+         pone «Respondido» y en la siguiente pasada deja de recibir correos.
+    """
+    # (a) y (c) — se leen del contacto
+    por_contacto = hs_search_contacts(
         [{"filters": [
             {"propertyName": "engagements_last_meeting_booked", "operator": "HAS_PROPERTY"},
-            {"propertyName": "apollo_estado", "operator": "IN",
-             "values": ["enviado", "abierto", "respondido"]},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
-        ]}],
+         ]},
+         {"filters": [
+            {"propertyName": "apollo_estado", "operator": "IN",
+             "values": ["respondido", "reunion_agendada", "baja"]},
+            {"propertyName": "email", "operator": "HAS_PROPERTY"},
+         ]}],
         ["email", "apollo_estado"],
     )
-    log(f"PARADA: {len(con_reunion)} contacto(s) con reunión agendada")
-    for h in con_reunion:
-        contacto = apollo_find_by_email(h["properties"]["email"])
-        if not contacto:
-            continue
-        for seq in (SEQ_INBOUND, SEQ_OUTBOUND):
-            if seq in (contacto.get("emailer_campaign_ids") or []):
-                write(f"sacar {h['properties']['email']} de {seq}",
-                      lambda s=seq, c=contacto: apollo_stop(s, [c["id"]]))
-        hs_stamp(h["id"], {"apollo_estado": "reunion_agendada"})
+    for h in por_contacto:
+        props = h["properties"]
+        if props["apollo_estado"] in EN_CURSO:      # llegó por la reunión
+            hs_stamp(h["id"], {"apollo_estado": "reunion_agendada"})
+            _sacar_de_apollo(props["email"], "reunión agendada")
+        else:                                       # ya estaba marcado
+            _sacar_de_apollo(props["email"], f"estado {props['apollo_estado']}")
+    log(f"PARADA · contacto: {len(por_contacto)} revisado(s)")
+
+    # (b) — se lee del negocio: cualquier etapa que no sea la primera
+    avanzados = hs_search_deals(
+        [{"filters": [
+            {"propertyName": "pipeline", "operator": "EQ", "value": PIPELINE},
+            {"propertyName": "dealstage", "operator": "NEQ", "value": ETAPA_LEAD},
+        ]}],
+        ["dealname", "dealstage"],
+    )
+    tocados = 0
+    for deal in avanzados:
+        for contact_id in hs_contact_ids_of_deal(deal["id"]):
+            c = hs("GET", f"/crm/v3/objects/contacts/{contact_id}"
+                          "?properties=email,apollo_estado")["properties"]
+            if c.get("apollo_estado") in EN_CURSO and c.get("email"):
+                hs_stamp(contact_id, {"apollo_estado": "respondido"})
+                _sacar_de_apollo(c["email"], "su negocio ya avanzó de etapa")
+                tocados += 1
+    log(f"PARADA · negocio: {tocados} contacto(s) con el negocio ya avanzado")
 
 
 def main():
@@ -322,7 +383,7 @@ def main():
     # Primero lo que corta, luego lo que inscribe: así nunca se escribe a
     # alguien que ya ha respondido o tiene reunión.
     sync_replies()
-    stop_on_meeting()
+    stop_when_engaged()
     enroll_inbound(sender_id)
     enroll_outbound(sender_id)
     sync_bounces()

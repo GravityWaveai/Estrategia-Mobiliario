@@ -9,7 +9,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | Paso | Qué mira | Qué hace |
 |---|---|---|
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
-| **PARADA** | Contactos con `engagements_last_meeting_booked` relleno y aún activos en Apollo | Los saca de la secuencia y marca `apollo_estado = reunion_agendada` |
+| **PARADA** | Tres señales: reunión agendada, negocio fuera de la primera etapa, o estado puesto a mano | Saca al contacto de la secuencia |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
@@ -26,6 +26,21 @@ por su cuenta con `hs_latest_sales_email_reply_date`, sin pasar por el puente.
 
 **Por qué los rebotes sí vienen de Apollo**: un correo que nunca llegó no genera
 ninguna actividad en HubSpot, así que no hay nada nativo que mirar.
+
+## Las tres señales de parada
+
+La cadencia se corta en cuanto hay contacto real, venga por donde venga. Ninguna
+de las tres depende de que Apollo hile bien la conversación:
+
+| Señal | De dónde sale | Qué caso cubre |
+|---|---|---|
+| Respuesta | `hs_sales_email_last_replied` | Contestan al hilo, o escriben a Amaia por su cuenta. La bandeja de Amaia está conectada a HubSpot, así que lo registra igual |
+| Reunión agendada | `engagements_last_meeting_booked` | Reservan hueco en el calendario. Apollo no lo ve |
+| Negocio fuera de «Lead mobiliario» | `dealstage` | Cualquier otra cosa: una llamada, un correo desde otra dirección del ayuntamiento, un aviso por LinkedIn. Si Amaia movió la ficha, es que pasó algo |
+
+La tercera es además la válvula manual: Amaia puede poner `apollo_estado` a
+«Respondido» en la ficha del contacto y en la siguiente pasada deja de recibir
+correos, sin tener que entrar en Apollo.
 
 **Por qué la parada la hace el puente y no Apollo**: Apollo corta solo cuando
 alguien responde o se marca como interesado, pero no ve el calendario de Amaia.
