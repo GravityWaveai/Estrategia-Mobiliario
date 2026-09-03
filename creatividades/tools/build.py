@@ -355,12 +355,53 @@ def pdf_linkedin(tableros):
     return destino
 
 
+# --------------------------------------------------- exportacion a Canva
+# El importador de Canva convierte en pagina cada elemento marcado con
+# data-document-role="page", y el texto entra como capa de texto viva, no
+# como imagen. Se emite un archivo por pieza para que cada carrusel sea un
+# diseno de Canva, y solo con las imagenes que esa pieza usa.
+def export_canva(carpeta):
+    os.makedirs(carpeta, exist_ok=True)
+    escritos = []
+    for codigo, nombre, _fase, fn in piezas.PIEZAS:
+        estilo.reset_imagenes()
+        tableros = fn()
+        paginas = []
+        for tb in tableros:
+            paginas.append(
+                '<div class="board" data-document-role="page" '
+                'data-label="%s" style="width:%dpx;height:%dpx;--u:%.6fpx">'
+                '%s</div>'
+                % (tb["nombre"].replace('"', "'"), tb["w"], tb["h"],
+                   tb["w"] / 1080.0, tb["html"]))
+        html = ("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">"
+                "<title>%s %s</title>%s"
+                "<style>html,body{margin:0;padding:0;background:%s}</style>"
+                "</head><body>%s</body></html>"
+                % (codigo, nombre, cabecera_css(), estilo.FONDO,
+                   "".join(paginas)))
+        ruta = os.path.join(carpeta, "%s.html" % codigo.lower())
+        with open(ruta, "w") as f:
+            f.write(html)
+        escritos.append((codigo, nombre, ruta, len(tableros),
+                         tableros[0]["w"], tableros[0]["h"]))
+    return escritos
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--solo-kit", action="store_true")
     ap.add_argument("--artefacto", metavar="RUTA",
                     help="escribe el kit sin envoltorio, para publicar")
+    ap.add_argument("--canva", metavar="CARPETA",
+                    help="un HTML por pieza, anotado para importar en Canva")
     args = ap.parse_args()
+
+    if args.canva:
+        for cod, nom, ruta, n, w, h in export_canva(args.canva):
+            print("canva %-4s %-34s %d pag. %dx%d  %d KB"
+                  % (cod, nom[:34], n, w, h, os.path.getsize(ruta) // 1024))
+        return
 
     tableros = piezas.todas()
     if args.artefacto:

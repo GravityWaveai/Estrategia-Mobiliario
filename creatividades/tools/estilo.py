@@ -83,6 +83,11 @@ def acabado(nombre):
                                           "%s.jpg" % nombre.lower()))
 
 
+def reset_imagenes():
+    """Vacia el registro, para emitir solo las imagenes de una pieza."""
+    _IMAGENES.clear()
+
+
 def css_imagenes():
     """El bloque CSS con todas las imagenes usadas, una sola vez."""
     return "".join(".%s{background-image:url(%s)}" % (c, d)
