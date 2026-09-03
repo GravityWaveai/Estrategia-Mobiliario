@@ -35,14 +35,22 @@ primeras son automáticas y no requieren que nadie haga nada:
 | Señal | De dónde sale | Qué caso cubre |
 |---|---|---|
 | Respuesta al contacto | `hs_sales_email_last_replied` | Contestan al hilo, o escriben a Amaia por su cuenta. Su bandeja está conectada a HubSpot, así que lo registra igual |
-| Correo entrante del ayuntamiento | Objetos `email` asociados a la empresa, dirección `INCOMING_EMAIL` | Contesta **otra persona** del ayuntamiento desde otra dirección. Ni Apollo ni las propiedades nativas del contacto lo ven |
+| Correo entrante del mismo contacto | Objetos `email` con `hs_email_from_email` = su dirección | Escribe a Amaia **en un hilo nuevo** en vez de responder al de la secuencia. Apollo no lo reconoce como respuesta suya |
+| Correo entrante del ayuntamiento | Objetos `email` asociados a la empresa | Contesta **otra persona** desde otra dirección. Requiere que el contacto tenga empresa asociada |
 | Reunión agendada | `engagements_last_meeting_booked` | Reservan hueco en el calendario. Apollo no lo ve |
 | Negocio fuera de «Lead mobiliario» | `dealstage` | Lo que no deja rastro de correo: una llamada, un aviso por LinkedIn |
 
-La segunda es la que exige el scope `sales-email-read` en el token de HubSpot.
-Mira a nivel de **empresa**, no de contacto: basta con que alguien de ese
-ayuntamiento haya escrito en los últimos 45 días para que se pare la cadencia de
-todos sus contactos inscritos.
+Las dos del medio exigen el scope `sales-email-read` en el token de HubSpot, y
+miran los últimos 45 días. La de dirección funciona siempre; la de empresa solo
+para los contactos que tengan empresa asociada.
+
+**Punto débil conocido**: hoy solo la mitad de los contactos del portal tienen
+empresa asociada, así que en la otra mitad el caso «contesta un compañero desde
+otra dirección» no se detecta. Se arregla activando en HubSpot la creación y
+asociación automática de empresas por dominio de correo
+(Settings → Objects → Companies), que además beneficia a todo el CRM. No se puede
+hacer por API. Buscar por dominio en los correos tampoco es alternativa: la
+Search API solo acepta la dirección completa, no comodines.
 
 Además, poner `apollo_estado` a mano en HubSpot también para la cadencia. No hace
 falta para nada — es una salida de emergencia, no parte del funcionamiento.

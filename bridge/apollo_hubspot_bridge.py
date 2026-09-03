@@ -381,22 +381,22 @@ def _chunks(xs, n=100):
 
 
 def stop_on_any_inbound():
-    """Corta si alguien del ayuntamiento ha escrito, sea quien sea.
+    """Corta si ha entrado CUALQUIER correo del ayuntamiento.
 
-    El caso que ni Apollo ni las propiedades nativas cubren: escribimos al
-    buzón de contratación y contesta el técnico desde su dirección personal.
-    Para Apollo eso no es una respuesta a su hilo, y para HubSpot es otro
-    contacto, así que el ayuntamiento seguiría recibiendo seguimientos.
+    Dos comprobaciones, porque cubren casos distintos:
 
-    Aquí se mira a nivel de empresa: si hay CUALQUIER correo entrante asociado
-    al ayuntamiento después de que empezara la cadencia, se para.
+      1. Por dirección — el mismo contacto escribe a Amaia, pero en un hilo
+         nuevo en vez de responder al de la secuencia. Apollo no lo reconoce
+         como respuesta suya y seguiría enviando.
+      2. Por empresa — contesta otra persona del ayuntamiento desde otra
+         dirección. Solo funciona si el contacto tiene empresa asociada en
+         HubSpot, que hoy es aproximadamente la mitad de ellos.
     """
     activos = hs_search_contacts(
         [{"filters": [
             {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
             {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
-            {"propertyName": "associatedcompanyid", "operator": "HAS_PROPERTY"},
         ]}],
         ["email", "apollo_estado", "associatedcompanyid"],
     )
@@ -404,12 +404,33 @@ def stop_on_any_inbound():
         log("ENTRANTES: no hay contactos en cadencia")
         return
 
-    # Un ayuntamiento puede tener varios contactos inscritos
+    limite = (datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)).isoformat()
+    por_email = {h["properties"]["email"].lower(): h for h in activos}
+    parar = set()
+
+    # --- 1. Por dirección del remitente -----------------------------------
+    for lote in _chunks(list(por_email), 50):
+        res = hs("POST", "/crm/v3/objects/emails/search", {
+            "filterGroups": [{"filters": [
+                {"propertyName": "hs_email_direction", "operator": "EQ", "value": "INCOMING_EMAIL"},
+                {"propertyName": "hs_email_from_email", "operator": "IN", "values": lote},
+                {"propertyName": "hs_timestamp", "operator": "GTE", "value": limite},
+            ]}],
+            "properties": ["hs_email_from_email", "hs_timestamp"],
+            "limit": 100,
+        })
+        for e in res.get("results", []):
+            remitente = (e["properties"].get("hs_email_from_email") or "").lower()
+            if remitente in por_email:
+                parar.add(por_email[remitente]["id"])
+
+    # --- 2. Por empresa, para los que la tengan ---------------------------
     por_empresa = {}
     for h in activos:
-        por_empresa.setdefault(h["properties"]["associatedcompanyid"], []).append(h)
+        cid = h["properties"].get("associatedcompanyid")
+        if cid:
+            por_empresa.setdefault(cid, []).append(h)
 
-    # Los correos asociados a cada ayuntamiento, sin traerlos enteros
     email_ids, de_quien = [], {}
     for company_id in por_empresa:
         res = hs("GET", f"/crm/v4/objects/companies/{company_id}/associations/emails?limit=100")
@@ -417,26 +438,26 @@ def stop_on_any_inbound():
             email_ids.append(r["toObjectId"])
             de_quien[r["toObjectId"]] = company_id
 
-    limite = (datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)).isoformat()
-    con_respuesta = set()
     for lote in _chunks(sorted(set(email_ids))):
         res = hs("POST", "/crm/v3/objects/emails/batch/read", {
             "inputs": [{"id": i} for i in lote],
             "properties": ["hs_email_direction", "hs_timestamp"],
         })
         for e in res.get("results", []):
-            p = e["properties"]
-            if p.get("hs_email_direction") == "INCOMING_EMAIL" and (p.get("hs_timestamp") or "") >= limite:
-                con_respuesta.add(de_quien[int(e["id"])])
+            pr = e["properties"]
+            if pr.get("hs_email_direction") == "INCOMING_EMAIL" and (pr.get("hs_timestamp") or "") >= limite:
+                for h in por_empresa[de_quien[int(e["id"])]]:
+                    parar.add(h["id"])
 
-    parados = 0
-    for company_id in con_respuesta:
-        for h in por_empresa[company_id]:
+    # --- Parar -------------------------------------------------------------
+    for h in activos:
+        if h["id"] in parar:
             hs_stamp(h["id"], {"apollo_estado": "respondido"})
-            _sacar_de_apollo(h["properties"]["email"], "alguien del ayuntamiento ha escrito")
-            parados += 1
-    log(f"ENTRANTES: {len(por_empresa)} ayuntamiento(s) en cadencia, "
-        f"{len(con_respuesta)} con correo entrante, {parados} contacto(s) parados")
+            _sacar_de_apollo(h["properties"]["email"], "ha entrado correo del ayuntamiento")
+
+    sin_empresa = sum(1 for h in activos if not h["properties"].get("associatedcompanyid"))
+    log(f"ENTRANTES: {len(activos)} en cadencia, {len(parar)} parado(s). "
+        f"{sin_empresa} sin empresa asociada (solo se comprueban por dirección)")
 
 
 def main():
