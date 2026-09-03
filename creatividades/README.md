@@ -2,7 +2,8 @@
 
 Generador de las creatividades del lanzamiento en Instagram y LinkedIn.
 El plan de campaña, el calendario y los textos están en
-[`PLAN-LANZAMIENTO.md`](PLAN-LANZAMIENTO.md).
+[`PLAN-LANZAMIENTO.md`](PLAN-LANZAMIENTO.md); los diseños editables en Canva,
+en [`CANVA.md`](CANVA.md).
 
 ## Regenerar todo
 
