@@ -11,7 +11,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
 | **PARADA** | Cuatro señales, ver abajo | Saca al contacto de la secuencia |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -61,6 +61,21 @@ Si la reunión se agenda desde el enlace de HubSpot, Apollo seguiría escribiend
 
 **Por qué el estado se escribe también en el negocio**: los cuatro workflows de
 etapa son de objeto negocio y no pueden filtrar por propiedades del contacto.
+
+## Por qué OUTBOUND también escribe en HubSpot
+
+El workflow que crea el negocio para el OUTBOUND (`4840005827`) se dispara con
+la lista **2845**, filtrada por `campana_apollo = mobiliario_urbano AND
+NOT_IN_LIST 2841`. Sin que algo escriba esa propiedad, la lista nunca se
+puebla y el negocio no se crea nunca — el correo sale, pero no aparece nada en
+el pipeline. Por eso, tras inscribir en Apollo, el puente busca en HubSpot los
+contactos ya pushed desde Apollo y les marca `campana_apollo`. Al que Apollo
+aún no haya empujado a HubSpot (el pull tarda hasta 15 min) se le marca en la
+siguiente pasada — igual que ya hacía `enroll_inbound` con los suyos.
+
+La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
+veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
+(acción 4), y eso lo saca automáticamente de la 2845.
 
 ## Idempotencia
 

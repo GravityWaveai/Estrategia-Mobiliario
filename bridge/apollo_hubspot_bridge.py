@@ -201,7 +201,7 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
-    pendientes, page = [], 1
+    pendientes, emails, page = [], [], 1
     while len(pendientes) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
@@ -213,15 +213,36 @@ def enroll_outbound(sender_id):
             if not c.get("email"):
                 continue          # sin correo no hay nada que enviar
             pendientes.append(c["id"])
+            emails.append(c["email"])
             if len(pendientes) >= CAP:
                 break
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
         page += 1
     log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP})")
-    if pendientes:
-        write(f"inscribir {len(pendientes)} en OUTBOUND",
-              lambda: apollo_enroll(SEQ_OUTBOUND, pendientes, sender_id))
+    if not pendientes:
+        return
+
+    write(f"inscribir {len(pendientes)} en OUTBOUND",
+          lambda: apollo_enroll(SEQ_OUTBOUND, pendientes, sender_id))
+
+    # Marcar campana_apollo en HubSpot: es lo que activa el workflow que crea
+    # el negocio (dispara con la lista 2845, filtrada por esta propiedad). Sin
+    # este paso el correo sale pero nunca aparece un negocio en el pipeline.
+    # Solo se puede marcar a quien Apollo ya haya empujado a HubSpot; el resto
+    # queda para la siguiente pasada, cuando el pull automático (cada 15 min)
+    # los haya traído.
+    en_hubspot = hs_search_contacts(
+        [{"filters": [{"propertyName": "email", "operator": "IN", "values": emails}]}],
+        ["email", "campana_apollo"],
+    )
+    marcados = 0
+    for h in en_hubspot:
+        if h["properties"].get("campana_apollo") != CAMPANA:
+            hs_stamp(h["id"], {"campana_apollo": CAMPANA})
+            marcados += 1
+    log(f"OUTBOUND: {marcados}/{len(pendientes)} ya estaban en HubSpot y quedan "
+        f"marcados; el resto se marca en cuanto Apollo los empuje")
 
 
 def _apollo_sequences_of(email):
