@@ -46,6 +46,7 @@ LIST_OUTBOUND = "6a983205f242c800107386c8"
 CAMPANA = "mobiliario_urbano"
 PIPELINE = "4080461018"
 ETAPA_LEAD = "5948376264"   # «Lead mobiliario», la primera
+VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 
 # Estados de Apollo que HubSpot no puede deducir por su cuenta. La respuesta
 # NO está aquí a propósito: la detecta HubSpot (ver sync_replies).
@@ -328,8 +329,8 @@ def stop_when_engaged():
       a) Reunión agendada en el calendario de Amaia. Apollo no lo ve.
       b) El negocio ha salido de la primera etapa. Da igual el motivo: si
          Amaia movió la ficha es que ha pasado algo, aunque fuera una llamada.
-      c) Alguien marcó el estado a mano en HubSpot. La válvula manual: Amaia
-         pone «Respondido» y en la siguiente pasada deja de recibir correos.
+      c) Alguien marcó el estado a mano en HubSpot. No hace falta para nada,
+         pero deja a Amaia una salida de emergencia si la necesita.
     """
     # (a) y (c) — se leen del contacto
     por_contacto = hs_search_contacts(
@@ -374,6 +375,70 @@ def stop_when_engaged():
     log(f"PARADA · negocio: {tocados} contacto(s) con el negocio ya avanzado")
 
 
+def _chunks(xs, n=100):
+    for i in range(0, len(xs), n):
+        yield xs[i:i + n]
+
+
+def stop_on_any_inbound():
+    """Corta si alguien del ayuntamiento ha escrito, sea quien sea.
+
+    El caso que ni Apollo ni las propiedades nativas cubren: escribimos al
+    buzón de contratación y contesta el técnico desde su dirección personal.
+    Para Apollo eso no es una respuesta a su hilo, y para HubSpot es otro
+    contacto, así que el ayuntamiento seguiría recibiendo seguimientos.
+
+    Aquí se mira a nivel de empresa: si hay CUALQUIER correo entrante asociado
+    al ayuntamiento después de que empezara la cadencia, se para.
+    """
+    activos = hs_search_contacts(
+        [{"filters": [
+            {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+            {"propertyName": "email", "operator": "HAS_PROPERTY"},
+            {"propertyName": "associatedcompanyid", "operator": "HAS_PROPERTY"},
+        ]}],
+        ["email", "apollo_estado", "associatedcompanyid"],
+    )
+    if not activos:
+        log("ENTRANTES: no hay contactos en cadencia")
+        return
+
+    # Un ayuntamiento puede tener varios contactos inscritos
+    por_empresa = {}
+    for h in activos:
+        por_empresa.setdefault(h["properties"]["associatedcompanyid"], []).append(h)
+
+    # Los correos asociados a cada ayuntamiento, sin traerlos enteros
+    email_ids, de_quien = [], {}
+    for company_id in por_empresa:
+        res = hs("GET", f"/crm/v4/objects/companies/{company_id}/associations/emails?limit=100")
+        for r in res.get("results", []):
+            email_ids.append(r["toObjectId"])
+            de_quien[r["toObjectId"]] = company_id
+
+    limite = (datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)).isoformat()
+    con_respuesta = set()
+    for lote in _chunks(sorted(set(email_ids))):
+        res = hs("POST", "/crm/v3/objects/emails/batch/read", {
+            "inputs": [{"id": i} for i in lote],
+            "properties": ["hs_email_direction", "hs_timestamp"],
+        })
+        for e in res.get("results", []):
+            p = e["properties"]
+            if p.get("hs_email_direction") == "INCOMING_EMAIL" and (p.get("hs_timestamp") or "") >= limite:
+                con_respuesta.add(de_quien[int(e["id"])])
+
+    parados = 0
+    for company_id in con_respuesta:
+        for h in por_empresa[company_id]:
+            hs_stamp(h["id"], {"apollo_estado": "respondido"})
+            _sacar_de_apollo(h["properties"]["email"], "alguien del ayuntamiento ha escrito")
+            parados += 1
+    log(f"ENTRANTES: {len(por_empresa)} ayuntamiento(s) en cadencia, "
+        f"{len(con_respuesta)} con correo entrante, {parados} contacto(s) parados")
+
+
 def main():
     if not HUBSPOT_TOKEN or not APOLLO_API_KEY:
         sys.exit("Faltan HUBSPOT_TOKEN o APOLLO_API_KEY")
@@ -384,6 +449,7 @@ def main():
     # alguien que ya ha respondido o tiene reunión.
     sync_replies()
     stop_when_engaged()
+    stop_on_any_inbound()
     enroll_inbound(sender_id)
     enroll_outbound(sender_id)
     sync_bounces()
