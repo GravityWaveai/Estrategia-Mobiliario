@@ -20,7 +20,10 @@ Sale:
 | `png/<id>.png` | Cada pieza a tamaño real de píxel, lista para subir |
 | `carrusel-linkedin-ayuntamientos.pdf` | La pieza P07 paginada, para el post de documento de LinkedIn |
 
-`build.py --solo-kit` genera solo el HTML (no necesita Chrome).
+`build.py --solo-kit` genera solo el HTML (no necesita Chrome), y
+`build.py --artefacto RUTA` escribe el kit sin envoltorio de documento y con
+la portada de campaña (tesis, las dos capas y el calendario), que es la
+versión que se publica como artifact.
 
 Y para revisar lo entregado:
 

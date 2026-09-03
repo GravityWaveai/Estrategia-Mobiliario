@@ -116,14 +116,48 @@ body{margin:0;font-family:'Cera Pro',Poppins,system-ui,sans-serif;
   background:rgba(0,173,181,.07);font-size:13px;line-height:1.6;
   color:rgba(255,255,255,.8)}
 .aviso b{font-weight:900;color:#00ADB5}
+
+/* --- intro y calendario, solo en la version publicada --- */
+.idea{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:34px;margin:0 0 58px}
+.capa{padding:26px 28px;background:#01313D}
+.capa h3{font-weight:900;text-transform:uppercase;letter-spacing:.01em;
+  font-size:19px;margin:0 0 10px}
+.capa .quien{font-weight:500;text-transform:uppercase;letter-spacing:.24em;
+  font-size:11px;color:#00ADB5;margin-bottom:16px}
+.capa p{font-size:14.5px;line-height:1.65;color:rgba(255,255,255,.78);
+  margin:0}
+.tesis{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;
+  line-height:1.05;font-size:34px;margin:0 0 58px;padding-left:22px;
+  border-left:3px solid #00ADB5;max-width:900px;text-wrap:balance}
+.cal{width:100%;border-collapse:collapse;margin:0 0 72px;
+  font-size:14px;font-variant-numeric:tabular-nums}
+.cal caption{text-align:left;font-weight:500;text-transform:uppercase;
+  letter-spacing:.24em;font-size:11px;color:#00ADB5;padding-bottom:16px}
+.cal th{text-align:left;font-weight:500;text-transform:uppercase;
+  letter-spacing:.18em;font-size:10.5px;color:rgba(255,255,255,.5);
+  padding:0 16px 12px 0;border-bottom:1px solid rgba(255,255,255,.16)}
+.cal td{padding:13px 16px 13px 0;color:rgba(255,255,255,.82);
+  border-bottom:1px solid rgba(255,255,255,.07);vertical-align:top}
+.cal td.cod{font-weight:900;color:#00ADB5;white-space:nowrap}
+.cal td.pza{font-weight:900;color:#fff}
+.cal tr.hero td{background:rgba(0,173,181,.07)}
+.envoltorio{overflow-x:auto}
 """
 
 
-def kit(tableros, escala=0.26):
-    partes = ["<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">",
-              "<title>Creatividades RRSS - Mobiliario urbano</title>",
-              cabecera_css(), "<style>%s</style></head><body>" % KIT_CSS,
-              '<div class="wrap">',
+def kit(tableros, escala=0.26, artefacto=False):
+    """El kit completo. En modo artefacto, sin envoltorio de documento."""
+    if artefacto:
+        partes = ["<title>El plástico vuelve a la calle</title>",
+                  cabecera_css(), "<style>%s</style>" % KIT_CSS,
+                  '<div class="wrap">']
+    else:
+        partes = ["<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">",
+                  "<title>Creatividades RRSS - Mobiliario urbano</title>",
+                  cabecera_css(), "<style>%s</style></head><body>" % KIT_CSS,
+                  '<div class="wrap">']
+    partes += [
               '<div class="cab"><div class="m" role="img" aria-label="Gravity Wave"'
               ' style="background-image:url(%s)"></div>' % estilo.wordmark(),
               '<div class="a">Lanzamiento en redes &middot; Mobiliario urbano</div>',
@@ -133,6 +167,8 @@ def kit(tableros, escala=0.26):
               'convertido en un banco&mdash; y la conversi&oacute;n a ayuntamiento vive '
               'en la cola de cada carrusel y en LinkedIn. Fondo #01313D, '
               'Cera Pro real, #00ADB5 con cuentagotas.</p></div>']
+    if artefacto:
+        partes.append(intro())
 
     por_pieza = {}
     for tb in tableros:
@@ -169,8 +205,60 @@ def kit(tableros, escala=0.26):
         partes.append(bloque_copy(codigo))
         partes.append('</div>')
 
-    partes.append("</div></body></html>")
+    partes.append("</div>" if artefacto else "</div></body></html>")
     return "".join(partes)
+
+
+CALENDARIO = [
+    ("Semana 1", "Martes 10:00", "P01", "Teaser", "IG + LinkedIn", "1 imagen"),
+    ("Semana 1", "Viernes 13:00", "P02", "El bucle en tres pasos",
+     "Instagram", "Carrusel 4"),
+    ("Semana 2", "Martes 10:00", "P03", "Carrusel héroe",
+     "IG + LinkedIn", "Carrusel 8"),
+    ("Semana 2", "Viernes 13:00", "P04", "Manifiesto", "IG + LinkedIn",
+     "1 imagen"),
+    ("Semana 3", "Martes 10:00", "P05", "El catálogo pieza a pieza",
+     "Instagram", "Carrusel 7"),
+    ("Semana 3", "Jueves 19:00", "P06", "Los doce acabados", "Instagram",
+     "1 imagen"),
+    ("Semana 4", "Miércoles 09:00", "P07", "Cómo lo compra un ayuntamiento",
+     "LinkedIn", "Documento 6 pág."),
+    ("Semana 4", "Viernes 09:00", "P08", "Post de fundadora",
+     "LinkedIn (Amaia)", "1 imagen"),
+    ("Cada semana", "Con cada post", "P09", "Stories", "Instagram",
+     "3 stories"),
+    ("Al cerrar", "Cada municipio", "P10", "Plantilla por municipio",
+     "IG + LinkedIn", "1 imagen"),
+]
+
+
+def intro():
+    """La idea y el calendario, para que el kit publicado se explique solo."""
+    filas = "".join(
+        '<tr%s><td>%s</td><td>%s</td><td class="cod">%s</td>'
+        '<td class="pza">%s</td><td>%s</td><td>%s</td></tr>'
+        % (' class="hero"' if cod == "P03" else "", sem, dia, cod, pza, can, fmt)
+        for sem, dia, cod, pza, can, fmt in CALENDARIO)
+    return (
+        '<p class="tesis">Sacar el plástico es la mitad del trabajo.<br>'
+        'La otra es darle un sitio.</p>'
+        '<div class="idea">'
+        '<div class="capa"><div class="quien">Capa pública</div>'
+        '<h3>Todo el mundo</h3><p>Portada y primeras diapositivas de cada '
+        'carrusel, posts sueltos y stories. El plástico que sacamos del '
+        'Mediterráneo vuelve a tu ciudad convertido en un banco. Es lo que '
+        'se comparte y lo que da alcance.</p></div>'
+        '<div class="capa"><div class="quien">Capa del decisor</div>'
+        '<h3>Ayuntamientos</h3><p>Las últimas diapositivas de cada carrusel '
+        'y todo LinkedIn. Encaje en pliego, plazos, precio por volumen y '
+        'trazabilidad. Quien no es ayuntamiento se queda antes; quien lo es '
+        'llega y escribe.</p></div>'
+        '</div>'
+        '<div class="envoltorio"><table class="cal">'
+        '<caption>Cuatro semanas</caption><thead><tr>'
+        '<th>Semana</th><th>Cuándo</th><th>Cód.</th><th>Pieza</th>'
+        '<th>Canal</th><th>Formato</th></tr></thead>'
+        '<tbody>%s</tbody></table></div>' % filas)
 
 
 def bloque_copy(codigo):
@@ -270,9 +358,18 @@ def pdf_linkedin(tableros):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--solo-kit", action="store_true")
+    ap.add_argument("--artefacto", metavar="RUTA",
+                    help="escribe el kit sin envoltorio, para publicar")
     args = ap.parse_args()
 
     tableros = piezas.todas()
+    if args.artefacto:
+        with open(args.artefacto, "w") as f:
+            f.write(kit(tableros, artefacto=True))
+        print("arte  %s (%d KB)"
+              % (args.artefacto, os.path.getsize(args.artefacto) // 1024))
+        return
+
     destino_kit = os.path.join(ROOT, "kit-creatividades.html")
     with open(destino_kit, "w") as f:
         f.write(kit(tableros))
