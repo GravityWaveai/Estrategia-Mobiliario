@@ -83,6 +83,26 @@ def acabado(nombre):
                                           "%s.jpg" % nombre.lower()))
 
 
+# El importador de Canva no entiende rgba() en un color de texto y lo tira a
+# negro —que sobre el petroleo es invisible—, ni puede ingerir la Cera Pro
+# incrustada en base64. Esta hoja solo se aplica al export a Canva: pasa cada
+# blanco con alfa a su hexadecimal equivalente sobre el fondo, y declara
+# Poppins, que si esta en la biblioteca de Canva y es la caida documentada de
+# la Cera. Los PNG no la usan: siguen saliendo con la Cera real.
+CSS_CANVA = """
+.board{font-family:Poppins,'Cera Pro',system-ui,sans-serif}
+.txt{color:#DBE2E4}
+.etq{color:#8DA2A8}
+.pfo{color:#80989E}
+.contador{color:#99ADB1}
+.ante.blanca{color:#B8C5C9}
+.fuente{color:#738E94}
+.item .c{color:#EBEFEF}
+.precio .d,.precio .u{color:#B3C1C5}
+.tabla th{color:#8DA2A8}
+"""
+
+
 def reset_imagenes():
     """Vacia el registro, para emitir solo las imagenes de una pieza."""
     _IMAGENES.clear()

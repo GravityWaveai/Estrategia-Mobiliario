@@ -376,10 +376,10 @@ def export_canva(carpeta):
                    tb["w"] / 1080.0, tb["html"]))
         html = ("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">"
                 "<title>%s %s</title>%s"
-                "<style>html,body{margin:0;padding:0;background:%s}</style>"
+                "<style>html,body{margin:0;padding:0;background:%s}%s</style>"
                 "</head><body>%s</body></html>"
                 % (codigo, nombre, cabecera_css(), estilo.FONDO,
-                   "".join(paginas)))
+                   estilo.CSS_CANVA, "".join(paginas)))
         ruta = os.path.join(carpeta, "%s.html" % codigo.lower())
         with open(ruta, "w") as f:
             f.write(html)
