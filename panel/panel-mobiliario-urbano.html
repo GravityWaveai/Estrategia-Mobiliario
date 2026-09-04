@@ -127,8 +127,6 @@ section{margin-top:44px}
 
 /* ---------- Tarjetas de cifra ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
-/* Una tarjeta sola no debe estirarse a todo el ancho. */
-.tiles.sola{grid-template-columns:minmax(240px,360px);max-width:360px}
 .tile{background:var(--ground);padding:20px;display:flex;flex-direction:column;gap:8px;min-height:124px}
 .tile .v{font-weight:900;font-size:42px;line-height:.92;letter-spacing:-.03em;display:flex;align-items:baseline;gap:6px;order:1}
 .tile .v.destacado{color:var(--accent)}
@@ -269,12 +267,12 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     <button class="cerrar" id="cerrar-apagado">Ocultar</button>
   </div>
 
-  <section id="s-captacion">
+  <section id="s-productos" class="oculto">
     <div class="sec-cab">
-      <h2>Captación</h2>
-      <p class="sec-nota" id="nota-captacion"></p>
+      <h2>Productos de interés</h2>
+      <p class="sec-nota" id="nota-productos"></p>
     </div>
-    <div class="tiles" id="tiles-captacion"></div>
+    <div id="productos"></div>
   </section>
 
   <section id="s-embudo">
@@ -283,14 +281,6 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <p class="sec-nota">El porcentaje es sobre el total de negocios del segmento. La probabilidad es la que tiene configurada cada etapa en el pipeline.</p>
     </div>
     <div class="embudo" id="embudo"></div>
-  </section>
-
-  <section id="s-actividad">
-    <div class="sec-cab">
-      <h2>Actividad comercial</h2>
-      <p class="sec-nota">Reuniones del calendario de Amaia, filtradas a los negocios del pipeline Mobiliario Urbano. No incluye las de sus otros embudos.</p>
-    </div>
-    <div class="tiles" id="tiles-actividad"></div>
   </section>
 
   <section id="s-diagnostico">
@@ -333,9 +323,7 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <h2>Lo que ha pasado esta semana</h2>
       <p class="sec-nota" id="nota-semana"></p>
     </div>
-    <div class="tiles" id="tiles-semana"></div>
-
-    <div class="panel-b" style="margin-top:24px">
+    <div class="panel-b">
       <h3>Movimiento de la semana</h3>
       <p class="nota">Cuenta lo que <em>ocurrió</em> dentro de cada ventana de siete días, no cómo está el embudo ahora. Las dos últimas columnas reparten la semana en curso por origen.</p>
       <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
@@ -429,6 +417,13 @@ var PROPS_DEAL = ["dealname","dealstage","amount","amount_in_home_currency",
 
 var MOTIVOS = {sin_presupuesto:"Sin presupuesto", ahora_no:"Ahora no",
   eligio_otro:"Eligió otro", sin_respuesta:"Sin respuesta", otro:"Otro"};
+
+/* Valores de `productos_interes`, la casilla múltiple del formulario web.
+   Un valor que no esté aquí se muestra tal cual: si alguien añade una opción
+   nueva al formulario, aparece igual en lugar de desaparecer del recuento. */
+var PRODUCTOS = {parque_infantil:"Parque infantil", banco:"Banco",
+  papelera:"Papelera", mesa:"Mesa", taburete:"Taburete",
+  letrero_corporeo:"Letras de exterior", otro:"Otro"};
 
 var PAGINA = 200, PAGINAS_DEAL = 3, PAGINAS_CONTACTO = 2;
 var REFRESCO = 60000, REFRESCO_LENTO = 150000;
@@ -807,11 +802,30 @@ function metricas(seg){
     return enPeriodo(fecha(D.cInbound[k].createdate)); }).length;
   m.contactados = Object.keys(D.cOutbound).filter(function(k){
     return enPeriodo(fecha(D.cOutbound[k].createdate)); }).length;
-  m.respondidos = Object.keys(D.cOutbound).filter(function(k){
-    var c = D.cOutbound[k];
-    return enPeriodo(fecha(c.createdate)) &&
-      (c.apollo_estado === "respondido" || c.apollo_estado === "reunion_agendada"); }).length;
   return m;
+}
+
+/* Cuántos leads ha pedido cada producto. Es una casilla múltiple, así que un
+   mismo lead cuenta en todos los que marcó: la suma pasa del total de leads a
+   propósito, y lo que compara la barra es producto contra producto. */
+function porProducto(){
+  var cuenta = {}, leads = 0;
+  Object.keys(D.cInbound).forEach(function(k){
+    var c = D.cInbound[k];
+    if(!enPeriodo(fecha(c.createdate))) return;
+    leads++;
+    (c.productos_interes || "").split(";").forEach(function(v){
+      v = v.trim();
+      if(v) cuenta[v] = (cuenta[v] || 0) + 1;
+    });
+  });
+  var filas = Object.keys(cuenta).map(function(v){
+    return {et:PRODUCTOS[v] || v, v:cuenta[v]};
+  }).sort(function(a, b){ return b.v - a.v; });
+  /* El más pedido en Formentera; el resto en Deep Blue, para que la respuesta
+     a «qué producto funciona más» se lea sin contar cifras. */
+  filas.forEach(function(f, i){ f.color = (i === 0 ? "--stage-6" : "--stage-2"); });
+  return {filas:filas, leads:leads};
 }
 
 /* ============================================================
@@ -900,18 +914,6 @@ function metricasSemana(seg){
   return s;
 }
 
-/* Las reuniones no se pueden repartir por origen: el cruce con el pipeline no
-   arrastra el negocio concreto. Se dan como cifra de campaña. */
-function reuniones(){
-  var r = {agendadas:0};
-  Object.keys(D.reuniones).forEach(function(k){
-    var m = D.reuniones[k];
-    if(m.hs_meeting_outcome === "CANCELED") return;
-    if(enPeriodo(fecha(m.hs_meeting_start_time))) r.agendadas++;
-  });
-  return r;
-}
-
 /* ============================================================
    Pintado
    ============================================================ */
@@ -936,37 +938,26 @@ function barras(items, formato){
 function pinta(){
   reconstruyeEtapas();
   if(vista === "semana"){ pintaSemana(); return; }
-  var m = metricas(segmento), r = reuniones();
+  var m = metricas(segmento);
 
   /* Contadores del conmutador */
   $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);
   $("n-outbound").textContent = fmtN.format(negociosDe("outbound").length);
   $("n-todo").textContent     = fmtN.format(negociosDe("todo").length);
 
-  /* --- Captación --- */
-  var t = "", nota = "";
-  if(segmento === "inbound"){
-    nota = "Conversiones del formulario de /mobiliario-urbano/. Un contacto cuenta una vez, aunque lo rellene dos.";
-    t += tile("Formularios completados", fmtN.format(m.formularios), "", "", true);
-    t += tile("Negocios creados", fmtN.format(m.total), "",
-      "<b>"+txtPct(pct(m.total, m.formularios))+"</b> de los formularios");
-  } else if(segmento === "outbound"){
-    nota = "Lista MOBILIARIO URBANO de Apollo. «Contactados» son los que ya han llegado a HubSpot con la campaña marcada.";
-    t += tile("Ayuntamientos contactados", fmtN.format(m.contactados), "", "", true);
-    t += tile("Han respondido", fmtN.format(m.respondidos), "",
-      "<b>"+txtPct(pct(m.respondidos, m.contactados))+"</b> de los contactados");
-    t += tile("Negocios creados", fmtN.format(m.total), "",
-      "<b>"+txtPct(pct(m.total, m.contactados))+"</b> de los contactados");
-  } else {
-    nota = "Las dos vías juntas. Arriba, el volumen que entra por cada una antes de convertirse en negocio.";
-    t += tile("Formularios completados", fmtN.format(m.formularios), "", "Entrada inbound");
-    t += tile("Ayuntamientos contactados", fmtN.format(m.contactados), "", "Entrada outbound");
-    t += tile("Negocios creados", fmtN.format(m.total), "", "Suma de ambos orígenes", true);
+  /* --- Productos de interés, solo en inbound --- */
+  var esInbound = segmento === "inbound";
+  $("s-productos").classList.toggle("oculto", !esInbound);
+  if(esInbound){
+    var pr = porProducto();
+    $("nota-productos").textContent = pr.leads
+      ? "De " + fmtN.format(pr.leads) + " formulario(s) completado(s) en /mobiliario-urbano/. "
+        + "Se puede marcar más de un producto, así que los números suman más que el total de leads."
+      : "Cuando entre el primer formulario, aquí se verá qué producto piden más.";
+    $("productos").innerHTML = pr.filas.length
+      ? barras(pr.filas, function(v){ return fmtN.format(v)+(v===1?" lead":" leads"); })
+      : '<p class="vacio">Ningún formulario completado todavía.</p>';
   }
-  t += tile("Conversión a ganado", txtPct(m.conversion), "",
-    fmtN.format(m.ganados)+" de "+fmtN.format(m.total)+" negocios");
-  $("tiles-captacion").innerHTML = t;
-  $("nota-captacion").textContent = nota;
 
   /* --- Embudo --- */
   var maxEtapa = Math.max.apply(null, ETAPAS.map(function(e){ return m.porEtapa[e.id]; })) || 1;
@@ -983,11 +974,6 @@ function pinta(){
       '<span class="cifras"><span class="n">'+fmtN.format(n)+'</span>'+
         '<span class="pct">'+(m.total ? txtPct(pct(n, m.total)) : "—")+'</span></span></div>';
   }).join("");
-
-  /* --- Actividad --- */
-  $("tiles-actividad").className = "tiles sola";
-  $("tiles-actividad").innerHTML = tile("Reuniones agendadas",
-    fmtN.format(r.agendadas), "", "Calendario de Amaia · sin repartir por origen", true);
 
   /* --- Tiempos --- */
   var usaTransito = m.hayTransito;
@@ -1086,19 +1072,6 @@ function pintaSemana(){
     ", frente a los siete días anteriores (del "+f.format(new Date(hoy - 2*SEMANA))+
     " al "+f.format(new Date(hoy - SEMANA))+").";
 
-  var destacadas = [
-    {k:"nuevos", et:"Negocios creados", bueno:"sube", dinero:false},
-    {k:"movimientos", et:"Cambios de etapa", bueno:"sube", dinero:false},
-    {k:"ganados", et:"Negocios ganados", bueno:"sube", dinero:false},
-    {k:"ingresos", et:"Ingresos ganados", bueno:"sube", dinero:true}
-  ];
-  $("tiles-semana").innerHTML = destacadas.map(function(d){
-    var v = T[d.k];
-    return tile(d.et, celda(v.a, d.dinero), "",
-      delta(v.a, v.b, d.bueno, d.dinero)+' &middot; '+celda(v.b, d.dinero)+' la anterior',
-      v.a > 0);
-  }).join("");
-
   $("tabla-semana").innerHTML =
     '<thead><tr><th>Métrica</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th>'+
     '<th><span class="chip">Inbound</span></th><th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
@@ -1192,7 +1165,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), fun
       o.setAttribute("aria-selected", String(o === b));
     });
     var semanal = vista === "semana";
-    ["s-captacion","s-embudo","s-actividad","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
+    ["s-productos","s-embudo","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
       $(id).classList.toggle("oculto", semanal);
     });
     $("s-semana").classList.toggle("oculto", !semanal);

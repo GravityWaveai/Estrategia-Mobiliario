@@ -32,18 +32,18 @@ Solo se usan dos herramientas del conector, y cada una para lo que sabe hacer:
 | `search_crm_objects` | Negocios del pipeline, contactos de formulario, contactos de Apollo | Devuelve JSON limpio, `total` para paginar, y **omite sin fallar las propiedades que no existen** |
 | `query_crm_data` | Origen de cada negocio y reuniones del pipeline | Es la única que cruza objetos (`CONTACT.…` desde `DEAL`, `DEAL.pipeline` desde `MEETING`) |
 
-### Captación
+### Embudo
 
 | Métrica | Definición exacta |
 |---|---|
-| Formularios completados | Contactos con `productos_interes` relleno. Esa propiedad solo la escribe el formulario de `/mobiliario-urbano/`, así que equivale a una conversión. Un contacto cuenta una vez aunque lo rellene dos veces |
-| Ayuntamientos contactados | Contactos con `campana_apollo = mobiliario_urbano`, que es lo que estampa el puente al inscribir en la secuencia de Apollo |
-| Han respondido (outbound) | De los anteriores, `apollo_estado` en `respondido` o `reunion_agendada` |
+| Productos de interés (solo inbound) | Leads que marcaron cada opción de `productos_interes`. Es una casilla múltiple, así que un lead cuenta en todos los que pidió y la suma pasa del total de leads a propósito: lo que compara la barra es producto contra producto. El más pedido va en Formentera para que la respuesta se lea sin contar cifras. Una opción nueva del formulario aparece con su valor interno en vez de desaparecer del recuento |
 | Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018` |
-| Conversión a ganado | Negocios en «Ganado» ÷ negocios del segmento |
-| Reuniones agendadas | Reuniones cuyo propietario es Amaia (`681386458`) **y** que están atadas a un negocio de este pipeline |
 | Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
 | Motivos de pérdida | `motivo_perdida` de los negocios en «Descartado» |
+
+El total de formularios completados y de ayuntamientos contactados ya no tiene
+tarjeta propia: sale en la nota del gráfico de productos, en la fila «Entradas
+al embudo» de la comparativa y en las dos primeras filas de la tabla semanal.
 
 ### vs semana pasada
 
@@ -60,7 +60,7 @@ acumulada.
 | Respuestas al outbound | `apollo_fecha_respuesta` dentro de la ventana |
 | Negocios creados | `createdate` dentro de la ventana |
 | Negocios que cambiaron de etapa | `hs_v2_date_entered_current_stage` dentro de la ventana |
-| Reuniones agendadas | Inicio dentro de la ventana. Sin repartir por origen |
+| Reuniones agendadas | Reuniones de Amaia (`681386458`) atadas a un negocio de este pipeline, con inicio dentro de la ventana. Sin repartir por origen. Es el único sitio del panel donde salen |
 | Ganados · Descartados · Ingresos | `closedate` dentro de la ventana; si falta, la fecha de entrada en la etapa |
 
 El signo se colorea por si **mejora o empeora**, no por si sube o baja: más
@@ -89,7 +89,8 @@ asociados tiene `productos_interes` relleno o su `inbound__outbound` empieza
 por `INBOUND`; si no, es outbound si tiene `campana_apollo` o su
 `inbound__outbound` empieza por `OUTBOUND`.
 
-**2. De reuniones solo se cuentan las agendadas.** «Realizadas», «propuestas
+**2. De reuniones solo se cuentan las agendadas, y solo en la pestaña
+semanal.** «Realizadas», «propuestas
 enviadas» y «negocios con reunión» se retiraron del panel el 04/09/2026: las
 tres eran deducidas, no leídas. «Realizadas» tenía que inferirse de la hora de
 fin porque `hs_meeting_outcome` está vacío en las 176 reuniones de Amaia
