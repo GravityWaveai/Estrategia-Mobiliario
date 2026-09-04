@@ -10,8 +10,8 @@ es la única pieza que los une. Se lanza cada hora desde
 |---|---|---|
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
 | **PARADA** | Cuatro señales, ver abajo | Saca al contacto de la secuencia |
-| **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND |
+| **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -61,6 +61,47 @@ Si la reunión se agenda desde el enlace de HubSpot, Apollo seguiría escribiend
 
 **Por qué el estado se escribe también en el negocio**: los cuatro workflows de
 etapa son de objeto negocio y no pueden filtrar por propiedades del contacto.
+
+## Por qué OUTBOUND también escribe en HubSpot
+
+El workflow que crea el negocio para el OUTBOUND (`4840005827`) se dispara con
+la lista **2845**, filtrada por `campana_apollo = mobiliario_urbano AND
+NOT_IN_LIST 2841`. Sin que algo escriba esa propiedad, la lista nunca se
+puebla y el negocio no se crea nunca — el correo sale, pero no aparece nada en
+el pipeline. Por eso, tras inscribir en Apollo, el puente busca en HubSpot los
+contactos ya pushed desde Apollo y les marca `campana_apollo`. Al que Apollo
+aún no haya empujado a HubSpot (el pull tarda hasta 15 min) se le marca en la
+siguiente pasada — igual que ya hacía `enroll_inbound` con los suyos.
+
+La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
+veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
+(acción 4), y eso lo saca automáticamente de la 2845.
+
+Por el mismo motivo se copia también `municipio`: el nombre del negocio lo
+genera el workflow con `{{ enrolled_object.municipio }}`, y la integración
+nativa Apollo-HubSpot solo trae el `city` que calcula Apollo automáticamente
+-nada fiable para pueblos pequeños-, no el campo personalizado "Municipio"
+que se rellenó a mano y verificado contra el dominio de cada ayuntamiento.
+Sin este paso, varios negocios saldrían con el nombre del pueblo mal o en
+blanco aunque el correo llegue perfecto.
+
+## Personalización de los correos
+
+Los correos de OUTBOUND se dirigen a cada ayuntamiento por su nombre real
+(`{{company_name}}`, que Apollo resuelve desde el Account del contacto — el
+mismo que se limpió a "Ayuntamiento de X" para los 140 contactos de la
+lista). No depende del puente: es un campo estándar de Apollo.
+
+Los correos de INBOUND citan lo que el lead contó en el formulario web
+(`{{productos_interes}}`, `{{unidades_estimadas}}`, `{{plazo_proyecto}}`).
+Esto sí depende del puente: la integración nativa HubSpot↔Apollo no
+sincroniza propiedades personalizadas, así que `enroll_inbound()` traduce
+los valores internos de HubSpot (p. ej. `6_15`) a su etiqueta legible
+(`6–15`) y los escribe en los campos personalizados de Apollo justo antes
+de inscribir al contacto — de ahí que el paso de escritura vaya siempre
+antes que `apollo_enroll` en esa función. Los IDs de esos campos están en
+`CAMPOS_APOLLO_INBOUND`; si se borran o se renombran en Apollo (Settings →
+Custom Fields → Contacts) hay que actualizar esa constante.
 
 ## Idempotencia
 
