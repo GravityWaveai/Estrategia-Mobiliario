@@ -18,6 +18,14 @@ es la única pieza que los une. Se lanza cada hora desde
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
 acaba de responder o de agendar una reunión.
 
+**`BRIDGE_ENABLED` activa las dos vías a la vez** — no hay un interruptor
+separado por defecto: si se pone a `1` para probar INBOUND, OUTBOUND también
+queda activo, sujeto solo a `OUTBOUND_ENROLL_HOUR`. Para probar solo INBOUND
+sin arriesgar los 139 ayuntamientos reales de la lista de Apollo, hay que
+poner además `OUTBOUND_ENABLED = 0` — con eso el paso OUTBOUND se salta
+entero en cada pasada, pase la hora que pase, y no se toca ni Apollo ni
+HubSpot para esa parte.
+
 **OUTBOUND solo inscribe una vez al día**, a las `OUTBOUND_ENROLL_HOUR` UTC
 (8 por defecto — 10h en España en verano, 9h en invierno), aunque el cron
 corra cada hora. Sin este freno, el tope de 50 no era un tope diario de
@@ -134,6 +142,14 @@ Ninguno de los dos depende del puente para el envío del correo en sí — solo
 `{{productos_interes}}` etc. de INBOUND lo necesitan, porque esos datos no
 existen en Apollo hasta que el puente los escribe.
 
+Los 10 correos (5 de INBOUND + 5 de OUTBOUND) incluyen el enlace de reservas de
+Amaia (`https://meetings-eu1.hubspot.com/amaia-rodriguez`, su página de
+Meetings en HubSpot) como llamada a la acción, para que el ayuntamiento pueda
+agendar directamente mirando su disponibilidad real, sin esperar a que
+alguien conteste el correo. Es un enlace fijo en el HTML de cada plantilla,
+no depende del puente — si Amaia cambia de página de reservas hay que
+actualizar las 10 plantillas a mano en Apollo (o pedir que se haga vía MCP).
+
 Los correos de INBOUND citan lo que el lead contó en el formulario web
 (`{{productos_interes}}`, `{{unidades_estimadas}}`, `{{plazo_proyecto}}`).
 Esto sí depende del puente: la integración nativa HubSpot↔Apollo no
@@ -159,6 +175,7 @@ contacto ya se inscribió. Relanzar el job no duplica nada.
 | Secret | `HUBSPOT_TOKEN` | token de la app privada. Necesita además `sales-email-read` |
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
+| Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
 | Variable | `OUTBOUND_DAILY_CAP` | opcional, por defecto `50` |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 

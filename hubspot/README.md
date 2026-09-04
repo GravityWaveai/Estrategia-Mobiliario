@@ -80,17 +80,27 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 3. **No existe etapa «Frío»**: un negocio parado se pierde con motivo y fecha
    de reactivación, y la automatización 6 lo reabre ese día.
 
-## Etapas — criterios y caducidad
+## Etapas — nombres reales en el pipeline (verificado en HubSpot, 04/09/2026)
 
-| Etapa | Prob. | Entra cuando | Sale cuando | Máx. días |
-|---|---|---|---|---|
-| Lead mobiliario | 10 % | El formulario crea el negocio | El agente termina propuesta + mockups | 1 |
-| Propuesta en preparación | 20 % | Agente trabajando · importe puesto | Amaia aprueba el envío | 2 |
-| Propuesta entregada | 35 % | Email enviado con propuesta + agenda | Reunión reservada | 14 |
-| Reunión agendada | 55 % | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
-| Ajuste de propuesta | 75 % | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
-| Acuerdo firmado (ganado) | 100 % | Pedido confirmado por escrito | — | — |
-| Descartado (perdido) | 0 % | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
+Esta tabla sustituye a una versión anterior con nombres de etapa distintos
+(«Lead mobiliario», «Propuesta en preparación», etc.) que nunca se llegaron
+a crear así — quedó del primer borrador del plan y no coincidía con lo que
+hay de verdad en el pipeline `4080461018`. Los nombres de abajo son los
+reales, confirmados por API:
+
+| Id | Etapa | Prob. |
+|---|---|---|
+| `5948376264` | Información enviada | 10 % |
+| `5948376265` | Muestra interés / Intención de compra | 20 % |
+| `5948376266` | Propuesta enviada | 35 % |
+| `5948376267` | Reunión Agendada | 55 % |
+| `5948376268` | Negociación | 75 % |
+| `5948376269` | Ganado | 100 % |
+| `5948376270` | Descartado | 0 % |
+
+El formulario web crea el negocio directamente en **«Información enviada»**
+(la primera etapa) — es la que usa `bridge/apollo_hubspot_bridge.py` como
+`ETAPA_LEAD`.
 
 ## Datos fijos del portal
 
@@ -109,7 +119,7 @@ Con la estructura creada, Claude:
 
 1. Verifica pipeline y propiedades contra estas specs.
 2. Mete un lead de prueba de punta a punta
-   (formulario → contacto + negocio en «Lead mobiliario» → propuesta → tarea).
+   (formulario → contacto + negocio en «Información enviada» → propuesta → tarea).
 3. Deja programados los agentes 2, 5, 6 y 7 del documento operativo
    (generación de propuestas, seguimiento 5/12/14 días, reactivaciones,
    informe semanal del lunes 8:00).
@@ -246,7 +256,7 @@ del contacto, así que el puente escribe en los dos.
 | `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio |
 | `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Ídem + añade a la lista 2841 |
 | `4839142587` | MU · Propuesta enviada | Sin cambios |
-| `4839860441` | MU · Respuesta o reunión → Muestra interés | 6 ramales: los 4 nativos + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
+| `4839860441` | MU · Respuesta o reunión → Muestra interés | 5 ramales: 3 nativos (sales email, reunión reservada, actividad de reunión) + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
 | `4839928017` | MU · Reunión agendada | 3 ramales: los 2 nativos + `apollo_estado = reunion_agendada` |
 | `4839041253` | MU · Reunión realizada → Negociación | Sin cambios |
 
@@ -255,6 +265,25 @@ también está bloqueada por suscripción en la UI. La inscripción la hace el
 puente (`bridge/`).
 
 Los seis están **desactivados** a la espera de la prueba de punta a punta.
+
+`4839860441` tenía además una sexta rama (`hs_latest_marketing_email_reply_date
+IS_KNOWN`) que se ha quitado (04/09): esa propiedad no existe en el portal
+— no es que esté vacía, es un nombre inválido, así que esa rama nunca pudo
+dispararse. No se ha sustituido por la propiedad real
+(`hs_email_last_reply_date`, "Last marketing email reply date") a propósito:
+es una fecha global a cualquier correo de marketing de Gravity Wave, no solo
+a los de Mobiliario Urbano, así que un ayuntamiento con negocio abierto que
+respondiera a una newsletter cualquiera habría saltado de etapa por error.
+La rama que sí importa (`hs_latest_sales_email_reply_date`, la que rellena
+Apollo) queda intacta.
+
+Se creó además, en un intento previo, `4846749929` («MU · Respuesta detectada
+por HubSpot → apollo_estado»): marcaba `apollo_estado = respondido` en el
+contacto cuando `campana_apollo = mobiliario_urbano` y
+`hs_sales_email_last_replied` estaba relleno. Quedó redundante en cuanto
+`sync_replies()` empezó a hacer exactamente eso desde el puente (con el
+añadido de `apollo_fecha_respuesta`, que este workflow no rellenaba). Nunca
+se activó y se ha borrado del portal.
 
 ### Limpieza hecha
 
