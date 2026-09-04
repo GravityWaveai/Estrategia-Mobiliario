@@ -124,6 +124,8 @@ section{margin-top:44px}
 .sec-cab{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}
 .sec-cab h2{font-size:19px}
 .sec-nota{font-size:12px;color:var(--ink-faint);max-width:56ch}
+.sub-tit{font-size:15px;margin:36px 0 5px;text-transform:uppercase;letter-spacing:-.01em}
+.sub-nota{font-size:12px;color:var(--ink-faint);max-width:74ch;margin:0 0 16px}
 
 /* ---------- Tarjetas de cifra ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
@@ -147,6 +149,11 @@ section{margin-top:44px}
 .barra i{display:block;height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 @media (prefers-reduced-motion:reduce){.barra i{transition:none}}
 .etapa .cifras{display:flex;align-items:baseline;gap:14px;min-width:112px;justify-content:flex-end}
+.embudo.semanal .etapa{grid-template-columns:minmax(140px,200px) 1fr 260px}
+.embudo.semanal .cifras{min-width:0;gap:12px}
+.embudo.semanal .previa{font-size:12px;color:var(--ink-faint);min-width:62px;text-align:right}
+.embudo.semanal .delta{min-width:88px;text-align:right}
+@media(max-width:760px){.embudo.semanal .etapa{grid-template-columns:1fr 260px}}
 .etapa .n{font-weight:900;font-size:19px;letter-spacing:-.02em}
 .etapa .pct{font-size:12px;color:var(--ink-faint);min-width:46px;text-align:right}
 .etapa.perdida .nom{color:var(--ink-faint)}
@@ -323,17 +330,17 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <h2>Lo que ha pasado esta semana</h2>
       <p class="sec-nota" id="nota-semana"></p>
     </div>
-    <div class="panel-b">
-      <h3>Movimiento de la semana</h3>
-      <p class="nota">Cuenta lo que <em>ocurrió</em> dentro de cada ventana de siete días, no cómo está el embudo ahora. Las dos últimas columnas reparten la semana en curso por origen.</p>
-      <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
-    </div>
+    <h3 class="sub-tit">Negocios por etapa</h3>
+    <p class="sub-nota" id="nota-etapas-semana"></p>
+    <div class="embudo" id="embudo-semana"></div>
 
-    <div class="panel-b" style="margin-top:24px">
-      <h3>Entradas en cada etapa</h3>
-      <p class="nota" id="nota-etapas-semana"></p>
-      <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-etapas-semana"></table></div>
-    </div>
+    <h3 class="sub-tit">Resultados</h3>
+    <p class="sub-nota" id="nota-resultados-semana"></p>
+    <div class="tiles" id="tiles-semana"></div>
+
+    <h3 class="sub-tit">Movimiento de la semana</h3>
+    <p class="sub-nota">Todo lo que <em>ocurrió</em> dentro de cada ventana de siete días. Las dos últimas columnas reparten la semana en curso por origen.</p>
+    <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
   </section>
 
   <footer>
@@ -856,19 +863,41 @@ function entroEn(neg, id){
 }
 
 function cero(){ return {a:0, b:0}; }
+
+/* Cuánto pipeline había abierto en una fecha. HubSpot no guarda la foto del
+   embudo, pero sí se puede reconstruir: un negocio estaba abierto en T si ya
+   existía y todavía no se había cerrado. El importe es el de hoy —el
+   histórico no se guarda—, así que un negocio revalorizado desde entonces
+   arrastra su importe nuevo hacia atrás. */
+function abiertoEn(lista, corte){
+  var total = 0;
+  lista.forEach(function(neg){
+    var creado = fecha(neg.createdate);
+    if(creado === null || creado > corte) return;
+    var cerrado = (neg.dealstage === ID_GANADO || neg.dealstage === ID_PERDIDO);
+    if(cerrado){
+      var k = fecha(neg.closedate) || entroEn(neg, neg.dealstage);
+      if(k === null || k <= corte) return;   /* ya estaba cerrado en T */
+    }
+    total += num(neg.amount_in_home_currency || neg.amount);
+  });
+  return total;
+}
 function suma(acc, v, val){ if(v) acc[v] += (val === undefined ? 1 : val); }
 
 function metricasSemana(seg){
   var s = {
     nuevos:cero(), movimientos:cero(), ganados:cero(), perdidos:cero(), ingresos:cero(),
     formularios:cero(), contactados:cero(), respuestas:cero(),
-    agendadas:cero(), porEtapa:{}, exacto:false
+    agendadas:cero(), porEtapa:{}, exacto:false, abierto:cero(), conversion:cero()
   };
   ETAPAS.forEach(function(e){ s.porEtapa[e.id] = cero(); });
+  var enSegmento = [];
 
   Object.keys(D.negocios).forEach(function(id){
     var neg = D.negocios[id];
     if(seg !== "todo" && origenDe(id) !== seg) return;
+    enSegmento.push(neg);
 
     suma(s.nuevos, ventana(fecha(neg.createdate)));
     suma(s.movimientos, ventana(fecha(neg.hs_v2_date_entered_current_stage)));
@@ -902,6 +931,16 @@ function metricasSemana(seg){
       suma(s.respuestas, ventana(fecha(c.apollo_fecha_respuesta)));
     });
   }
+
+  /* Valor del pipeline al cierre de cada ventana. */
+  var ahora = Date.now();
+  s.abierto.a = abiertoEn(enSegmento, ahora);
+  s.abierto.b = abiertoEn(enSegmento, ahora - SEMANA);
+
+  /* Ganados sobre creados dentro de la misma ventana. No es la conversión
+     acumulada del embudo: son cohortes distintas, y así se dice arriba. */
+  s.conversion.a = s.nuevos.a ? Math.round(s.ganados.a / s.nuevos.a * 1000) / 10 : null;
+  s.conversion.b = s.nuevos.b ? Math.round(s.ganados.b / s.nuevos.b * 1000) / 10 : null;
 
   /* Las reuniones no se reparten por origen; solo se dan en el total. */
   if(seg === "todo"){
@@ -1053,13 +1092,15 @@ var FILAS_SEMANA = [
   {k:"ingresos",     et:"Ingresos ganados", bueno:"sube", dinero:true}
 ];
 
-function delta(a, b, bueno, dinero){
+function delta(a, b, bueno, dinero, puntos){
   var d = a - b;
   if(d === 0) return '<span class="delta igual">sin cambio</span>';
   var mejor = bueno === null ? null : (bueno === "sube" ? d > 0 : d < 0);
   var clase = mejor === null ? "igual" : (mejor ? "mejor" : "peor");
-  var txt = (d > 0 ? "▲ +" : "▼ ") + (dinero ? fmtE.format(Math.abs(d)) : fmtN.format(Math.abs(d)));
-  return '<span class="delta '+clase+'">'+txt+'</span>';
+  var abs = Math.abs(d);
+  var cifra = dinero ? fmtE.format(abs)
+    : (puntos ? String(Math.round(abs * 10) / 10).replace(".", ",") + " pp" : fmtN.format(abs));
+  return '<span class="delta '+clase+'">'+(d > 0 ? "▲ +" : "▼ ")+cifra+'</span>';
 }
 function celda(v, dinero){ return dinero ? fmtE.format(v) : fmtN.format(v); }
 
@@ -1072,6 +1113,54 @@ function pintaSemana(){
     ", frente a los siete días anteriores (del "+f.format(new Date(hoy - 2*SEMANA))+
     " al "+f.format(new Date(hoy - SEMANA))+").";
 
+  /* --- Negocios por etapa: el mismo embudo que en combinado, pero contando
+         entradas dentro de cada ventana en vez del reparto de hoy. --- */
+  $("nota-etapas-semana").textContent = T.exacto
+    ? "Negocios que entraron en cada etapa dentro de la ventana, con la fecha exacta que guarda HubSpot."
+    : "HubSpot todavía no ha creado las fechas de entrada de este pipeline, así que solo se puede fechar la entrada en la etapa donde está hoy cada negocio. Uno que pasó por dos etapas la misma semana cuenta solo en la última.";
+  var picos = ETAPAS.map(function(e){
+    var v = T.porEtapa[e.id] || cero(); return Math.max(v.a, v.b); });
+  var maxSem = Math.max.apply(null, picos) || 1;
+  var hayEntradas = picos.some(function(x){ return x > 0; });
+  $("embudo-semana").className = "embudo semanal" + (hayEntradas ? "" : " sin-datos");
+  $("embudo-semana").innerHTML = ETAPAS.map(function(e){
+    var v = T.porEtapa[e.id] || cero();
+    var bueno = (e.id === ID_PERDIDO) ? "baja" : "sube";
+    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+'">'+
+      '<span class="nom">'+esc(e.nom)+'</span>'+
+      '<span class="barra"><i style="width:'+(v.a ? Math.max(2,(v.a/maxSem)*100) : 0)+
+        '%;background:var('+e.css+')"></i></span>'+
+      '<span class="cifras"><span class="n">'+fmtN.format(v.a)+'</span>'+
+        '<span class="previa">'+fmtN.format(v.b)+' antes</span>'+
+        delta(v.a, v.b, bueno, false)+'</span></div>';
+  }).join("");
+
+  /* --- Resultados: las mismas cifras que en combinado, comparadas --- */
+  $("nota-resultados-semana").textContent =
+    "El pipeline abierto se reconstruye a la fecha de corte de cada ventana —qué negocios existían y aún no estaban cerrados—, con el importe de hoy. El ponderado no aparece: haría falta saber en qué etapa estaba cada negocio hace una semana, y eso HubSpot no lo guarda.";
+  var res = [
+    {k:"conversion", et:"Conversión a ganado", bueno:"sube", tipo:"pct"},
+    {k:"ganados",    et:"Negocios ganados",    bueno:"sube", tipo:"n"},
+    {k:"ingresos",   et:"Ingresos ganados",    bueno:"sube", tipo:"eur"},
+    {k:"abierto",    et:"Pipeline abierto",    bueno:"sube", tipo:"eur"}
+  ];
+  $("tiles-semana").innerHTML = res.map(function(d){
+    var v = T[d.k], dinero = d.tipo === "eur";
+    var pinta = d.tipo === "pct"
+      ? txtPct(v.a)
+      : (dinero ? fmtE.format(v.a) : fmtN.format(v.a));
+    var antes = d.tipo === "pct"
+      ? txtPct(v.b)
+      : (dinero ? fmtE.format(v.b) : fmtN.format(v.b));
+    var sig = (d.tipo === "pct")
+      ? (v.a === null || v.b === null
+          ? '<span class="delta igual">sin comparar</span>'
+          : delta(v.a, v.b, d.bueno, false, true))
+      : delta(v.a, v.b, d.bueno, dinero);
+    return tile(d.et, pinta, "", sig + ' &middot; ' + antes + ' la anterior', v.a > 0);
+  }).join("");
+
+  /* --- Movimiento de la semana --- */
   $("tabla-semana").innerHTML =
     '<thead><tr><th>Métrica</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th>'+
     '<th><span class="chip">Inbound</span></th><th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
@@ -1085,18 +1174,6 @@ function pintaSemana(){
           ? '<td>'+celda(I[r.k].a, r.dinero)+'</td><td>'+celda(O[r.k].a, r.dinero)+'</td>'
           : '<td colspan="2" style="text-align:center;color:var(--ink-faint);font-weight:400">sin repartir por origen</td>')+
         '</tr>';
-    }).join("")+'</tbody>';
-
-  $("nota-etapas-semana").textContent = T.exacto
-    ? "Negocios que entraron en cada etapa dentro de la ventana, con la fecha exacta que guarda HubSpot."
-    : "HubSpot todavía no ha creado las fechas de entrada de este pipeline, así que solo se puede fechar la entrada en la etapa donde está hoy cada negocio. Un negocio que pasó por dos etapas esta semana cuenta solo en la última.";
-  $("tabla-etapas-semana").innerHTML =
-    '<thead><tr><th>Etapa</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th></tr></thead><tbody>'+
-    ETAPAS.map(function(e){
-      var v = T.porEtapa[e.id] || cero();
-      var bueno = (e.id === ID_PERDIDO) ? "baja" : "sube";
-      return '<tr><td>'+esc(e.nom)+'</td><td>'+fmtN.format(v.a)+'</td>'+
-        '<td>'+fmtN.format(v.b)+'</td><td>'+delta(v.a, v.b, bueno, false)+'</td></tr>';
     }).join("")+'</tbody>';
 
   $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);

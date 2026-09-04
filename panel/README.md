@@ -47,12 +47,30 @@ al embudo» de la comparativa y en las dos primeras filas de la tabla semanal.
 
 ### vs semana pasada
 
-Compara los últimos 7 días con los 7 anteriores. Solo cuenta **hechos con
-fecha dentro de la ventana** —negocios creados, etapas alcanzadas, cierres,
-reuniones—, nunca fotos del embudo: HubSpot no guarda cómo estaba el pipeline
-el lunes pasado, así que un «pipeline abierto la semana pasada» sería
-inventado. Por eso esa pestaña no repite el valor del pipeline ni la conversión
-acumulada.
+Compara los últimos 7 días con los 7 anteriores, con las mismas métricas que
+la pestaña combinada. Tres bloques:
+
+1. **Negocios por etapa** — el mismo embudo, pero contando cuántos negocios
+   **entraron** en cada etapa dentro de cada ventana, con el número de la
+   semana anterior y el signo al lado.
+2. **Resultados** — conversión, ganados, ingresos y pipeline abierto.
+3. **Movimiento de la semana** — la tabla completa, con el desglose
+   inbound/outbound de la semana en curso.
+
+Casi todo son **hechos con fecha dentro de la ventana**, que son exactos. Dos
+excepciones, marcadas en la propia pestaña:
+
+- **Pipeline abierto** se *reconstruye* a la fecha de corte de cada ventana:
+  un negocio estaba abierto si ya existía y aún no se había cerrado. El
+  importe es el de hoy, porque el histórico no se guarda, así que un negocio
+  revalorizado desde entonces arrastra su importe nuevo hacia atrás.
+- **Conversión a ganado** de la semana es ganados ÷ creados **dentro de la
+  misma ventana**. No es la conversión acumulada del embudo: son cohortes
+  distintas.
+
+**El ponderado no aparece** en esta pestaña, y es a propósito: haría falta
+saber en qué etapa estaba cada negocio hace una semana para conocer su
+probabilidad de entonces, y HubSpot no guarda ese dato.
 
 | Fila | Qué cuenta |
 |---|---|
@@ -62,6 +80,9 @@ acumulada.
 | Negocios que cambiaron de etapa | `hs_v2_date_entered_current_stage` dentro de la ventana |
 | Reuniones agendadas | Reuniones de Amaia (`681386458`) atadas a un negocio de este pipeline, con inicio dentro de la ventana. Sin repartir por origen. Es el único sitio del panel donde salen |
 | Ganados · Descartados · Ingresos | `closedate` dentro de la ventana; si falta, la fecha de entrada en la etapa |
+| Negocios por etapa | Entradas en cada etapa dentro de la ventana, con la fecha exacta cuando existe y, si no, la de la etapa actual |
+| Pipeline abierto | Reconstruido a la fecha de corte: creado antes y no cerrado todavía, con el importe de hoy |
+| Conversión a ganado | Ganados ÷ creados dentro de la misma ventana |
 
 El signo se colorea por si **mejora o empeora**, no por si sube o baja: más
 descartados sale en gris, no en verde. Sin rojos ni ámbares, que la marca no
