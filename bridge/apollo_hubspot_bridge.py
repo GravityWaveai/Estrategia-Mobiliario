@@ -14,7 +14,9 @@ Apollo envía los correos; HubSpot es el CRM y el pipeline. Este script es la
   4. PARADA   — si en HubSpot consta una reunión agendada (calendario de Amaia),
                 saca al contacto de la secuencia de Apollo. Apollo no ve ese
                 calendario, así que la parada tiene que venir de aquí.
-  5. REBOTES  — lo único que sigue viniendo de Apollo, porque HubSpot no puede
+  5. DESCARTE — si la secuencia de Apollo termina sin respuesta, el negocio
+                pasa solo a «Descartado». Nadie tiene que cerrarlo a mano.
+  6. REBOTES  — lo único que sigue viniendo de Apollo, porque HubSpot no puede
                 saberlo: un correo que no llegó nunca no genera actividad.
 
 Es idempotente: `apollo_estado` en HubSpot hace de memoria, así que se puede
@@ -45,7 +47,8 @@ SEQ_OUTBOUND = "6a9844f7d0bf520010f72cc1"
 LIST_OUTBOUND = "6a983205f242c800107386c8"
 CAMPANA = "mobiliario_urbano"
 PIPELINE = "4080461018"
-ETAPA_LEAD = "5948376264"   # «Lead mobiliario», la primera
+ETAPA_LEAD = "5948376264"   # «Información enviada», la primera
+ETAPA_DESCARTADO = "5948376270"
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 
 # Campos personalizados de Apollo (contacto) donde se vuelca lo que el lead
@@ -482,16 +485,13 @@ def _chunks(xs, n=100):
 
 
 def stop_on_any_inbound():
-    """Corta si ha entrado CUALQUIER correo del ayuntamiento.
+    """Corta si el propio contacto escribe por su cuenta, en un hilo nuevo en
+    vez de responder al de la secuencia — Apollo no lo reconoce como
+    respuesta suya y seguiría enviando.
 
-    Dos comprobaciones, porque cubren casos distintos:
-
-      1. Por dirección — el mismo contacto escribe a Amaia, pero en un hilo
-         nuevo en vez de responder al de la secuencia. Apollo no lo reconoce
-         como respuesta suya y seguiría enviando.
-      2. Por empresa — contesta otra persona del ayuntamiento desde otra
-         dirección. Solo funciona si el contacto tiene empresa asociada en
-         HubSpot, que hoy es aproximadamente la mitad de ellos.
+    A propósito solo cuenta la dirección exacta del contacto inscrito: si
+    contesta un compañero suyo desde otra dirección del mismo ayuntamiento,
+    no se considera respuesta.
     """
     activos = hs_search_contacts(
         [{"filters": [
@@ -499,7 +499,7 @@ def stop_on_any_inbound():
             {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
         ]}],
-        ["email", "apollo_estado", "associatedcompanyid"],
+        ["email", "apollo_estado"],
     )
     if not activos:
         log("ENTRANTES: no hay contactos en cadencia")
@@ -509,7 +509,6 @@ def stop_on_any_inbound():
     por_email = {h["properties"]["email"].lower(): h for h in activos}
     parar = set()
 
-    # --- 1. Por dirección del remitente -----------------------------------
     for lote in _chunks(list(por_email), 50):
         res = hs("POST", "/crm/v3/objects/emails/search", {
             "filterGroups": [{"filters": [
@@ -525,40 +524,50 @@ def stop_on_any_inbound():
             if remitente in por_email:
                 parar.add(por_email[remitente]["id"])
 
-    # --- 2. Por empresa, para los que la tengan ---------------------------
-    por_empresa = {}
-    for h in activos:
-        cid = h["properties"].get("associatedcompanyid")
-        if cid:
-            por_empresa.setdefault(cid, []).append(h)
-
-    email_ids, de_quien = [], {}
-    for company_id in por_empresa:
-        res = hs("GET", f"/crm/v4/objects/companies/{company_id}/associations/emails?limit=100")
-        for r in res.get("results", []):
-            email_ids.append(r["toObjectId"])
-            de_quien[r["toObjectId"]] = company_id
-
-    for lote in _chunks(sorted(set(email_ids))):
-        res = hs("POST", "/crm/v3/objects/emails/batch/read", {
-            "inputs": [{"id": i} for i in lote],
-            "properties": ["hs_email_direction", "hs_timestamp"],
-        })
-        for e in res.get("results", []):
-            pr = e["properties"]
-            if pr.get("hs_email_direction") == "INCOMING_EMAIL" and (pr.get("hs_timestamp") or "") >= limite:
-                for h in por_empresa[de_quien[int(e["id"])]]:
-                    parar.add(h["id"])
-
-    # --- Parar -------------------------------------------------------------
     for h in activos:
         if h["id"] in parar:
             hs_stamp(h["id"], {"apollo_estado": "respondido"})
-            _sacar_de_apollo(h["properties"]["email"], "ha entrado correo del ayuntamiento")
+            _sacar_de_apollo(h["properties"]["email"], "ha entrado correo del propio contacto")
 
-    sin_empresa = sum(1 for h in activos if not h["properties"].get("associatedcompanyid"))
-    log(f"ENTRANTES: {len(activos)} en cadencia, {len(parar)} parado(s). "
-        f"{sin_empresa} sin empresa asociada (solo se comprueban por dirección)")
+    log(f"ENTRANTES: {len(activos)} en cadencia, {len(parar)} parado(s)")
+
+
+def mark_sin_respuesta():
+    """Si la secuencia de Apollo termina sin que haya habido respuesta, el
+    negocio se descarta solo: nadie tiene que ir a cerrarlo a mano.
+
+    Cubre INBOUND y OUTBOUND por igual, buscando en HubSpot (no en la lista
+    de Apollo, que solo tiene los de OUTBOUND) a cualquier contacto de la
+    campaña que siga «en curso» y comprobando en Apollo si su secuencia ya
+    terminó (status "finished") sin que hubiera respuesta.
+    """
+    activos = hs_search_contacts(
+        [{"filters": [
+            {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+            {"propertyName": "email", "operator": "HAS_PROPERTY"},
+        ]}],
+        ["email", "apollo_estado"],
+    )
+    descartados = 0
+    for h in activos:
+        contacto = apollo_find_by_email(h["properties"]["email"])
+        if not contacto:
+            continue
+        estados = {s.get("emailer_campaign_id"): s.get("status")
+                   for s in (contacto.get("contact_campaign_statuses") or [])}
+        if not any(estados.get(seq) == "finished" for seq in (SEQ_INBOUND, SEQ_OUTBOUND)):
+            continue
+        write(f"marcar {h['properties']['email']} como finalizado sin respuesta",
+              lambda hid=h["id"]: hs_stamp(hid, {"apollo_estado": "finalizado"}))
+        for deal_id in hs_deal_ids(h["id"]):
+            deal = hs("GET", f"/crm/v3/objects/deals/{deal_id}?properties=dealstage")
+            if deal["properties"].get("dealstage") == ETAPA_LEAD:
+                write(f"descartar el negocio {deal_id} — sin respuesta tras la secuencia",
+                      lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
+                                            {"properties": {"dealstage": ETAPA_DESCARTADO}}))
+        descartados += 1
+    log(f"SIN RESPUESTA: {descartados}/{len(activos)} negocio(s) pasan a Descartado")
 
 
 def main():
@@ -572,6 +581,7 @@ def main():
     sync_replies()
     stop_when_engaged()
     stop_on_any_inbound()
+    mark_sin_respuesta()
     enroll_inbound(sender_id)
     enroll_outbound(sender_id)
     sync_bounces()
