@@ -26,6 +26,8 @@ Variables de entorno:
   HUBSPOT_TOKEN          token de la app privada de HubSpot   (obligatorio)
   APOLLO_API_KEY         API key de Apollo                    (obligatorio)
   BRIDGE_ENABLED         "1" para escribir de verdad; si no, simulacro
+  OUTBOUND_ENABLED       "0" para desactivar solo OUTBOUND sin tocar INBOUND
+                         (por defecto "1" — sigue el valor de BRIDGE_ENABLED)
   OUTBOUND_DAILY_CAP     tope diario del OUTBOUND (por defecto 50)
   OUTBOUND_ENROLL_HOUR   hora UTC en la que se inscribe OUTBOUND cada día
                          (por defecto 8; el resto de pasadas de esa hora
@@ -42,6 +44,7 @@ from datetime import datetime, timedelta, timezone
 HUBSPOT_TOKEN = os.environ.get("HUBSPOT_TOKEN", "")
 APOLLO_API_KEY = os.environ.get("APOLLO_API_KEY", "")
 ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
+OUTBOUND_ENABLED = os.environ.get("OUTBOUND_ENABLED", "1") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
 HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
 
@@ -637,7 +640,9 @@ def main():
     # 50 se salta: el cron corre cada hora, así que sin este freno un lunes
     # con mucho pendiente (importación semanal) metería 50 en la primera
     # pasada y otros 50 en la siguiente, la misma mañana.
-    if datetime.now(timezone.utc).hour == HORA_ENVIO_OUTBOUND:
+    if not OUTBOUND_ENABLED:
+        log("OUTBOUND: desactivado explícitamente (OUTBOUND_ENABLED=0)")
+    elif datetime.now(timezone.utc).hour == HORA_ENVIO_OUTBOUND:
         enroll_outbound(sender_id)
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")

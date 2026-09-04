@@ -18,6 +18,14 @@ es la única pieza que los une. Se lanza cada hora desde
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
 acaba de responder o de agendar una reunión.
 
+**`BRIDGE_ENABLED` activa las dos vías a la vez** — no hay un interruptor
+separado por defecto: si se pone a `1` para probar INBOUND, OUTBOUND también
+queda activo, sujeto solo a `OUTBOUND_ENROLL_HOUR`. Para probar solo INBOUND
+sin arriesgar los 139 ayuntamientos reales de la lista de Apollo, hay que
+poner además `OUTBOUND_ENABLED = 0` — con eso el paso OUTBOUND se salta
+entero en cada pasada, pase la hora que pase, y no se toca ni Apollo ni
+HubSpot para esa parte.
+
 **OUTBOUND solo inscribe una vez al día**, a las `OUTBOUND_ENROLL_HOUR` UTC
 (8 por defecto — 10h en España en verano, 9h en invierno), aunque el cron
 corra cada hora. Sin este freno, el tope de 50 no era un tope diario de
@@ -167,6 +175,7 @@ contacto ya se inscribió. Relanzar el job no duplica nada.
 | Secret | `HUBSPOT_TOKEN` | token de la app privada. Necesita además `sales-email-read` |
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
+| Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
 | Variable | `OUTBOUND_DAILY_CAP` | opcional, por defecto `50` |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 
