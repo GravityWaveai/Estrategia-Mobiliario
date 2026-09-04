@@ -233,13 +233,18 @@ def _etiquetas(valor_hubspot, mapa):
 
 def enroll_inbound(sender_id):
     """Leads del formulario web que aún no están en la secuencia."""
+    # lastmodifieddate, no createdate: si el email ya existía en el CRM,
+    # HubSpot actualiza ese contacto en vez de crear uno nuevo, así que su
+    # fecha de creación puede ser de años atrás aunque el formulario se
+    # acabe de rellenar. createdate dejaba fuera a cualquier lead que ya
+    # estuviera en el CRM por otro motivo.
     desde = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
     leads = hs_search_contacts(
         [{"filters": [
             {"propertyName": "productos_interes", "operator": "HAS_PROPERTY"},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
             {"propertyName": "apollo_estado", "operator": "NOT_HAS_PROPERTY"},
-            {"propertyName": "createdate", "operator": "GTE", "value": desde},
+            {"propertyName": "lastmodifieddate", "operator": "GTE", "value": desde},
         ]}],
         ["email", "firstname", "apollo_estado", "productos_interes",
          "unidades_estimadas", "plazo_proyecto", "tipo_entidad", "message"],
