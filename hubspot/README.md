@@ -242,7 +242,7 @@ estos datos habría enviado asuntos truncados. El campo personalizado
 
 | Propiedad | Tipo | Quién la rellena |
 |---|---|---|
-| `provincia` | texto | La integración de Apollo, desde su campo personalizado «Provincia». Es el dato que personaliza los correos OUTBOUND |
+| `provincia` | texto | La integración de Apollo, desde su campo personalizado «Provincia». Es el dato que personaliza los correos OUTBOUND. **Creada el 04/09/2026**: estaba documentada aquí pero no existía en el portal, así que el mapeo de Apollo no tenía destino. Ya está en `spec/contact-properties.json` |
 | `apollo_estado` | lista | El puente |
 | `apollo_fecha_respuesta` | fecha/hora | El puente |
 

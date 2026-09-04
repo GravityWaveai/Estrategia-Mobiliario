@@ -179,11 +179,27 @@ El panel funciona y sale a cero porque el circuito aún no está encendido:
 
 ## Marca
 
-Paleta y tipografía de la skill `gravity-wave-marca`: fondo `#01313D` en tema
-oscuro, blanco dominante en claro, Formentera `#00ADB5` como acento medido, y
-Cera Pro real (Black / Medium / Regular) incrustada en base64 desde
-`assets/fonts/`. Sin rojos ni ámbares: un negocio perdido se apaga a gris
-azulado en vez de encenderse en rojo.
+Sigue la skill `gravity-wave-marca` al pie:
+
+- **Un solo mundo visual, el de la marca.** El fondo es `#01313D` siempre, no
+  el tema del sistema: la guía lo fija como fondo de las piezas digitales. El
+  panel declara `color-scheme: dark` para que el desplegable, el foco y las
+  barras nativas se pinten en oscuro en vez de tomarlos prestados del
+  anfitrión. Si alguien lo prefiere claro, se recupera el tema doble.
+- **Regla de oro**: antetítulo diminuto y espaciado (Medium, `.3em`) sobre
+  titular macizo en caja alta (Black, `-.02em`). Vale para la cabecera y para
+  cada sección.
+- **Cifras**: número enorme en Black arriba, etiqueta debajo en blanco a
+  cuerpo pequeño, nota al pie en gris. La cifra en Formentera es **solo la
+  principal de cada fila**; el resto en blanco, porque el turquesa satura.
+- **Sin rojo, ámbar ni verde.** La rampa del embudo va de Deep Blue
+  `#1E6778` a Formentera `#00ADB5`, y lo perdido se apaga a gris azulado en
+  vez de encenderse. En la pestaña semanal el signo también: mejora en
+  Formentera, empeora en gris.
+- **Cera Pro real** (Black 900 / Medium 500 / Regular 400), incrustada en
+  base64 desde `assets/fonts/`. Poppins como red de seguridad.
+- **Firma** `PLASTIC FREE OCEANS` apilada en tres líneas, Black, en la
+  esquina inferior izquierda. Radios de 0–2 px.
 
 **No lleva el logotipo**: este repositorio no trae `assets/logos/`, y el
 wordmark no se redibuja nunca. Sigue en su lugar la regla de composición de la
