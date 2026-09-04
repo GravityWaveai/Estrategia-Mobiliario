@@ -256,6 +256,14 @@ puente (`bridge/`).
 
 Los seis están **desactivados** a la espera de la prueba de punta a punta.
 
+Se creó además, en un intento previo, `4846749929` («MU · Respuesta detectada
+por HubSpot → apollo_estado»): marcaba `apollo_estado = respondido` en el
+contacto cuando `campana_apollo = mobiliario_urbano` y
+`hs_sales_email_last_replied` estaba relleno. Quedó redundante en cuanto
+`sync_replies()` empezó a hacer exactamente eso desde el puente (con el
+añadido de `apollo_fecha_respuesta`, que este workflow no rellenaba). Nunca
+se activó y se ha borrado del portal.
+
 ### Limpieza hecha
 
 - Retirada la exclusión de la lista 2923 del workflow de reseteo mensual
