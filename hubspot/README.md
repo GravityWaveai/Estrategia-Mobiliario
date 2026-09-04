@@ -82,6 +82,17 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 ## Etapas — criterios y caducidad
 
+> **Corrección (04/09/2026).** La tabla de abajo es de la spec original y
+> **no coincide con el pipeline que hay montado**. Las etapas reales del
+> pipeline `4080461018` son: Información enviada (`5948376264`) · Muestra
+> interés / Intención de compra (`5948376265`) · Propuesta enviada
+> (`5948376266`) · Reunión Agendada (`5948376267`) · Negociación
+> (`5948376268`) · Ganado (`5948376269`) · Descartado (`5948376270`).
+> Son las que usan `bridge/apollo_hubspot_bridge.py` y `panel/`. Se mantiene
+> la tabla siguiente por los criterios de entrada, salida y caducidad, que
+> siguen siendo válidos.
+
+
 | Etapa | Prob. | Entra cuando | Sale cuando | Máx. días |
 |---|---|---|---|---|
 | Lead mobiliario | 10 % | El formulario crea el negocio | El agente termina propuesta + mockups | 1 |
