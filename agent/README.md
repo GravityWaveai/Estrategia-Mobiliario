@@ -30,6 +30,15 @@ Baleares y Canarias; 156 con email institucional, 67 sin email localizado.
    (alcaldía, medio ambiente, urbanismo, contratación…).
 3. Enriquece cada persona (1 crédito Apollo por email revelado, máx. 3 por
    municipio) y descarta emails ya presentes en la BBDD.
+   **Regla de calidad obligatoria**: todo registro nuevo debe llevar
+   municipio y provincia verificados (los emails de la campaña los usan).
+   La verificación se hace casando la organización del contacto con una
+   fila del CSV — por dominio o por nombre exacto del ayuntamiento — y
+   copiando municipio/provincia de esa fila. Si la correspondencia no es
+   inequívoca (dominio desconocido, nombre parecido de otro municipio
+   como Artà/Artés, organización que no es el ayuntamiento), el contacto
+   se descarta: ni lista de Apollo, ni CSV, ni HubSpot. Los descartes se
+   anotan en el resumen semanal.
 4. Añade los nuevos al CSV con `origen=apollo`, regenera el Excel y hace
    commit al repo.
 5. Guarda cada contacto nuevo en la lista de Apollo de la campaña
