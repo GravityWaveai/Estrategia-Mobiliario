@@ -41,9 +41,7 @@ Solo se usan dos herramientas del conector, y cada una para lo que sabe hacer:
 | Han respondido (outbound) | De los anteriores, `apollo_estado` en `respondido` o `reunion_agendada` |
 | Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018` |
 | Conversión a ganado | Negocios en «Ganado» ÷ negocios del segmento |
-| Propuestas enviadas | Negocios que **llegaron alguna vez** a «Propuesta enviada», no los que están ahí ahora |
-| Reuniones agendadas / realizadas | Reuniones cuyo propietario es Amaia (`681386458`) **y** que están atadas a un negocio de este pipeline. Realizada = su hora de fin ya pasó y no está cancelada |
-| Negocios con reunión | Negocios que llegaron a la etapa «Reunión agendada» |
+| Reuniones agendadas | Reuniones cuyo propietario es Amaia (`681386458`) **y** que están atadas a un negocio de este pipeline |
 | Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
 | Motivos de pérdida | `motivo_perdida` de los negocios en «Descartado» |
 
@@ -62,8 +60,7 @@ acumulada.
 | Respuestas al outbound | `apollo_fecha_respuesta` dentro de la ventana |
 | Negocios creados | `createdate` dentro de la ventana |
 | Negocios que cambiaron de etapa | `hs_v2_date_entered_current_stage` dentro de la ventana |
-| Propuestas enviadas · Llegaron a reunión | Entrada en esa etapa dentro de la ventana |
-| Reuniones agendadas · celebradas | Inicio / fin dentro de la ventana. Sin repartir por origen |
+| Reuniones agendadas | Inicio dentro de la ventana. Sin repartir por origen |
 | Ganados · Descartados · Ingresos | `closedate` dentro de la ventana; si falta, la fecha de entrada en la etapa |
 
 El signo se colorea por si **mejora o empeora**, no por si sube o baja: más
@@ -92,12 +89,15 @@ asociados tiene `productos_interes` relleno o su `inbound__outbound` empieza
 por `INBOUND`; si no, es outbound si tiene `campana_apollo` o su
 `inbound__outbound` empieza por `OUTBOUND`.
 
-**2. «Reunión realizada» se cuenta por fecha pasada**, no por el campo de
-resultado. `hs_meeting_outcome` está vacío en las 176 reuniones de Amaia,
-incluidas las de 2023: no lo rellena la sincronización de calendario, es un
-campo manual. Contar por fecha funciona desde el primer día; el precio es que
-un *no-show* cuenta como celebrada. Si algún día se marcan los resultados, se
-añade la cifra exacta al lado sin tocar nada más.
+**2. De reuniones solo se cuentan las agendadas.** «Realizadas», «propuestas
+enviadas» y «negocios con reunión» se retiraron del panel el 04/09/2026: las
+tres eran deducidas, no leídas. «Realizadas» tenía que inferirse de la hora de
+fin porque `hs_meeting_outcome` está vacío en las 176 reuniones de Amaia
+—incluidas las de 2023: no lo rellena la sincronización de calendario, es un
+campo manual—, y las otras dos dependían de unas fechas de entrada por etapa
+que HubSpot aún no ha creado. Lo que queda es lo que se lee directamente.
+El recuento de negocios en las etapas «Propuesta enviada» y «Reunión
+Agendada» sigue en el embudo, que ese sí es exacto.
 
 **3. El periodo por defecto es «desde el inicio»**, con selector de 90 / 30 /
 7 días. Filtra por `createdate` del negocio, salvo los ingresos ganados, que
@@ -155,10 +155,6 @@ HubSpot:
   las crea cuando el primer negocio pasa por cada etapa. `search_crm_objects`
   las ignora sin dar error, así que el panel se repara solo. Mientras tanto
   muestra lo que llevan parados los negocios abiertos en cada etapa, y lo dice.
-- **Etapas alcanzadas, al principio.** Sin esas fechas, «llegó a la etapa X» se
-  deduce de la posición actual. Es exacto salvo para los negocios en
-  «Descartado», de los que no se sabe hasta dónde llegaron; por eso no se les
-  atribuye ninguna etapa intermedia hasta que existan las fechas.
 - **Etapas añadidas después.** Una etapa nueva se detecta y se muestra, pero
   no entra en el cálculo de etapas alcanzadas ni de tiempos: su sitio en el
   embudo hay que declararlo en la spec.

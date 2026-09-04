@@ -127,6 +127,8 @@ section{margin-top:44px}
 
 /* ---------- Tarjetas de cifra ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+/* Una tarjeta sola no debe estirarse a todo el ancho. */
+.tiles.sola{grid-template-columns:minmax(240px,360px);max-width:360px}
 .tile{background:var(--ground);padding:20px;display:flex;flex-direction:column;gap:8px;min-height:124px}
 .tile .v{font-weight:900;font-size:42px;line-height:.92;letter-spacing:-.03em;display:flex;align-items:baseline;gap:6px;order:1}
 .tile .v.destacado{color:var(--accent)}
@@ -286,7 +288,7 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
   <section id="s-actividad">
     <div class="sec-cab">
       <h2>Actividad comercial</h2>
-      <p class="sec-nota">Propuestas y reuniones. Las reuniones salen del calendario de Amaia, filtradas al pipeline Mobiliario Urbano.</p>
+      <p class="sec-nota">Reuniones del calendario de Amaia, filtradas a los negocios del pipeline Mobiliario Urbano. No incluye las de sus otros embudos.</p>
     </div>
     <div class="tiles" id="tiles-actividad"></div>
   </section>
@@ -380,8 +382,7 @@ var ETAPAS_BASE = [
   {id:"5948376269", nom:"Ganado",                                prob:1.00, tipo:"ganada",  css:"--stage-6"},
   {id:"5948376270", nom:"Descartado",                            prob:0.00, tipo:"perdida", css:"--stage-lost"}
 ];
-var ID_PROPUESTA = "5948376266", ID_REUNION = "5948376267",
-    ID_GANADO = "5948376269", ID_PERDIDO = "5948376270";
+var ID_GANADO = "5948376269", ID_PERDIDO = "5948376270";
 
 var ETAPAS = ETAPAS_BASE.slice(), IDX = {};
 var etiquetasVivas = null;   /* stageId -> etiqueta, de get_properties */
@@ -736,11 +737,10 @@ function negociosDe(seg){
 function metricas(seg){
   var lista = negociosDe(seg);
   var m = {
-    total:lista.length, porEtapa:{}, alcanzada:{}, ganados:0, perdidos:0, abiertos:0,
-    valorAbierto:0, valorPonderado:0, ingresos:0, motivos:{}, tiempos:{}, dwell:{},
-    reunionEtapa:0, propuestas:0
+    total:lista.length, porEtapa:{}, ganados:0, perdidos:0, abiertos:0,
+    valorAbierto:0, valorPonderado:0, ingresos:0, motivos:{}, tiempos:{}, dwell:{}
   };
-  ETAPAS.forEach(function(e){ m.porEtapa[e.id] = 0; m.alcanzada[e.id] = 0; });
+  ETAPAS.forEach(function(e){ m.porEtapa[e.id] = 0; });
 
   var acumTiempo = {}, cuentaTiempo = {}, acumDwell = {}, cuentaDwell = {};
 
@@ -753,15 +753,6 @@ function metricas(seg){
       var pv = parseFloat(n.hs_deal_stage_probability);
       if(isFinite(pv)) probsVivas[et] = pv;
     }
-
-    /* Etapas alcanzadas alguna vez. La fecha de entrada es exacta; mientras
-       HubSpot no la haya creado se deduce de la posición actual, que solo es
-       fiable para los negocios que no están en «Descartado». */
-    ETAPAS.forEach(function(e, j){
-      var entrada = n["hs_v2_date_entered_"+e.id];
-      if(entrada) m.alcanzada[e.id]++;
-      else if(e.tipo !== "nueva" && et !== ID_PERDIDO && j <= i) m.alcanzada[e.id]++;
-    });
 
     if(et === ID_GANADO){
       m.ganados++;
@@ -808,8 +799,6 @@ function metricas(seg){
     m.dwell[e.id]   = cuentaDwell[e.id]  ? dias(acumDwell[e.id]  / cuentaDwell[e.id])  : null;
   });
 
-  m.propuestas   = m.alcanzada[ID_PROPUESTA] || 0;
-  m.reunionEtapa = m.alcanzada[ID_REUNION] || 0;
   m.conversion   = pct(m.ganados, m.total);
   m.hayTransito  = ETAPAS.some(function(e){ return m.tiempos[e.id] !== null; });
 
@@ -857,10 +846,9 @@ function suma(acc, v, val){ if(v) acc[v] += (val === undefined ? 1 : val); }
 
 function metricasSemana(seg){
   var s = {
-    nuevos:cero(), movimientos:cero(), propuestas:cero(), reunionEtapa:cero(),
-    ganados:cero(), perdidos:cero(), ingresos:cero(),
+    nuevos:cero(), movimientos:cero(), ganados:cero(), perdidos:cero(), ingresos:cero(),
     formularios:cero(), contactados:cero(), respuestas:cero(),
-    agendadas:cero(), celebradas:cero(), porEtapa:{}, exacto:false
+    agendadas:cero(), porEtapa:{}, exacto:false
   };
   ETAPAS.forEach(function(e){ s.porEtapa[e.id] = cero(); });
 
@@ -877,9 +865,6 @@ function metricasSemana(seg){
       if(neg["hs_v2_date_entered_"+e.id]) s.exacto = true;
       suma(s.porEtapa[e.id], ventana(t));
     });
-
-    suma(s.propuestas,    ventana(entroEn(neg, ID_PROPUESTA)));
-    suma(s.reunionEtapa,  ventana(entroEn(neg, ID_REUNION)));
 
     if(neg.dealstage === ID_GANADO){
       var vG = ventana(fecha(neg.closedate)) || ventana(entroEn(neg, ID_GANADO));
@@ -906,13 +891,10 @@ function metricasSemana(seg){
 
   /* Las reuniones no se reparten por origen; solo se dan en el total. */
   if(seg === "todo"){
-    var ahora = Date.now();
     Object.keys(D.reuniones).forEach(function(k){
       var r = D.reuniones[k];
       if(r.hs_meeting_outcome === "CANCELED") return;
       suma(s.agendadas, ventana(fecha(r.hs_meeting_start_time)));
-      var fin = fecha(r.hs_meeting_end_time) || fecha(r.hs_meeting_start_time);
-      if(fin !== null && fin < ahora) suma(s.celebradas, ventana(fin));
     });
   }
   return s;
@@ -921,15 +903,11 @@ function metricasSemana(seg){
 /* Las reuniones no se pueden repartir por origen: el cruce con el pipeline no
    arrastra el negocio concreto. Se dan como cifra de campaña. */
 function reuniones(){
-  var ahora = Date.now(), r = {agendadas:0, realizadas:0, futuras:0};
+  var r = {agendadas:0};
   Object.keys(D.reuniones).forEach(function(k){
     var m = D.reuniones[k];
     if(m.hs_meeting_outcome === "CANCELED") return;
-    var ini = fecha(m.hs_meeting_start_time);
-    if(!enPeriodo(ini)) return;
-    r.agendadas++;
-    var fin = fecha(m.hs_meeting_end_time) || ini;
-    if(fin !== null && fin < ahora) r.realizadas++; else r.futuras++;
+    if(enPeriodo(fecha(m.hs_meeting_start_time))) r.agendadas++;
   });
   return r;
 }
@@ -1007,16 +985,9 @@ function pinta(){
   }).join("");
 
   /* --- Actividad --- */
-  var a = "";
-  a += tile("Propuestas enviadas", fmtN.format(m.propuestas), "",
-    "Negocios que llegaron a la etapa");
-  a += tile("Negocios con reunión", fmtN.format(m.reunionEtapa), "",
-    "Llegaron a «Reunión agendada»");
-  a += tile("Reuniones agendadas", fmtN.format(r.agendadas), "",
-    "Calendario de Amaia · sin repartir por origen");
-  a += tile("Reuniones realizadas", fmtN.format(r.realizadas), "",
-    r.futuras ? fmtN.format(r.futuras)+" aún por celebrar" : "Ya celebradas");
-  $("tiles-actividad").innerHTML = a;
+  $("tiles-actividad").className = "tiles sola";
+  $("tiles-actividad").innerHTML = tile("Reuniones agendadas",
+    fmtN.format(r.agendadas), "", "Calendario de Amaia · sin repartir por origen", true);
 
   /* --- Tiempos --- */
   var usaTransito = m.hayTransito;
@@ -1064,8 +1035,6 @@ function pintaComparativa(){
   var filas = [
     ["Entradas al embudo", fmtN.format(a.formularios)+" formularios", fmtN.format(b.contactados)+" contactados"],
     ["Negocios creados", fmtN.format(a.total), fmtN.format(b.total)],
-    ["Propuestas enviadas", fmtN.format(a.propuestas), fmtN.format(b.propuestas)],
-    ["Negocios con reunión", fmtN.format(a.reunionEtapa), fmtN.format(b.reunionEtapa)],
     ["Ganados", fmtN.format(a.ganados), fmtN.format(b.ganados)],
     ["Descartados", fmtN.format(a.perdidos), fmtN.format(b.perdidos)],
     ["Conversión a ganado", txtPct(a.conversion), txtPct(b.conversion)],
@@ -1092,10 +1061,7 @@ var FILAS_SEMANA = [
   {k:"respuestas",   et:"Respuestas al outbound", bueno:"sube", dinero:false},
   {k:"nuevos",       et:"Negocios creados", bueno:"sube", dinero:false},
   {k:"movimientos",  et:"Negocios que cambiaron de etapa", bueno:"sube", dinero:false},
-  {k:"propuestas",   et:"Propuestas enviadas", bueno:"sube", dinero:false},
-  {k:"reunionEtapa", et:"Negocios que llegaron a reunión", bueno:"sube", dinero:false},
   {k:"agendadas",    et:"Reuniones agendadas", bueno:"sube", dinero:false},
-  {k:"celebradas",   et:"Reuniones celebradas", bueno:"sube", dinero:false},
   {k:"ganados",      et:"Negocios ganados", bueno:"sube", dinero:false},
   {k:"perdidos",     et:"Negocios descartados", bueno:"baja", dinero:false},
   {k:"ingresos",     et:"Ingresos ganados", bueno:"sube", dinero:true}
@@ -1137,7 +1103,7 @@ function pintaSemana(){
     '<thead><tr><th>Métrica</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th>'+
     '<th><span class="chip">Inbound</span></th><th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
     FILAS_SEMANA.map(function(r){
-      var v = T[r.k], reparte = (r.k !== "agendadas" && r.k !== "celebradas");
+      var v = T[r.k], reparte = (r.k !== "agendadas");
       return '<tr><td>'+esc(r.et)+'</td>'+
         '<td>'+celda(v.a, r.dinero)+'</td>'+
         '<td>'+celda(v.b, r.dinero)+'</td>'+

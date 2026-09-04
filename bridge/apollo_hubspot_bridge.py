@@ -76,6 +76,19 @@ CAMPOS_APOLLO_INBOUND = {
 # a HubSpot en vez de fiarse de que la integración nativa lo traiga bien.
 CAMPO_APOLLO_MUNICIPIO = "6a999f44b6a7d5001357d023"
 
+# Provincia, cargada igual que el municipio: a mano y verificada. La
+# integración nativa Apollo↔HubSpot no sincroniza campos personalizados y su
+# API no expone los mapeos (apollo_fields_index devuelve los campos, pero sin
+# su correspondencia en el CRM), así que ni se puede mapear desde fuera ni
+# queda otra que copiarla desde aquí.
+CAMPO_APOLLO_PROVINCIA = "6a9834c6c1f16e001cc3278f"
+
+# Propiedades que existen TAMBIÉN en negocios y hay que reflejar allí: los
+# workflows de etapa son de objeto negocio y no pueden filtrar por propiedades
+# del contacto. Las demás —municipio, provincia, campana_apollo— solo existen
+# en contactos, y mandárselas a un negocio devuelve 400 y aborta la pasada.
+PROPS_TAMBIEN_EN_NEGOCIO = {"apollo_estado", "apollo_fecha_respuesta"}
+
 ETIQUETAS_PRODUCTOS_INTERES = {
     "banco": "Banco", "mesa": "Mesa", "papelera": "Papelera",
     "taburete": "Taburete", "letrero_corporeo": "Letrero corpóreo",
@@ -213,8 +226,11 @@ def hs_stamp(contact_id, props):
     """Escribe las propiedades en el contacto y en sus negocios del pipeline."""
     write(f"contacto {contact_id} <- {props}",
           lambda: hs("PATCH", f"/crm/v3/objects/contacts/{contact_id}", {"properties": props}))
+    props_negocio = {k: v for k, v in props.items() if k in PROPS_TAMBIEN_EN_NEGOCIO}
+    if not props_negocio:
+        return
     for deal_id in (hs_deal_ids(contact_id) if ENABLED else []):
-        hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": props})
+        hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": props_negocio})
 
 
 # --------------------------------------------------------------------------
@@ -274,6 +290,80 @@ def enroll_inbound(sender_id):
         hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA})
 
 
+def campos_verificados(contacto_apollo):
+    """Los dos campos de Apollo que se rellenaron a mano y se verificaron
+    contra el dominio de cada ayuntamiento. El `city` que calcula Apollo solo
+    no vale: para pueblos pequeños se equivoca o lo deja vacío."""
+    tcf = contacto_apollo.get("typed_custom_fields") or {}
+    return {"municipio": tcf.get(CAMPO_APOLLO_MUNICIPIO),
+            "provincia": tcf.get(CAMPO_APOLLO_PROVINCIA)}
+
+
+def campos_que_faltan(contacto_hubspot, campos):
+    """Solo lo que Apollo tiene y HubSpot no, o tiene distinto. Nunca borra:
+    si Apollo no sabe la provincia, la de HubSpot se queda como esté."""
+    if not campos:
+        return {}
+    props = contacto_hubspot["properties"]
+    return {k: v for k, v in campos.items() if v and props.get(k) != v}
+
+
+def sync_campos_verificados():
+    """Copia a HubSpot el municipio y la provincia verificados en Apollo.
+
+    Esto lo haría el mapeo de campos de la integración nativa, pero esa
+    integración no sincroniza campos personalizados y su API no expone los
+    mapeos, así que no se puede configurar desde fuera: se hace aquí.
+
+    `enroll_outbound` ya los copia al inscribir, pero solo a los que inscribe
+    ese día. Este paso cubre a los que ya estaban —los 137 de la lista— y a
+    los que Apollo empuje más tarde, cuando el pull automático los traiga
+    después de que la inscripción haya pasado.
+
+    Cuesta una búsqueda en HubSpot por pasada; solo baja a Apollo si falta
+    algo de verdad.
+    """
+    def sin(propiedad):
+        return {"filters": [
+            {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+            {"propertyName": propiedad, "operator": "NOT_HAS_PROPERTY"},
+        ]}
+
+    faltan = hs_search_contacts([sin("provincia"), sin("municipio")],
+                                ["email", "municipio", "provincia"])
+    pendientes = {}
+    for c in faltan:
+        email = (c["properties"].get("email") or "").lower()
+        if email:
+            pendientes[email] = c
+    if not pendientes:
+        log("CAMPOS: municipio y provincia al día en HubSpot")
+        return
+
+    log(f"CAMPOS: {len(pendientes)} contacto(s) sin municipio o sin provincia")
+    marcados, page = 0, 1
+    while pendientes:
+        res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
+        lote = res.get("contacts", [])
+        if not lote:
+            break
+        for c in lote:
+            contacto = pendientes.pop((c.get("email") or "").lower(), None)
+            if not contacto:
+                continue
+            props = campos_que_faltan(contacto, campos_verificados(c))
+            if props:
+                hs_stamp(contacto["id"], props)
+                marcados += 1
+        if page >= res.get("pagination", {}).get("total_pages", 1):
+            break
+        page += 1
+
+    log(f"CAMPOS: {marcados} contacto(s) actualizados desde Apollo"
+        + (f"; {len(pendientes)} no están en la lista de Apollo o no tienen "
+           f"esos campos rellenos allí" if pendientes else ""))
+
+
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
     candidatos, page = {}, 1
@@ -309,8 +399,8 @@ def enroll_outbound(sender_id):
         )
     }
     pendientes = [c["id"] for email, c in candidatos.items() if email.lower() not in ya_procesados]
-    municipio_de = {email: (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
-                    for email, c in candidatos.items() if email.lower() not in ya_procesados}
+    campos_de = {email.lower(): campos_verificados(c)
+                 for email, c in candidatos.items() if email.lower() not in ya_procesados}
     saltados = len(candidatos) - len(pendientes)
 
     log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP})"
@@ -328,24 +418,23 @@ def enroll_outbound(sender_id):
     # queda para la siguiente pasada, cuando el pull automático (cada 15 min)
     # los haya traído.
     #
-    # También se copia "municipio": el nombre del negocio lo genera el
-    # workflow con {{ enrolled_object.municipio }}, y la integración nativa
-    # Apollo-HubSpot solo trae el "city" que calcula Apollo automáticamente
-    # -no fiable para pueblos pequeños-, no el campo "Municipio" verificado
-    # a mano. Sin este paso, varios negocios saldrían con el nombre del
-    # pueblo mal o en blanco aunque el correo esté perfecto.
+    # También se copian "municipio" y "provincia": el nombre del negocio lo
+    # genera el workflow con {{ enrolled_object.municipio }}, y la integración
+    # nativa Apollo-HubSpot solo trae el "city" que calcula Apollo
+    # automáticamente -no fiable para pueblos pequeños-, no los campos
+    # verificados a mano. Sin este paso, varios negocios saldrían con el
+    # nombre del pueblo mal o en blanco aunque el correo esté perfecto, y la
+    # provincia no llegaría nunca al CRM.
     en_hubspot = hs_search_contacts(
-        [{"filters": [{"propertyName": "email", "operator": "IN", "values": list(municipio_de)}]}],
-        ["email", "campana_apollo", "municipio"],
+        [{"filters": [{"propertyName": "email", "operator": "IN", "values": list(campos_de)}]}],
+        ["email", "campana_apollo", "municipio", "provincia"],
     )
     marcados = 0
     for h in en_hubspot:
         props = {}
         if h["properties"].get("campana_apollo") != CAMPANA:
             props["campana_apollo"] = CAMPANA
-        municipio = municipio_de.get(h["properties"]["email"])
-        if municipio and h["properties"].get("municipio") != municipio:
-            props["municipio"] = municipio
+        props.update(campos_que_faltan(h, campos_de.get((h["properties"].get("email") or "").lower())))
         if props:
             hs_stamp(h["id"], props)
             marcados += 1
@@ -641,6 +730,9 @@ def main():
         enroll_outbound(sender_id)
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
+    # Va después de OUTBOUND para recoger en la misma pasada a los que se
+    # acaben de inscribir, y corre siempre, no solo a la hora de inscripción.
+    sync_campos_verificados()
     sync_bounces()
     log("Listo.")
 

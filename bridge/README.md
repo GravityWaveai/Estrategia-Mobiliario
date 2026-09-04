@@ -13,6 +13,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` y `municipio` en los que ya estén en HubSpot |
+| **CAMPOS** | Contactos de la campaña en HubSpot sin `municipio` o sin `provincia` | Los copia desde los campos personalizados verificados de Apollo |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -144,6 +145,44 @@ de inscribir al contacto — de ahí que el paso de escritura vaya siempre
 antes que `apollo_enroll` en esa función. Los IDs de esos campos están en
 `CAMPOS_APOLLO_INBOUND`; si se borran o se renombran en Apollo (Settings →
 Custom Fields → Contacts) hay que actualizar esa constante.
+
+## Municipio y provincia: por qué los copia el puente
+
+Los dos son campos personalizados de Apollo, rellenados a mano y verificados
+contra el dominio de cada ayuntamiento. Deberían llegar a HubSpot por el mapeo
+de campos de la integración nativa, pero **esa integración no sincroniza
+campos personalizados**, y su API tampoco expone los mapeos —`fields_index`
+devuelve los campos de Apollo, pero sin su correspondencia en el CRM—, así que
+no se puede configurar desde fuera ni desde un script. La única vía es
+copiarlos, y eso hace `sync_campos_verificados()`.
+
+Hacen falta por motivos distintos:
+
+- **`municipio`**: el workflow OUTBOUND nombra el negocio con
+  `{{ enrolled_object.municipio }}`. El `city` que calcula Apollo solo no
+  vale para pueblos pequeños: saldrían negocios con el nombre mal o en blanco.
+- **`provincia`**: no hace falta para el correo —Apollo envía con su propio
+  campo, que ya está relleno—, sino para el CRM: sin ella no se puede filtrar
+  ni segmentar por provincia en HubSpot.
+
+`enroll_outbound()` ya los copia a quien inscribe ese día.
+`sync_campos_verificados()` cubre el resto: los que ya estaban en la lista y
+los que Apollo empuje más tarde, cuando el pull automático los traiga después
+de la hora de inscripción. Cuesta una búsqueda en HubSpot por pasada y solo
+baja a Apollo si falta algo.
+
+Ninguno de los dos borra nada: si Apollo no sabe la provincia, la que haya en
+HubSpot se queda como esté.
+
+## Qué se escribe en el negocio y qué no
+
+`hs_stamp()` escribe en el contacto y refleja en sus negocios **solo**
+`apollo_estado` y `apollo_fecha_respuesta` (`PROPS_TAMBIEN_EN_NEGOCIO`), que
+son las únicas que existen también en el objeto negocio. `municipio`,
+`provincia` y `campana_apollo` solo existen en contactos: mandárselas a un
+negocio devuelve 400 y aborta la pasada entera. No saltaba porque el pipeline
+estaba vacío, pero habría saltado en cuanto un contacto ya marcado tuviera
+negocio y hubiera que corregirle el municipio.
 
 ## Idempotencia
 
