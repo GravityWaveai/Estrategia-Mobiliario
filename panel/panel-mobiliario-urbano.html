@@ -114,6 +114,9 @@ select.periodo:focus-visible{outline:2px solid var(--accent-mark);outline-offset
 .segmentos button:hover{color:var(--ink-soft)}
 .segmentos button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent-mark)}
 .segmentos button:focus-visible{outline:2px solid var(--accent-mark);outline-offset:3px}
+.segmentos button.aparte{margin-left:auto;margin-right:0;padding-left:32px;border-left:1px solid var(--line)}
+.segmentos button.aparte::before{content:"";width:0}
+@media(max-width:760px){.segmentos button.aparte{margin-left:0;padding-left:0;border-left:0}}
 .seg-n{font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.08em}
 .segmentos button[aria-selected="true"] .seg-n{color:var(--accent)}
 
@@ -157,6 +160,7 @@ section{margin-top:44px}
 .etapa:last-child{border-bottom:0}
 .etapa .nom{font-size:13px;font-weight:500;color:var(--ink-soft);display:flex;align-items:center;gap:9px}
 .etapa .prob{font-size:10px;color:var(--ink-faint);letter-spacing:.08em;font-weight:500}
+.etapa .prob.avisa{color:var(--accent);text-transform:uppercase;letter-spacing:.12em}
 .barra{height:24px;transition:height .3s ease;background:var(--surface);border-radius:1px;position:relative;overflow:hidden;min-width:20px}
 .barra i{display:block;height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 @media (prefers-reduced-motion:reduce){.barra i{transition:none}}
@@ -194,6 +198,12 @@ section{margin-top:44px}
 .chip{display:inline-flex;align-items:center;gap:6px}
 .chip::before{content:"";width:8px;height:8px;border-radius:1px;background:var(--serie-in)}
 .chip.out::before{background:var(--serie-out)}
+.chip.tot::before{background:var(--muted-mark)}
+.delta{font-weight:500;font-size:12px;letter-spacing:0;white-space:nowrap}
+.delta.mejor{color:var(--accent)}
+.delta.peor{color:var(--ink-faint)}
+.delta.igual{color:var(--ink-faint)}
+.tile .sub .delta{font-size:12px}
 
 /* ---------- Vacío / error ---------- */
 .vacio{color:var(--ink-faint);font-size:13px;padding:22px 0;text-align:center}
@@ -245,6 +255,9 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       </button>
       <button role="tab" id="tab-todo" aria-selected="true" data-seg="todo">
         Combinado <span class="seg-n" id="n-todo">—</span>
+      </button>
+      <button role="tab" id="tab-semana" aria-selected="false" data-seg="semana" class="aparte">
+        vs semana pasada
       </button>
     </div>
   </div>
@@ -331,6 +344,26 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     </div>
   </section>
 
+  <section id="s-semana" class="oculto">
+    <div class="sec-cab">
+      <h2>Lo que ha pasado esta semana</h2>
+      <p class="sec-nota" id="nota-semana"></p>
+    </div>
+    <div class="tiles" id="tiles-semana"></div>
+
+    <div class="panel-b" style="margin-top:24px">
+      <h3>Movimiento de la semana</h3>
+      <p class="nota">Cuenta lo que <em>ocurrió</em> dentro de cada ventana de siete días, no cómo está el embudo ahora. Las dos últimas columnas reparten la semana en curso por origen.</p>
+      <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
+    </div>
+
+    <div class="panel-b" style="margin-top:24px">
+      <h3>Entradas en cada etapa</h3>
+      <p class="nota" id="nota-etapas-semana"></p>
+      <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-etapas-semana"></table></div>
+    </div>
+  </section>
+
   <footer>
     <div class="pie-flex">
       <p class="pie-txt" id="pie-txt"></p>
@@ -352,17 +385,54 @@ var PIPELINE   = "4080461018";
 var AMAIA      = "681386458";
 var CAMPANA    = "mobiliario_urbano";
 
-var ETAPAS = [
-  {id:"5948376264", nom:"Información enviada",   prob:0.10, tipo:"abierta", css:"--stage-1"},
-  {id:"5948376265", nom:"Muestra interés",       prob:0.20, tipo:"abierta", css:"--stage-2"},
-  {id:"5948376266", nom:"Propuesta enviada",     prob:0.35, tipo:"abierta", css:"--stage-3"},
-  {id:"5948376267", nom:"Reunión agendada",      prob:0.55, tipo:"abierta", css:"--stage-4"},
-  {id:"5948376268", nom:"Negociación",           prob:0.75, tipo:"abierta", css:"--stage-5"},
-  {id:"5948376269", nom:"Ganado",                prob:1.00, tipo:"ganada",  css:"--stage-6"},
-  {id:"5948376270", nom:"Descartado",            prob:0.00, tipo:"perdida", css:"--stage-lost"}
+/* Las etiquetas y el orden son los del pipeline real (spec en
+   hubspot/spec/pipeline-mobiliario-urbano.json). Las probabilidades son las
+   declaradas: el conector no expone la metadata del pipeline. Ninguna de las
+   dos cosas se da por buena — abajo se sustituyen por lo que diga HubSpot. */
+var ETAPAS_BASE = [
+  {id:"5948376264", nom:"Información enviada",                   prob:0.10, tipo:"abierta", css:"--stage-1"},
+  {id:"5948376265", nom:"Muestra interés / Intención de compra", prob:0.20, tipo:"abierta", css:"--stage-2"},
+  {id:"5948376266", nom:"Propuesta enviada",                     prob:0.35, tipo:"abierta", css:"--stage-3"},
+  {id:"5948376267", nom:"Reunión Agendada",                      prob:0.55, tipo:"abierta", css:"--stage-4"},
+  {id:"5948376268", nom:"Negociación",                           prob:0.75, tipo:"abierta", css:"--stage-5"},
+  {id:"5948376269", nom:"Ganado",                                prob:1.00, tipo:"ganada",  css:"--stage-6"},
+  {id:"5948376270", nom:"Descartado",                            prob:0.00, tipo:"perdida", css:"--stage-lost"}
 ];
-var IDX = {}; ETAPAS.forEach(function(e,i){ IDX[e.id]=i; });
-var I_PROPUESTA = 2, I_REUNION = 3, I_GANADO = 5, I_PERDIDO = 6;
+var ID_PROPUESTA = "5948376266", ID_REUNION = "5948376267",
+    ID_GANADO = "5948376269", ID_PERDIDO = "5948376270";
+
+var ETAPAS = ETAPAS_BASE.slice(), IDX = {};
+var etiquetasVivas = null;   /* stageId -> etiqueta, de get_properties */
+var probsVivas = {};         /* stageId -> probabilidad observada en un negocio */
+
+/* El panel expone las etapas del pipeline, no una copia suya: la etiqueta la
+   manda HubSpot, una etapa que desaparezca se marca, y una que se añada se
+   descubre en cuanto un negocio la use. */
+function reconstruyeEtapas(){
+  var lista = ETAPAS_BASE.map(function(e){
+    var c = {id:e.id, nom:e.nom, prob:e.prob, tipo:e.tipo, css:e.css, ausente:false};
+    if(etiquetasVivas){
+      if(etiquetasVivas[c.id]) c.nom = etiquetasVivas[c.id];
+      else c.ausente = true;   /* ya no existe en el portal */
+    }
+    if(probsVivas[c.id] !== undefined) c.prob = probsVivas[c.id];
+    return c;
+  });
+  var conocidas = {}; lista.forEach(function(e){ conocidas[e.id] = true; });
+  /* Etapas que alguien haya añadido al pipeline después de escribir esto. */
+  var negocios = (typeof D !== "undefined" && D.negocios) ? D.negocios : {};
+  Object.keys(negocios).forEach(function(k){
+    var id = negocios[k].dealstage;
+    if(!id || conocidas[id]) return;
+    conocidas[id] = true;
+    lista.push({id:id, nom:(etiquetasVivas && etiquetasVivas[id]) || ("Etapa "+id),
+      prob:(probsVivas[id] !== undefined ? probsVivas[id] : 0), tipo:"nueva",
+      css:"--stage-4", ausente:false});
+  });
+  ETAPAS = lista; IDX = {};
+  ETAPAS.forEach(function(e,i){ IDX[e.id] = i; });
+}
+reconstruyeEtapas();
 
 /* Propiedades de negocio. Las hs_v2_date_entered_* de este pipeline aún no
    existen en el portal: HubSpot las crea cuando el primer negocio pasa por
@@ -372,7 +442,7 @@ var PROPS_DEAL = ["dealname","dealstage","amount","amount_in_home_currency",
   "deal_currency_code","hs_projected_amount_in_home_currency","createdate",
   "closedate","motivo_perdida","closed_lost_reason","hs_deal_stage_probability",
   "hs_v2_date_entered_current_stage","hubspot_owner_id"]
-  .concat(ETAPAS.map(function(e){ return "hs_v2_date_entered_"+e.id; }));
+  .concat(ETAPAS_BASE.map(function(e){ return "hs_v2_date_entered_"+e.id; }));
 
 var MOTIVOS = {sin_presupuesto:"Sin presupuesto", ahora_no:"Ahora no",
   eligio_otro:"Eligió otro", sin_respuesta:"Sin respuesta", otro:"Otro"};
@@ -455,7 +525,7 @@ var D = {
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
-var segmento = "todo", periodoDias = 0;
+var segmento = "todo", periodoDias = 0, vista = "embudo";
 
 function guardaPagina(destino, filas, clave){
   filas.forEach(function(f){ destino[f[clave]] = f; });
@@ -619,6 +689,22 @@ function arranca(){
     })(i);
   }
 
+  /* Etiquetas reales de las etapas. Devuelve las de todos los pipelines del
+     portal; el pipeline al que pertenece cada una no viene, así que la
+     pertenencia y el orden siguen saliendo de la spec, y de aquí solo el
+     nombre y si la etapa sigue existiendo. */
+  vigila("etapas", "get_properties", {
+    objectType:"deals",
+    propertyNames:["dealstage"]
+  }, function(p){
+    if(!p || !p.results) return;
+    var d = p.results.filter(function(x){ return x.name === "dealstage"; })[0];
+    if(!d || !d.options) return;
+    var mapa = {};
+    d.options.forEach(function(o){ mapa[o.value] = o.label; });
+    etiquetasVivas = mapa;
+  }, {refetchInterval:REFRESCO_LENTO});
+
   /* Reuniones de Amaia atadas a un negocio de este pipeline. El cruce con
      DEAL.pipeline es lo que las separa del resto de su calendario. */
   vigila("reuniones", "query_crm_data", {
@@ -680,6 +766,11 @@ function metricas(seg){
     var et = n.dealstage, i = IDX[et];
     if(i === undefined) return;
     m.porEtapa[et]++;
+    if(n.hs_deal_stage_probability !== undefined && n.hs_deal_stage_probability !== null &&
+       probsVivas[et] === undefined){
+      var pv = parseFloat(n.hs_deal_stage_probability);
+      if(isFinite(pv)) probsVivas[et] = pv;
+    }
 
     /* Etapas alcanzadas alguna vez. La fecha de entrada es exacta; mientras
        HubSpot no la haya creado se deduce de la posición actual, que solo es
@@ -687,16 +778,16 @@ function metricas(seg){
     ETAPAS.forEach(function(e, j){
       var entrada = n["hs_v2_date_entered_"+e.id];
       if(entrada) m.alcanzada[e.id]++;
-      else if(i !== I_PERDIDO && j <= i) m.alcanzada[e.id]++;
+      else if(e.tipo !== "nueva" && et !== ID_PERDIDO && j <= i) m.alcanzada[e.id]++;
     });
 
-    if(i === I_GANADO){
+    if(et === ID_GANADO){
       m.ganados++;
       var cierre = fecha(n.closedate);
       if(!periodoDias || (cierre !== null && enPeriodo(cierre))){
         m.ingresos += num(n.amount_in_home_currency || n.amount);
       }
-    } else if(i === I_PERDIDO){
+    } else if(et === ID_PERDIDO){
       m.perdidos++;
       var mo = n.motivo_perdida || n.closed_lost_reason || "sin_indicar";
       m.motivos[mo] = (m.motivos[mo] || 0) + 1;
@@ -724,7 +815,7 @@ function metricas(seg){
     }
     /* Reposo: lo que lleva parado ahora mismo el negocio en su etapa. */
     var desde = fecha(n.hs_v2_date_entered_current_stage);
-    if(desde !== null && i !== I_GANADO && i !== I_PERDIDO){
+    if(desde !== null && et !== ID_GANADO && et !== ID_PERDIDO){
       acumDwell[et] = (acumDwell[et] || 0) + (Date.now() - desde);
       cuentaDwell[et] = (cuentaDwell[et] || 0) + 1;
     }
@@ -735,8 +826,8 @@ function metricas(seg){
     m.dwell[e.id]   = cuentaDwell[e.id]  ? dias(acumDwell[e.id]  / cuentaDwell[e.id])  : null;
   });
 
-  m.propuestas   = m.alcanzada[ETAPAS[I_PROPUESTA].id];
-  m.reunionEtapa = m.alcanzada[ETAPAS[I_REUNION].id];
+  m.propuestas   = m.alcanzada[ID_PROPUESTA] || 0;
+  m.reunionEtapa = m.alcanzada[ID_REUNION] || 0;
   m.conversion   = pct(m.ganados, m.total);
   m.hayTransito  = ETAPAS.some(function(e){ return m.tiempos[e.id] !== null; });
 
@@ -750,6 +841,99 @@ function metricas(seg){
     return enPeriodo(fecha(c.createdate)) &&
       (c.apollo_estado === "respondido" || c.apollo_estado === "reunion_agendada"); }).length;
   return m;
+}
+
+/* ============================================================
+   Semana contra semana. Solo cuenta HECHOS con fecha dentro de la ventana
+   —negocios creados, etapas alcanzadas, cierres, reuniones—, nunca fotos del
+   embudo: HubSpot no guarda el estado que tenía el pipeline el lunes pasado,
+   así que un «pipeline abierto la semana pasada» sería inventado.
+   ============================================================ */
+var SEMANA = 7 * 86400000;
+
+function ventana(ms){
+  if(ms === null) return null;
+  var d = Date.now() - ms;
+  if(d < 0) return null;              /* futuro */
+  if(d < SEMANA) return "a";          /* últimos 7 días */
+  if(d < 2 * SEMANA) return "b";      /* los 7 anteriores */
+  return null;
+}
+
+/* Cuándo entró un negocio en una etapa. La fecha exacta solo existe cuando
+   HubSpot ha creado la propiedad; si no, sirve la de la etapa actual, que
+   siempre está y es exacta para la etapa en la que está ahora. */
+function entroEn(neg, id){
+  var t = fecha(neg["hs_v2_date_entered_"+id]);
+  if(t !== null) return t;
+  if(neg.dealstage === id) return fecha(neg.hs_v2_date_entered_current_stage);
+  return null;
+}
+
+function cero(){ return {a:0, b:0}; }
+function suma(acc, v, val){ if(v) acc[v] += (val === undefined ? 1 : val); }
+
+function metricasSemana(seg){
+  var s = {
+    nuevos:cero(), movimientos:cero(), propuestas:cero(), reunionEtapa:cero(),
+    ganados:cero(), perdidos:cero(), ingresos:cero(),
+    formularios:cero(), contactados:cero(), respuestas:cero(),
+    agendadas:cero(), celebradas:cero(), porEtapa:{}, exacto:false
+  };
+  ETAPAS.forEach(function(e){ s.porEtapa[e.id] = cero(); });
+
+  Object.keys(D.negocios).forEach(function(id){
+    var neg = D.negocios[id];
+    if(seg !== "todo" && origenDe(id) !== seg) return;
+
+    suma(s.nuevos, ventana(fecha(neg.createdate)));
+    suma(s.movimientos, ventana(fecha(neg.hs_v2_date_entered_current_stage)));
+
+    ETAPAS.forEach(function(e){
+      var t = entroEn(neg, e.id);
+      if(t === null) return;
+      if(neg["hs_v2_date_entered_"+e.id]) s.exacto = true;
+      suma(s.porEtapa[e.id], ventana(t));
+    });
+
+    suma(s.propuestas,    ventana(entroEn(neg, ID_PROPUESTA)));
+    suma(s.reunionEtapa,  ventana(entroEn(neg, ID_REUNION)));
+
+    if(neg.dealstage === ID_GANADO){
+      var vG = ventana(fecha(neg.closedate)) || ventana(entroEn(neg, ID_GANADO));
+      suma(s.ganados, vG);
+      suma(s.ingresos, vG, num(neg.amount_in_home_currency || neg.amount));
+    }
+    if(neg.dealstage === ID_PERDIDO){
+      suma(s.perdidos, ventana(fecha(neg.closedate)) || ventana(entroEn(neg, ID_PERDIDO)));
+    }
+  });
+
+  if(seg !== "outbound"){
+    Object.keys(D.cInbound).forEach(function(k){
+      suma(s.formularios, ventana(fecha(D.cInbound[k].createdate)));
+    });
+  }
+  if(seg !== "inbound"){
+    Object.keys(D.cOutbound).forEach(function(k){
+      var c = D.cOutbound[k];
+      suma(s.contactados, ventana(fecha(c.createdate)));
+      suma(s.respuestas, ventana(fecha(c.apollo_fecha_respuesta)));
+    });
+  }
+
+  /* Las reuniones no se reparten por origen; solo se dan en el total. */
+  if(seg === "todo"){
+    var ahora = Date.now();
+    Object.keys(D.reuniones).forEach(function(k){
+      var r = D.reuniones[k];
+      if(r.hs_meeting_outcome === "CANCELED") return;
+      suma(s.agendadas, ventana(fecha(r.hs_meeting_start_time)));
+      var fin = fecha(r.hs_meeting_end_time) || fecha(r.hs_meeting_start_time);
+      if(fin !== null && fin < ahora) suma(s.celebradas, ventana(fin));
+    });
+  }
+  return s;
 }
 
 /* Las reuniones no se pueden repartir por origen: el cruce con el pipeline no
@@ -790,6 +974,8 @@ function barras(items, formato){
 }
 
 function pinta(){
+  reconstruyeEtapas();
+  if(vista === "semana"){ pintaSemana(); return; }
   var m = metricas(segmento), r = reuniones();
 
   /* Contadores del conmutador */
@@ -827,9 +1013,11 @@ function pinta(){
   $("embudo").className = "embudo" + (m.total ? "" : " sin-datos");
   $("embudo").innerHTML = ETAPAS.map(function(e){
     var n = m.porEtapa[e.id];
-    return '<div class="etapa'+(e.tipo==="perdida"?" perdida":"")+'">'+
+    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+'">'+
       '<span class="nom">'+esc(e.nom)+
-        '<span class="prob">'+Math.round(e.prob*100)+'%</span></span>'+
+        (e.ausente?'<span class="prob avisa">ya no está en el pipeline</span>':
+         e.tipo==="nueva"?'<span class="prob avisa">etapa nueva</span>':
+         '<span class="prob">'+Math.round(e.prob*100)+'%</span>')+'</span>'+
       '<span class="barra"><i style="width:'+(n ? Math.max(2,(n/maxEtapa)*100) : 0)+
         '%;background:var('+e.css+')"></i></span>'+
       '<span class="cifras"><span class="n">'+fmtN.format(n)+'</span>'+
@@ -881,12 +1069,12 @@ function pinta(){
   $("tiles-resultados").innerHTML = res;
 
   /* --- Comparativa --- */
-  var comparando = segmento === "todo";
+  var comparando = segmento === "todo" && vista === "embudo";
   $("s-comparativa").classList.toggle("oculto", !comparando);
   if(comparando) pintaComparativa();
 
   /* --- Estado --- */
-  estadoConexion(m);
+  estadoConexion();
 }
 
 function pintaComparativa(){
@@ -911,7 +1099,92 @@ function pintaComparativa(){
     }).join("")+'</tbody>';
 }
 
-function estadoConexion(m){
+/* ============================================================
+   Pintado de la semana
+   ============================================================ */
+/* «Mejor» no es siempre «más»: más descartados es peor. Sin rojos ni verdes
+   —la marca no los admite—: mejora en Formentera, empeora en gris azulado. */
+var FILAS_SEMANA = [
+  {k:"formularios",  et:"Formularios completados", bueno:"sube", dinero:false},
+  {k:"contactados",  et:"Ayuntamientos contactados", bueno:"sube", dinero:false},
+  {k:"respuestas",   et:"Respuestas al outbound", bueno:"sube", dinero:false},
+  {k:"nuevos",       et:"Negocios creados", bueno:"sube", dinero:false},
+  {k:"movimientos",  et:"Negocios que cambiaron de etapa", bueno:"sube", dinero:false},
+  {k:"propuestas",   et:"Propuestas enviadas", bueno:"sube", dinero:false},
+  {k:"reunionEtapa", et:"Negocios que llegaron a reunión", bueno:"sube", dinero:false},
+  {k:"agendadas",    et:"Reuniones agendadas", bueno:"sube", dinero:false},
+  {k:"celebradas",   et:"Reuniones celebradas", bueno:"sube", dinero:false},
+  {k:"ganados",      et:"Negocios ganados", bueno:"sube", dinero:false},
+  {k:"perdidos",     et:"Negocios descartados", bueno:"baja", dinero:false},
+  {k:"ingresos",     et:"Ingresos ganados", bueno:"sube", dinero:true}
+];
+
+function delta(a, b, bueno, dinero){
+  var d = a - b;
+  if(d === 0) return '<span class="delta igual">sin cambio</span>';
+  var mejor = bueno === null ? null : (bueno === "sube" ? d > 0 : d < 0);
+  var clase = mejor === null ? "igual" : (mejor ? "mejor" : "peor");
+  var txt = (d > 0 ? "▲ +" : "▼ ") + (dinero ? fmtE.format(Math.abs(d)) : fmtN.format(Math.abs(d)));
+  return '<span class="delta '+clase+'">'+txt+'</span>';
+}
+function celda(v, dinero){ return dinero ? fmtE.format(v) : fmtN.format(v); }
+
+function pintaSemana(){
+  var T = metricasSemana("todo"), I = metricasSemana("inbound"), O = metricasSemana("outbound");
+  var f = new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short"});
+  var hoy = Date.now();
+  $("nota-semana").textContent =
+    "Del "+f.format(new Date(hoy - SEMANA))+" al "+f.format(new Date(hoy))+
+    ", frente a los siete días anteriores (del "+f.format(new Date(hoy - 2*SEMANA))+
+    " al "+f.format(new Date(hoy - SEMANA))+").";
+
+  var destacadas = [
+    {k:"nuevos", et:"Negocios creados", bueno:"sube", dinero:false},
+    {k:"movimientos", et:"Cambios de etapa", bueno:"sube", dinero:false},
+    {k:"ganados", et:"Negocios ganados", bueno:"sube", dinero:false},
+    {k:"ingresos", et:"Ingresos ganados", bueno:"sube", dinero:true}
+  ];
+  $("tiles-semana").innerHTML = destacadas.map(function(d){
+    var v = T[d.k];
+    return tile(d.et, celda(v.a, d.dinero), "",
+      delta(v.a, v.b, d.bueno, d.dinero)+' &middot; '+celda(v.b, d.dinero)+' la anterior',
+      v.a > 0);
+  }).join("");
+
+  $("tabla-semana").innerHTML =
+    '<thead><tr><th>Métrica</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th>'+
+    '<th><span class="chip">Inbound</span></th><th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
+    FILAS_SEMANA.map(function(r){
+      var v = T[r.k], reparte = (r.k !== "agendadas" && r.k !== "celebradas");
+      return '<tr><td>'+esc(r.et)+'</td>'+
+        '<td>'+celda(v.a, r.dinero)+'</td>'+
+        '<td>'+celda(v.b, r.dinero)+'</td>'+
+        '<td>'+delta(v.a, v.b, r.bueno, r.dinero)+'</td>'+
+        (reparte
+          ? '<td>'+celda(I[r.k].a, r.dinero)+'</td><td>'+celda(O[r.k].a, r.dinero)+'</td>'
+          : '<td colspan="2" style="text-align:center;color:var(--ink-faint);font-weight:400">sin repartir por origen</td>')+
+        '</tr>';
+    }).join("")+'</tbody>';
+
+  $("nota-etapas-semana").textContent = T.exacto
+    ? "Negocios que entraron en cada etapa dentro de la ventana, con la fecha exacta que guarda HubSpot."
+    : "HubSpot todavía no ha creado las fechas de entrada de este pipeline, así que solo se puede fechar la entrada en la etapa donde está hoy cada negocio. Un negocio que pasó por dos etapas esta semana cuenta solo en la última.";
+  $("tabla-etapas-semana").innerHTML =
+    '<thead><tr><th>Etapa</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th></tr></thead><tbody>'+
+    ETAPAS.map(function(e){
+      var v = T.porEtapa[e.id] || cero();
+      var bueno = (e.id === ID_PERDIDO) ? "baja" : "sube";
+      return '<tr><td>'+esc(e.nom)+'</td><td>'+fmtN.format(v.a)+'</td>'+
+        '<td>'+fmtN.format(v.b)+'</td><td>'+delta(v.a, v.b, bueno, false)+'</td></tr>';
+    }).join("")+'</tbody>';
+
+  $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);
+  $("n-outbound").textContent = fmtN.format(negociosDe("outbound").length);
+  $("n-todo").textContent     = fmtN.format(negociosDe("todo").length);
+  estadoConexion();
+}
+
+function estadoConexion(){
   var fallos = Object.keys(D.fallos), punto = $("punto"), txt = $("estado-txt");
   var hayDatos = Object.keys(D.negocios).length > 0 ||
                  Object.keys(D.cInbound).length > 0 || Object.keys(D.cOutbound).length > 0;
@@ -964,10 +1237,20 @@ function estadoConexion(m){
    ============================================================ */
 Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), function(b){
   b.addEventListener("click", function(){
-    segmento = b.dataset.seg;
+    var s = b.dataset.seg;
+    vista = (s === "semana") ? "semana" : "embudo";
+    if(vista === "embudo") segmento = s;
     Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), function(o){
       o.setAttribute("aria-selected", String(o === b));
     });
+    var semanal = vista === "semana";
+    ["s-captacion","s-embudo","s-actividad","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
+      $(id).classList.toggle("oculto", semanal);
+    });
+    $("s-semana").classList.toggle("oculto", !semanal);
+    /* La ventana semanal es fija: el selector de periodo no pinta nada aquí. */
+    $("periodo").disabled = semanal;
+    $("periodo").style.opacity = semanal ? ".45" : "";
     pinta();
   });
 });

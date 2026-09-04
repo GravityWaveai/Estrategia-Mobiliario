@@ -1,7 +1,8 @@
 # Panel de conversión — Mobiliario Urbano
 
 `panel-mobiliario-urbano.html` es un panel que lee HubSpot **en directo** y
-separa los resultados en tres vistas: INBOUND, OUTBOUND y las dos juntas.
+separa los resultados en cuatro vistas: INBOUND, OUTBOUND, las dos juntas y
+**vs semana pasada**.
 
 Publicado como artefacto privado:
 <https://claude.ai/code/artifact/df4aa04d-90b5-4b4a-9340-9ac488a1b5d0>
@@ -46,6 +47,34 @@ Solo se usan dos herramientas del conector, y cada una para lo que sabe hacer:
 | Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
 | Motivos de pérdida | `motivo_perdida` de los negocios en «Descartado» |
 
+### vs semana pasada
+
+Compara los últimos 7 días con los 7 anteriores. Solo cuenta **hechos con
+fecha dentro de la ventana** —negocios creados, etapas alcanzadas, cierres,
+reuniones—, nunca fotos del embudo: HubSpot no guarda cómo estaba el pipeline
+el lunes pasado, así que un «pipeline abierto la semana pasada» sería
+inventado. Por eso esa pestaña no repite el valor del pipeline ni la conversión
+acumulada.
+
+| Fila | Qué cuenta |
+|---|---|
+| Formularios completados · Ayuntamientos contactados | Contactos creados dentro de la ventana |
+| Respuestas al outbound | `apollo_fecha_respuesta` dentro de la ventana |
+| Negocios creados | `createdate` dentro de la ventana |
+| Negocios que cambiaron de etapa | `hs_v2_date_entered_current_stage` dentro de la ventana |
+| Propuestas enviadas · Llegaron a reunión | Entrada en esa etapa dentro de la ventana |
+| Reuniones agendadas · celebradas | Inicio / fin dentro de la ventana. Sin repartir por origen |
+| Ganados · Descartados · Ingresos | `closedate` dentro de la ventana; si falta, la fecha de entrada en la etapa |
+
+El signo se colorea por si **mejora o empeora**, no por si sube o baja: más
+descartados sale en gris, no en verde. Sin rojos ni ámbares, que la marca no
+admite.
+
+Mientras HubSpot no cree las fechas de entrada por etapa, la tabla «Entradas en
+cada etapa» solo puede fechar la etapa **actual** de cada negocio: uno que pasó
+por dos etapas en la misma semana cuenta solo en la última. El panel lo dice en
+la propia tabla y deja de decirlo en cuanto las fechas existen.
+
 ### Resultados
 
 | Métrica | Definición exacta |
@@ -74,6 +103,25 @@ añade la cifra exacta al lado sin tocar nada más.
 7 días. Filtra por `createdate` del negocio, salvo los ingresos ganados, que
 filtran por `closedate` porque es cuando entra el dinero.
 
+## Las etapas no están clavadas en el código
+
+El panel expone **las etapas del pipeline, no una copia suya**. La pertenencia
+y el orden salen de `hubspot/spec/pipeline-mobiliario-urbano.json`, porque el
+conector no expone a qué pipeline pertenece cada etapa; todo lo demás lo manda
+HubSpot:
+
+- **La etiqueta** se lee en vivo de `get_properties` sobre `dealstage`. Si
+  alguien renombra una etapa en el portal, el panel cambia solo.
+- **La probabilidad** se toma del primer negocio que haya en esa etapa
+  (`hs_deal_stage_probability`, que la calcula HubSpot). Las de la spec son
+  solo el valor de partida mientras no haya negocios.
+- **Una etapa que desaparezca** del portal se marca «ya no está en el
+  pipeline» en vez de seguir mostrándose como si nada.
+- **Una etapa que se añada** se descubre en cuanto un negocio la usa, y sale
+  marcada «etapa nueva». No se le atribuyen etapas alcanzadas ni tiempos de
+  tránsito, porque su posición en el embudo no se puede deducir: para eso hay
+  que añadirla a la spec.
+
 ## Etapas del pipeline `4080461018`
 
 | # | Etapa | Id | Prob. |
@@ -86,10 +134,13 @@ filtran por `closedate` porque es cuando entra el dinero.
 | 6 | Ganado | `5948376269` | 100 % |
 | 7 | Descartado | `5948376270` | 0 % |
 
-> Estos son los nombres **reales** del portal. La tabla de etapas de
-> `hubspot/README.md` («Lead mobiliario», «Ajuste de propuesta», «Acuerdo
-> firmado»…) es de una versión anterior de la spec y no coincide con lo que
-> hay montado. El puente sí usa los ids correctos.
+> Verificado contra el portal el 04/09/2026. `hubspot/spec/pipeline-mobiliario-urbano.json`
+> ya refleja estos nombres e ids; antes describía siete etapas que nunca se
+> crearon con esos nombres. Las **probabilidades no se han podido verificar**:
+> el conector no expone la metadata del pipeline. El valor ponderado no
+> depende de ellas —usa `hs_projected_amount_in_home_currency`, que lo calcula
+> HubSpot—, pero conviene confirmarlas en Settings → Objects → Deals →
+> Pipelines.
 
 ## Limitaciones conocidas
 
@@ -108,6 +159,9 @@ filtran por `closedate` porque es cuando entra el dinero.
   deduce de la posición actual. Es exacto salvo para los negocios en
   «Descartado», de los que no se sabe hasta dónde llegaron; por eso no se les
   atribuye ninguna etapa intermedia hasta que existan las fechas.
+- **Etapas añadidas después.** Una etapa nueva se detecta y se muestra, pero
+  no entra en el cálculo de etapas alcanzadas ni de tiempos: su sitio en el
+  embudo hay que declararlo en la spec.
 - **Tope de carga:** 600 negocios y 400 contactos por lista. Si se superan, el
   pie del panel lo avisa; se sube cambiando `PAGINAS_DEAL` y `PAGINAS_CONTACTO`.
 - **El parser del TSV** de `query_crm_data` interpreta `Etiqueta (valor)`

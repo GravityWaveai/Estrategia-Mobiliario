@@ -1,39 +1,58 @@
 {
   "objectType": "deals",
+  "pipelineId": "4080461018",
   "label": "Mobiliario Urbano",
   "displayOrder": 5,
+  "_comment": [
+    "Refleja el pipeline REAL del portal 26243090, leído el 04/09/2026.",
+    "Las etiquetas y los stageId son los que devuelve la API y los que usan",
+    "bridge/apollo_hubspot_bridge.py y panel/. La versión anterior de este",
+    "fichero describía siete etapas que nunca llegaron a crearse con esos",
+    "nombres (Lead mobiliario, Ajuste de propuesta, Acuerdo firmado...).",
+    "Las probabilidades siguen siendo las declaradas en el plan original: la",
+    "API del conector no expone la metadata del pipeline, así que no se han",
+    "podido verificar contra el portal. El valor ponderado del panel usa",
+    "hs_projected_amount_in_home_currency, que lo calcula HubSpot, no estas."
+  ],
   "stages": [
     {
-      "label": "Lead mobiliario",
+      "stageId": "5948376264",
+      "label": "Información enviada",
       "displayOrder": 0,
       "metadata": { "probability": "0.1" }
     },
     {
-      "label": "Propuesta en preparación",
+      "stageId": "5948376265",
+      "label": "Muestra interés / Intención de compra",
       "displayOrder": 1,
       "metadata": { "probability": "0.2" }
     },
     {
-      "label": "Propuesta entregada",
+      "stageId": "5948376266",
+      "label": "Propuesta enviada",
       "displayOrder": 2,
       "metadata": { "probability": "0.35" }
     },
     {
-      "label": "Reunión agendada",
+      "stageId": "5948376267",
+      "label": "Reunión Agendada",
       "displayOrder": 3,
       "metadata": { "probability": "0.55" }
     },
     {
-      "label": "Ajuste de propuesta",
+      "stageId": "5948376268",
+      "label": "Negociación",
       "displayOrder": 4,
       "metadata": { "probability": "0.75" }
     },
     {
-      "label": "Acuerdo firmado",
+      "stageId": "5948376269",
+      "label": "Ganado",
       "displayOrder": 5,
       "metadata": { "probability": "1.0" }
     },
     {
+      "stageId": "5948376270",
       "label": "Descartado",
       "displayOrder": 6,
       "metadata": { "probability": "0.0" }
