@@ -48,6 +48,7 @@ LIST_OUTBOUND = "6a983205f242c800107386c8"
 CAMPANA = "mobiliario_urbano"
 PIPELINE = "4080461018"
 ETAPA_LEAD = "5948376264"   # «Información enviada», la primera
+ETAPA_MUESTRA_INTERES = "5948376265"
 ETAPA_DESCARTADO = "5948376270"
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 
@@ -271,8 +272,8 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
-    pendientes, municipio_de, page = [], {}, 1
-    while len(pendientes) < CAP:
+    candidatos, page = {}, 1
+    while len(candidatos) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
         if not lote:
@@ -282,14 +283,34 @@ def enroll_outbound(sender_id):
                 continue          # ya está en alguna secuencia
             if not c.get("email"):
                 continue          # sin correo no hay nada que enviar
-            pendientes.append(c["id"])
-            municipio_de[c["email"]] = (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
-            if len(pendientes) >= CAP:
+            candidatos[c["email"]] = c
+            if len(candidatos) >= CAP:
                 break
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
         page += 1
-    log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP})")
+
+    # No basta con que Apollo diga "sin secuencia activa": si ya se procesó
+    # antes (respondió, se descartó, rebotó...) HubSpot lo sabe aunque Apollo
+    # haya limpiado el campo al terminar. Sin este filtro, un ayuntamiento ya
+    # cerrado podría reinscribirse solo y volver a recibir los 5 correos.
+    ya_procesados = {
+        h["properties"]["email"].lower()
+        for h in hs_search_contacts(
+            [{"filters": [
+                {"propertyName": "email", "operator": "IN", "values": list(candidatos)},
+                {"propertyName": "apollo_estado", "operator": "HAS_PROPERTY"},
+            ]}],
+            ["email"],
+        )
+    }
+    pendientes = [c["id"] for email, c in candidatos.items() if email.lower() not in ya_procesados]
+    municipio_de = {email: (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
+                    for email, c in candidatos.items() if email.lower() not in ya_procesados}
+    saltados = len(candidatos) - len(pendientes)
+
+    log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP})"
+        + (f", {saltados} descartado(s) por tener ya apollo_estado en HubSpot" if saltados else ""))
     if not pendientes:
         return
 
@@ -340,12 +361,19 @@ def sync_replies():
     `hs_sales_email_last_replied` es una propiedad nativa: HubSpot la rellena
     al registrar la respuesta a un correo de ventas, que es justo lo que Apollo
     empuja al CRM. No dependemos de ningún campo indocumentado de Apollo.
+
+    También mira a los ya «finalizado» (descartados por `mark_sin_respuesta`):
+    una respuesta puede llegar tarde, después de que la secuencia terminara y
+    el negocio se descartara solo. El workflow de HubSpot que mueve a «Muestra
+    interés» solo dispara desde «Información enviada», así que si el negocio
+    ya está en «Descartado» no lo reabriría por su cuenta — por eso aquí se
+    reabre a mano en ese caso.
     """
     respondieron = hs_search_contacts(
         [{"filters": [
             {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
             {"propertyName": "hs_sales_email_last_replied", "operator": "HAS_PROPERTY"},
-            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO + ["finalizado"]},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
         ]}],
         ["email", "apollo_estado", "hs_sales_email_last_replied"],
@@ -353,10 +381,18 @@ def sync_replies():
     log(f"RESPUESTA: {len(respondieron)} contacto(s) han respondido")
     for h in respondieron:
         props = h["properties"]
+        era_finalizado = props["apollo_estado"] == "finalizado"
         hs_stamp(h["id"], {
             "apollo_estado": "respondido",
             "apollo_fecha_respuesta": props["hs_sales_email_last_replied"],
         })
+        if era_finalizado:
+            for deal_id in hs_deal_ids(h["id"]):
+                deal = hs("GET", f"/crm/v3/objects/deals/{deal_id}?properties=dealstage")
+                if deal["properties"].get("dealstage") == ETAPA_DESCARTADO:
+                    write(f"reabrir el negocio {deal_id} — respuesta tardía tras el descarte",
+                          lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
+                                                {"properties": {"dealstage": ETAPA_MUESTRA_INTERES}}))
         # Apollo suele parar solo al detectar la respuesta, pero si el correo
         # entró por otra vía (respondieron a Amaia directamente) no se entera.
         contacto, activas = _apollo_sequences_of(props["email"])
@@ -436,11 +472,13 @@ def stop_when_engaged():
       c) Alguien marcó el estado a mano en HubSpot. No hace falta para nada,
          pero deja a Amaia una salida de emergencia si la necesita.
     """
-    # (a) y (c) — se leen del contacto
+    # (a) y (c) — se leen del contacto. Incluye "finalizado" porque una
+    # reunión puede agendarse tarde, tras el descarte automático — el
+    # negocio se reabre a mano si hace falta, igual que con una respuesta.
     por_contacto = hs_search_contacts(
         [{"filters": [
             {"propertyName": "engagements_last_meeting_booked", "operator": "HAS_PROPERTY"},
-            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+            {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO + ["finalizado"]},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
          ]},
          {"filters": [
@@ -452,8 +490,16 @@ def stop_when_engaged():
     )
     for h in por_contacto:
         props = h["properties"]
-        if props["apollo_estado"] in EN_CURSO:      # llegó por la reunión
+        if props["apollo_estado"] in EN_CURSO + ["finalizado"]:  # llegó por la reunión
+            era_finalizado = props["apollo_estado"] == "finalizado"
             hs_stamp(h["id"], {"apollo_estado": "reunion_agendada"})
+            if era_finalizado:
+                for deal_id in hs_deal_ids(h["id"]):
+                    deal = hs("GET", f"/crm/v3/objects/deals/{deal_id}?properties=dealstage")
+                    if deal["properties"].get("dealstage") == ETAPA_DESCARTADO:
+                        write(f"reabrir el negocio {deal_id} — reunión agendada tras el descarte",
+                              lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
+                                                    {"properties": {"dealstage": ETAPA_MUESTRA_INTERES}}))
             _sacar_de_apollo(props["email"], "reunión agendada")
         else:                                       # ya estaba marcado
             _sacar_de_apollo(props["email"], f"estado {props['apollo_estado']}")

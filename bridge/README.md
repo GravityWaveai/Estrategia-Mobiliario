@@ -61,6 +61,15 @@ cuando pasa a `"finished"` sin que el contacto haya llegado antes a
 Solo mueve el negocio si sigue en la primera etapa — si ya avanzó por otro
 motivo, no lo toca.
 
+**Respuesta o reunión tardía, después del descarte**: puede pasar — el
+ayuntamiento contesta semanas después, cuando el negocio ya está en
+«Descartado». El workflow de HubSpot que mueve a «Muestra interés» solo
+dispara desde «Información enviada», así que no lo reabriría por su cuenta.
+Por eso `sync_replies()` y la parte de reunión de `stop_when_engaged()`
+también miran a los contactos en estado `finalizado`, y si su negocio sigue
+en «Descartado», lo reabren a mano a «Muestra interés» antes de que el
+workflow siga desde ahí con el resto de etapas.
+
 **Por qué la parada la hace el puente y no Apollo**: Apollo corta solo cuando
 alguien responde o se marca como interesado, pero no ve el calendario de Amaia.
 Si la reunión se agenda desde el enlace de HubSpot, Apollo seguiría escribiendo.
@@ -82,6 +91,13 @@ siguiente pasada — igual que ya hacía `enroll_inbound` con los suyos.
 La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
 veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
 (acción 4), y eso lo saca automáticamente de la 2845.
+
+**Por qué `enroll_outbound()` también comprueba `apollo_estado` en HubSpot**:
+no basta con que Apollo diga que el contacto no está en ninguna secuencia —
+si ya se procesó antes (respondió, se descartó, rebotó...) y Apollo limpió
+esa referencia al terminar, parecería "libre" otra vez. Sin esta comprobación,
+un ayuntamiento ya cerrado podría reinscribirse solo y volver a recibir los
+5 correos, sin fin.
 
 Por el mismo motivo se copia también `municipio`: el nombre del negocio lo
 genera el workflow con `{{ enrolled_object.municipio }}`, y la integración
