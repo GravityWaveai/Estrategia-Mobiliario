@@ -9,7 +9,8 @@ es la única pieza que los une. Se lanza cada hora desde
 | Paso | Qué mira | Qué hace |
 |---|---|---|
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
-| **PARADA** | Cuatro señales, ver abajo | Saca al contacto de la secuencia |
+| **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
+| **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
@@ -27,33 +28,38 @@ por su cuenta con `hs_latest_sales_email_reply_date`, sin pasar por el puente.
 **Por qué los rebotes sí vienen de Apollo**: un correo que nunca llegó no genera
 ninguna actividad en HubSpot, así que no hay nada nativo que mirar.
 
-## Las cuatro señales de parada
+## Las tres señales de parada
 
-La cadencia se corta en cuanto hay contacto real, venga por donde venga. Las tres
-primeras son automáticas y no requieren que nadie haga nada:
+La cadencia se corta en cuanto hay contacto real, venga por donde venga. Las
+tres son automáticas y no requieren que nadie haga nada:
 
 | Señal | De dónde sale | Qué caso cubre |
 |---|---|---|
 | Respuesta al contacto | `hs_sales_email_last_replied` | Contestan al hilo, o escriben a Amaia por su cuenta. Su bandeja está conectada a HubSpot, así que lo registra igual |
 | Correo entrante del mismo contacto | Objetos `email` con `hs_email_from_email` = su dirección | Escribe a Amaia **en un hilo nuevo** en vez de responder al de la secuencia. Apollo no lo reconoce como respuesta suya |
-| Correo entrante del ayuntamiento | Objetos `email` asociados a la empresa | Contesta **otra persona** desde otra dirección. Requiere que el contacto tenga empresa asociada |
-| Reunión agendada | `engagements_last_meeting_booked` | Reservan hueco en el calendario. Apollo no lo ve |
-| Negocio fuera de «Lead mobiliario» | `dealstage` | Lo que no deja rastro de correo: una llamada, un aviso por LinkedIn |
+| Negocio fuera de «Información enviada» | `dealstage` | Lo que no deja rastro de correo: una llamada, un aviso por LinkedIn |
 
-Las dos del medio exigen el scope `sales-email-read` en el token de HubSpot, y
-miran los últimos 45 días. La de dirección funciona siempre; la de empresa solo
-para los contactos que tengan empresa asociada.
+**A propósito NO cuenta** que conteste otra persona del ayuntamiento desde otra
+dirección: solo la del propio contacto inscrito para el email; solo `hs_sales_email_last_replied`
+para todo lo demás. Es una decisión explícita, no una limitación técnica.
 
-**Punto débil conocido**: hoy solo la mitad de los contactos del portal tienen
-empresa asociada, así que en la otra mitad el caso «contesta un compañero desde
-otra dirección» no se detecta. Se arregla activando en HubSpot la creación y
-asociación automática de empresas por dominio de correo
-(Settings → Objects → Companies), que además beneficia a todo el CRM. No se puede
-hacer por API. Buscar por dominio en los correos tampoco es alternativa: la
-Search API solo acepta la dirección completa, no comodines.
+La primera y la segunda exigen el scope `sales-email-read` en el token de
+HubSpot, y miran los últimos 45 días.
 
-Además, poner `apollo_estado` a mano en HubSpot también para la cadencia. No hace
+Además, poner `apollo_estado` a mano en HubSpot también corta la cadencia. No hace
 falta para nada — es una salida de emergencia, no parte del funcionamiento.
+
+## Descarte automático sin respuesta
+
+Si un contacto agota los 5 correos de su secuencia sin que haya habido
+respuesta, `mark_sin_respuesta()` lo marca `apollo_estado = finalizado` y
+mueve su negocio de «Información enviada» a «Descartado» — sin que Amaia
+tenga que revisarlo ni cerrarlo a mano. Se detecta mirando el `status` que
+Apollo da a cada contacto dentro de una secuencia (`contact_campaign_statuses`):
+cuando pasa a `"finished"` sin que el contacto haya llegado antes a
+`respondido`/`reunion_agendada`/etc., se considera que no hubo respuesta.
+Solo mueve el negocio si sigue en la primera etapa — si ya avanzó por otro
+motivo, no lo toca.
 
 **Por qué la parada la hace el puente y no Apollo**: Apollo corta solo cuando
 alguien responde o se marca como interesado, pero no ve el calendario de Amaia.
@@ -87,10 +93,16 @@ blanco aunque el correo llegue perfecto.
 
 ## Personalización de los correos
 
-Los correos de OUTBOUND se dirigen a cada ayuntamiento por su nombre real
-(`{{company_name}}`, que Apollo resuelve desde el Account del contacto — el
-mismo que se limpió a "Ayuntamiento de X" para los 140 contactos de la
-lista). No depende del puente: es un campo estándar de Apollo.
+Los correos de OUTBOUND citan el municipio y la provincia (`{{municipio}}`,
+`{{provincia}}`), no la empresa: el Account de Apollo no es fiable para todos
+los contactos (varios comparten cuenta con otros municipios), así que se dejó
+de usar `{{company_name}}`. `{{municipio}}` es el campo personalizado
+"Municipio", verificado a mano contra el dominio de cada ayuntamiento —
+también depende de él la copia a HubSpot descrita más abajo (para el nombre
+del negocio). `{{provincia}}` es otro campo personalizado, cargado igual.
+Ninguno de los dos depende del puente para el envío del correo en sí — solo
+`{{productos_interes}}` etc. de INBOUND lo necesitan, porque esos datos no
+existen en Apollo hasta que el puente los escribe.
 
 Los correos de INBOUND citan lo que el lead contó en el formulario web
 (`{{productos_interes}}`, `{{unidades_estimadas}}`, `{{plazo_proyecto}}`).
