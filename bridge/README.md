@@ -18,6 +18,20 @@ es la única pieza que los une. Se lanza cada hora desde
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
 acaba de responder o de agendar una reunión.
 
+**OUTBOUND solo inscribe una vez al día**, a las `OUTBOUND_ENROLL_HOUR` UTC
+(8 por defecto — 10h en España en verano, 9h en invierno), aunque el cron
+corra cada hora. Sin este freno, el tope de 50 no era un tope diario de
+verdad: si había más de 50 candidatos pendientes en un momento dado —por
+ejemplo, tras una importación semanal grande— se inscribían 50 en una pasada
+y otros 50 en la siguiente, la misma mañana. El resto de pasos (RESPUESTA,
+PARADA, DESCARTE, INBOUND, REBOTES) sí corren en todas las pasadas horarias;
+solo la inscripción nueva de OUTBOUND espera a su hora.
+
+Los correos, una vez inscrito el contacto, los manda Apollo según el
+calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
+inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
+lleva su propio reloj desde el día en que entra.
+
 **Por qué la respuesta la detecta HubSpot y no Apollo**: `hs_sales_email_last_replied`
 es una propiedad nativa que HubSpot rellena al registrar la respuesta a un correo
 de ventas — y eso es exactamente lo que Apollo le empuja al CRM. Apollo sí sabe
@@ -146,6 +160,7 @@ contacto ya se inscribió. Relanzar el job no duplica nada.
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
 | Variable | `OUTBOUND_DAILY_CAP` | opcional, por defecto `50` |
+| Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 
 ## Primera ejecución
 
