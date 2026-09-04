@@ -246,7 +246,7 @@ del contacto, así que el puente escribe en los dos.
 | `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio |
 | `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Ídem + añade a la lista 2841 |
 | `4839142587` | MU · Propuesta enviada | Sin cambios |
-| `4839860441` | MU · Respuesta o reunión → Muestra interés | 6 ramales: los 4 nativos + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
+| `4839860441` | MU · Respuesta o reunión → Muestra interés | 5 ramales: 3 nativos (sales email, reunión reservada, actividad de reunión) + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
 | `4839928017` | MU · Reunión agendada | 3 ramales: los 2 nativos + `apollo_estado = reunion_agendada` |
 | `4839041253` | MU · Reunión realizada → Negociación | Sin cambios |
 
@@ -255,6 +255,17 @@ también está bloqueada por suscripción en la UI. La inscripción la hace el
 puente (`bridge/`).
 
 Los seis están **desactivados** a la espera de la prueba de punta a punta.
+
+`4839860441` tenía además una sexta rama (`hs_latest_marketing_email_reply_date
+IS_KNOWN`) que se ha quitado (04/09): esa propiedad no existe en el portal
+— no es que esté vacía, es un nombre inválido, así que esa rama nunca pudo
+dispararse. No se ha sustituido por la propiedad real
+(`hs_email_last_reply_date`, "Last marketing email reply date") a propósito:
+es una fecha global a cualquier correo de marketing de Gravity Wave, no solo
+a los de Mobiliario Urbano, así que un ayuntamiento con negocio abierto que
+respondiera a una newsletter cualquiera habría saltado de etapa por error.
+La rama que sí importa (`hs_latest_sales_email_reply_date`, la que rellena
+Apollo) queda intacta.
 
 Se creó además, en un intento previo, `4846749929` («MU · Respuesta detectada
 por HubSpot → apollo_estado»): marcaba `apollo_estado = respondido` en el
