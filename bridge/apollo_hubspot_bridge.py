@@ -27,6 +27,9 @@ Variables de entorno:
   APOLLO_API_KEY         API key de Apollo                    (obligatorio)
   BRIDGE_ENABLED         "1" para escribir de verdad; si no, simulacro
   OUTBOUND_DAILY_CAP     tope diario del OUTBOUND (por defecto 50)
+  OUTBOUND_ENROLL_HOUR   hora UTC en la que se inscribe OUTBOUND cada día
+                         (por defecto 8; el resto de pasadas de esa hora
+                         no hacen nada nuevo en OUTBOUND)
 """
 
 import json
@@ -40,6 +43,7 @@ HUBSPOT_TOKEN = os.environ.get("HUBSPOT_TOKEN", "")
 APOLLO_API_KEY = os.environ.get("APOLLO_API_KEY", "")
 ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
+HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
 
 # Identificadores fijos del embudo
 SEQ_INBOUND = "6a9844b94208650014fc4754"
@@ -629,7 +633,14 @@ def main():
     stop_on_any_inbound()
     mark_sin_respuesta()
     enroll_inbound(sender_id)
-    enroll_outbound(sender_id)
+    # OUTBOUND solo inscribe una vez al día, a esta hora — si no, el tope de
+    # 50 se salta: el cron corre cada hora, así que sin este freno un lunes
+    # con mucho pendiente (importación semanal) metería 50 en la primera
+    # pasada y otros 50 en la siguiente, la misma mañana.
+    if datetime.now(timezone.utc).hour == HORA_ENVIO_OUTBOUND:
+        enroll_outbound(sender_id)
+    else:
+        log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
     sync_bounces()
     log("Listo.")
 
