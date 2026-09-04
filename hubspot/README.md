@@ -80,17 +80,27 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 3. **No existe etapa «Frío»**: un negocio parado se pierde con motivo y fecha
    de reactivación, y la automatización 6 lo reabre ese día.
 
-## Etapas — criterios y caducidad
+## Etapas — nombres reales en el pipeline (verificado en HubSpot, 04/09/2026)
 
-| Etapa | Prob. | Entra cuando | Sale cuando | Máx. días |
-|---|---|---|---|---|
-| Lead mobiliario | 10 % | El formulario crea el negocio | El agente termina propuesta + mockups | 1 |
-| Propuesta en preparación | 20 % | Agente trabajando · importe puesto | Amaia aprueba el envío | 2 |
-| Propuesta entregada | 35 % | Email enviado con propuesta + agenda | Reunión reservada | 14 |
-| Reunión agendada | 55 % | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
-| Ajuste de propuesta | 75 % | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
-| Acuerdo firmado (ganado) | 100 % | Pedido confirmado por escrito | — | — |
-| Descartado (perdido) | 0 % | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
+Esta tabla sustituye a una versión anterior con nombres de etapa distintos
+(«Lead mobiliario», «Propuesta en preparación», etc.) que nunca se llegaron
+a crear así — quedó del primer borrador del plan y no coincidía con lo que
+hay de verdad en el pipeline `4080461018`. Los nombres de abajo son los
+reales, confirmados por API:
+
+| Id | Etapa | Prob. |
+|---|---|---|
+| `5948376264` | Información enviada | 10 % |
+| `5948376265` | Muestra interés / Intención de compra | 20 % |
+| `5948376266` | Propuesta enviada | 35 % |
+| `5948376267` | Reunión Agendada | 55 % |
+| `5948376268` | Negociación | 75 % |
+| `5948376269` | Ganado | 100 % |
+| `5948376270` | Descartado | 0 % |
+
+El formulario web crea el negocio directamente en **«Información enviada»**
+(la primera etapa) — es la que usa `bridge/apollo_hubspot_bridge.py` como
+`ETAPA_LEAD`.
 
 ## Datos fijos del portal
 
@@ -109,7 +119,7 @@ Con la estructura creada, Claude:
 
 1. Verifica pipeline y propiedades contra estas specs.
 2. Mete un lead de prueba de punta a punta
-   (formulario → contacto + negocio en «Lead mobiliario» → propuesta → tarea).
+   (formulario → contacto + negocio en «Información enviada» → propuesta → tarea).
 3. Deja programados los agentes 2, 5, 6 y 7 del documento operativo
    (generación de propuestas, seguimiento 5/12/14 días, reactivaciones,
    informe semanal del lunes 8:00).
