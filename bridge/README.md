@@ -134,6 +134,14 @@ Ninguno de los dos depende del puente para el envío del correo en sí — solo
 `{{productos_interes}}` etc. de INBOUND lo necesitan, porque esos datos no
 existen en Apollo hasta que el puente los escribe.
 
+Los 10 correos (5 de INBOUND + 5 de OUTBOUND) incluyen el enlace de reservas de
+Amaia (`https://meetings-eu1.hubspot.com/amaia-rodriguez`, su página de
+Meetings en HubSpot) como llamada a la acción, para que el ayuntamiento pueda
+agendar directamente mirando su disponibilidad real, sin esperar a que
+alguien conteste el correo. Es un enlace fijo en el HTML de cada plantilla,
+no depende del puente — si Amaia cambia de página de reservas hay que
+actualizar las 10 plantillas a mano en Apollo (o pedir que se haga vía MCP).
+
 Los correos de INBOUND citan lo que el lead contó en el formulario web
 (`{{productos_interes}}`, `{{unidades_estimadas}}`, `{{plazo_proyecto}}`).
 Esto sí depende del puente: la integración nativa HubSpot↔Apollo no
