@@ -1,0 +1,180 @@
+{
+  "comun": {
+    "marca": "Gravitec®",
+    "web": "thegravitywave.com",
+    "web_url": "https://thegravitywave.com",
+    "email": "info@thegravitywave.com",
+    "cifras": [
+      {"valor": "100", "unidad": "%", "etiqueta": "redes de pesca recicladas"},
+      {"valor": "77", "unidad": "%", "prefijo": "hasta", "etiqueta": "menos CO₂ que un panel de plástico virgen"},
+      {"valor": "5–30", "unidad": "mm", "etiqueta": "de espesor, en tres formatos de panel"},
+      {"valor": "ISO", "unidad": "14001", "etiqueta": "certificado · fabricado en España"}
+    ],
+    "formatos": [
+      {"talla": "S", "medida": "2000 × 1000 mm", "m2": "2 m²", "espesores": "10 / 18 / 30 mm", "plazo": "4–5 semanas"},
+      {"talla": "M", "medida": "2400 × 1200 mm", "m2": "2,88 m²", "espesores": "5 / 10 / 18 / 30 mm", "plazo": "3–4 semanas"},
+      {"talla": "L", "medida": "4000 × 1200 mm", "m2": "4,8 m²", "espesores": "10 / 18 / 30 mm", "plazo": "4–5 semanas"}
+    ],
+    "textura": "Pulido por una cara: superficie lisa y mate, con un tacto parecido a la cerámica. Sin pulir por la otra: más brillo y una textura natural, ligeramente irregular. Ambas caras pulidas, bajo pedido.",
+    "trabajo": [
+      "Corte con CNC, sierra circular o de calar",
+      "Taladro y lijado como la madera",
+      "Tornillería con agujero pretaladrado",
+      "Cantos desbastados, redondeados o a 45°",
+      "Doblado con ranurado y calor",
+      "Se entrega con 1–2 cm de margen por lado"
+    ],
+    "avisos": [
+      "Necesita estructura portante: el panel no resiste el pandeo, sobre todo en 18 mm o menos.",
+      "Adhesivos: solo Permabond TA4605 / TA4610, y únicamente cuando no haya otra alternativa."
+    ],
+    "aplicaciones": ["Mobiliario interior y exterior", "Señalética y letras corpóreas", "Revestimientos verticales", "Displays y stands", "Parques infantiles", "Productos personalizados"],
+    "circular": [
+      {"titulo": "Del Mediterráneo", "texto": "Redes de pesca recuperadas del fondo del mar y de los puertos, trituradas y prensadas en Calpe."},
+      {"titulo": "Trazabilidad", "texto": "Cada lote queda registrado en blockchain: sabes de dónde viene el plástico de tu panel."},
+      {"titulo": "Retorno circular", "texto": "Cuando el panel o el producto termine su vida, nos lo devuelves y lo convertimos en material nuevo."}
+    ],
+    "nota_muestra": "Las muestras representan el rango de color de cada referencia. Los paneles pueden mostrar variaciones naturales, propias de un material reciclado del mar.",
+    "nota_tecnica": "Valores indicativos de la ficha técnica Gravitec® (ensayos UNE EN ISO). No constituyen límites de especificación."
+  },
+  "grupos": {
+    "A": {
+      "nombre": "Panel HDPE · redes de pesca",
+      "composicion": "Polietileno de alta densidad procedente al 100 % de redes de pesca recicladas.",
+      "tecnica": [
+        {"prop": "Densidad", "valor": "0,96", "unidad": "g/cm³"},
+        {"prop": "Absorción de agua", "valor": "0,01", "unidad": "%"},
+        {"prop": "Resistencia a tracción", "valor": "28", "unidad": "MPa"},
+        {"prop": "Resistencia a flexión", "valor": "27", "unidad": "MPa"},
+        {"prop": "Dureza Shore D", "valor": "62", "unidad": ""},
+        {"prop": "Impacto Charpy", "valor": "No rompe", "unidad": ""},
+        {"prop": "Temperatura de servicio", "valor": "−100 / +80", "unidad": "°C"},
+        {"prop": "Módulo elástico", "valor": "1300", "unidad": "MPa"}
+      ]
+    },
+    "B": {
+      "nombre": "Panel HDPE · redes de pesca · base clara",
+      "composicion": "Polietileno de alta densidad de redes de pesca recuperadas sobre base clara, formado por compactación y prensado térmico.",
+      "tecnica": [
+        {"prop": "Densidad", "valor": "1,53", "unidad": "g/cm³"},
+        {"prop": "Absorción de agua (24 h)", "valor": "0,4", "unidad": "%"},
+        {"prop": "Esfuerzo en fluencia", "valor": "10,1", "unidad": "MPa"},
+        {"prop": "Resistencia a flexión", "valor": "12,8", "unidad": "MPa"},
+        {"prop": "Dureza Shore D", "valor": "63", "unidad": ""},
+        {"prop": "Impacto Charpy", "valor": "28", "unidad": "kJ/m²"},
+        {"prop": "Módulo de flexión", "valor": "464", "unidad": "MPa"},
+        {"prop": "Módulo de tracción", "valor": "427", "unidad": "MPa"}
+      ]
+    }
+  },
+  "acabados": [
+    {
+      "slug": "cadaques", "nombre": "Cadaqués", "grupo": "B",
+      "tagline": "Verde esmeralda con vetas blancas que irradian desde el centro.",
+      "titulo": "El verde más vivo del Mediterráneo",
+      "descripcion": "Un fondo esmeralda intenso recorrido por estelas blancas en movimiento, como la luz entrando en una cala. Es el acabado más expresivo de la familia: pide protagonismo en mesas, barras y letras corpóreas.",
+      "base": "Verde esmeralda", "veta": "Estelas blancas radiales", "caracter": "Expresivo y luminoso",
+      "mano": "cadaques", "estudio": "cadaques",
+      "uso": [["plancha-cadaques", "Panel Gravitec® Cadaqués, canto en bruto"], ["silla-cadaques", "Detalle de asiento en Cadaqués"], ["render-cadaques", "Panel Cadaqués, cara pulida"]]
+    },
+    {
+      "slug": "vulcano", "nombre": "Vulcano", "grupo": "A",
+      "tagline": "Negro profundo salpicado de escamas claras, como roca volcánica.",
+      "titulo": "Negro roca con destellos",
+      "descripcion": "Un negro denso y mate, con pequeñas escamas claras repartidas al azar que recuerdan a la piedra volcánica. Aporta sobriedad y contraste: funciona en mobiliario contract, hostelería y piezas de diseño.",
+      "base": "Negro profundo", "veta": "Escamas claras dispersas", "caracter": "Sobrio y elegante",
+      "mano": "vulcano", "estudio": "vulcano",
+      "uso": [["taburetes-vulcano", "Taburetes y mesa auxiliar en Vulcano"], ["muestras-taller", "Vulcano junto a Cadaqués y Andros"], ["muestras-agua", "La familia Gravitec® al sol"]]
+    },
+    {
+      "slug": "sicilia", "nombre": "Sicilia", "grupo": "B",
+      "tagline": "Base blanca con una retícula verde oscuro, efecto terrazo.",
+      "titulo": "Terrazo blanco y verde",
+      "descripcion": "Sobre un fondo blanco hueso, una malla de verde oscuro dibuja un terrazo fino y regular. Es un acabado sereno, fácil de combinar con madera y metal, ideal para revestimientos y superficies amplias.",
+      "base": "Blanco hueso", "veta": "Retícula verde oscuro", "caracter": "Sereno y versátil",
+      "mano": "sicilia", "estudio": "sicilia",
+      "uso": [["paneles-andros-sicilia", "Sicilia junto a Andros"], ["render-sicilia", "Panel Sicilia, cara pulida"], ["muestras-agua", "La familia Gravitec® al sol"]]
+    },
+    {
+      "slug": "ifach", "nombre": "Ifach", "grupo": "B",
+      "tagline": "Azul cobalto profundo con estelas blancas en movimiento.",
+      "titulo": "Azul profundo, como el Peñón",
+      "descripcion": "Un cobalto intenso atravesado por trazos blancos que parecen corrientes marinas. Lleva el nombre del Peñón de Ifach, frente a Calpe, donde nació Gravity Wave. Un acabado con carácter para piezas que quieren destacar.",
+      "base": "Azul cobalto", "veta": "Trazos blancos en movimiento", "caracter": "Intenso y con carácter",
+      "mano": "ifach", "estudio": "ifach",
+      "uso": [["mesas-ifach", "Mesas de centro con sobre en Ifach"], ["osaka-ifach", "Pabellón de España, Expo 2025 Osaka"], ["muestras-agua", "La familia Gravitec® al sol"]]
+    },
+    {
+      "slug": "palermo", "nombre": "Palermo", "grupo": "B",
+      "tagline": "Blanco roto con un moteado negro fino y regular.",
+      "titulo": "Blanco moteado, casi mineral",
+      "descripcion": "El más claro de la familia: un blanco roto salpicado de motas negras finas, con el aspecto de una piedra natural. Ilumina espacios y deja que otros materiales tomen el color. Perfecto para paredes, mostradores y retail.",
+      "base": "Blanco roto", "veta": "Moteado negro fino", "caracter": "Luminoso y discreto",
+      "mano": null, "estudio": "palermo",
+      "uso": [["barras-12", "Los doce acabados Gravitec®"], ["muestras-agua", "La familia Gravitec® al sol"], ["apilado", "Paneles Gravitec® apilados"]]
+    },
+    {
+      "slug": "formentera", "nombre": "Formentera", "grupo": "A",
+      "tagline": "Verde turquesa marmolado, el acabado icónico de Gravitec®.",
+      "titulo": "El turquesa de Gravity Wave",
+      "descripcion": "Un turquesa marmolado con vetas más claras, directamente heredado del color de las redes que recuperamos. Es el acabado que más se ve en bancos, mesas y papeleras Gravitec®, y el que mejor cuenta de dónde viene el material.",
+      "base": "Verde turquesa", "veta": "Marmolado claro", "caracter": "Icónico y mediterráneo",
+      "mano": "formentera", "estudio": "formentera",
+      "uso": [["banco-formentera", "Banco Nero en Formentera"], ["taburete-formentera", "Taburete Melva en Formentera"], ["papelera-formentera", "Papelera Sorell en Formentera"]]
+    },
+    {
+      "slug": "capri", "nombre": "Capri", "grupo": "B",
+      "tagline": "Blanco con una red de azul, como espuma de mar.",
+      "titulo": "Espuma de mar en azul",
+      "descripcion": "Una trama de azul marino se abre sobre un fondo blanco creando un dibujo celular, parecido a la espuma que deja una ola. Fresco y ligero, encaja en hostelería, baños y espacios de playa.",
+      "base": "Blanco", "veta": "Red azul marino", "caracter": "Fresco y ligero",
+      "mano": "capri", "estudio": "capri",
+      "uso": [["muestras-agua", "Capri, Atenas, Sicilia y Vulcano al sol"], ["barras-12", "Los doce acabados Gravitec®"], ["apilado", "Paneles Gravitec® apilados"]]
+    },
+    {
+      "slug": "itaca", "nombre": "Ítaca", "grupo": "A",
+      "tagline": "Verde bosque profundo con hilos claros.",
+      "titulo": "Verde profundo y sereno",
+      "descripcion": "Un verde oscuro casi uniforme, con finos hilos claros que asoman al acercarse. Es un acabado tranquilo y elegante: en superficies grandes funciona como un color sólido y de cerca revela su origen marino.",
+      "base": "Verde bosque", "veta": "Hilos claros finos", "caracter": "Tranquilo y elegante",
+      "mano": "itaca", "estudio": "itaca",
+      "uso": [["barras-12", "Los doce acabados Gravitec®"], ["letras-spain", "Letras corpóreas en Gravitec®"], ["apilado", "Paneles Gravitec® apilados"]]
+    },
+    {
+      "slug": "andros", "nombre": "Andros", "grupo": "A",
+      "tagline": "Azul marino oscuro, liso y casi uniforme.",
+      "titulo": "Azul marino, casi liso",
+      "descripcion": "El acabado más uniforme de la familia: un azul marino profundo con mínimas motas. Se comporta como un color sólido y combina con todos los demás. Ideal cuando el diseño pide un fondo tranquilo.",
+      "base": "Azul marino", "veta": "Motas mínimas", "caracter": "Uniforme y sólido",
+      "mano": null, "estudio": "andros",
+      "uso": [["paneles-andros-sicilia", "Andros junto a Sicilia"], ["muestras-taller", "Andros bajo Cadaqués y Vulcano"], ["apilado", "Paneles Gravitec® apilados"]]
+    },
+    {
+      "slug": "niza", "nombre": "Niza", "grupo": "B",
+      "tagline": "Base marfil con salpicaduras verdes en degradado.",
+      "titulo": "Marfil con lluvia verde",
+      "descripcion": "Sobre un fondo marfil, pequeñas gotas verdes se concentran y se dispersan creando un degradado natural. Cada panel es distinto. Un acabado delicado para revestimientos, displays y piezas de interior.",
+      "base": "Marfil", "veta": "Salpicaduras verdes", "caracter": "Delicado y natural",
+      "mano": null, "estudio": "niza",
+      "uso": [["barras-12", "Los doce acabados Gravitec®"], ["muestra-manos-formentera", "Muestra Gravitec® en el estudio"], ["apilado", "Paneles Gravitec® apilados"]]
+    },
+    {
+      "slug": "atenas", "nombre": "Atenas", "grupo": "A",
+      "tagline": "Azul mediterráneo marmolado con blanco, luminoso.",
+      "titulo": "Azul mediterráneo y luz",
+      "descripcion": "Un azul medio marmolado con blanco, luminoso y alegre, que recuerda al mar visto desde arriba. Es el azul más versátil de la familia y el favorito para parques infantiles, mobiliario exterior y trofeos.",
+      "base": "Azul mediterráneo", "veta": "Marmolado blanco", "caracter": "Luminoso y alegre",
+      "mano": "atenas", "estudio": "atenas",
+      "uso": [["tobogan-atenas", "Parque infantil en Atenas"], ["bancos-atenas", "Bancos en Atenas"], ["trofeos-atenas-formentera", "Trofeos en Atenas y Formentera"]]
+    },
+    {
+      "slug": "marsella", "nombre": "Marsella", "grupo": "B",
+      "tagline": "Blanco con manchas grandes de verde botella.",
+      "titulo": "Terrazo grande y audaz",
+      "descripcion": "Manchas amplias de verde botella sobre blanco, con la escala de un terrazo clásico. Es gráfico y reconocible: funciona muy bien en barras, mostradores y piezas donde el material se ve de cerca.",
+      "base": "Blanco", "veta": "Manchas verde botella", "caracter": "Gráfico y audaz",
+      "mano": "marsella", "estudio": "marsella",
+      "uso": [["barras-12", "Los doce acabados Gravitec®"], ["muestras-agua", "La familia Gravitec® al sol"], ["apilado", "Paneles Gravitec® apilados"]]
+    }
+  ]
+}

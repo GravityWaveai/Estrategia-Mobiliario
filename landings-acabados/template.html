@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{nombre}} · Acabado Gravitec® · Gravity Wave</title>
+<meta name="description" content="{{tagline}} Panel Gravitec® fabricado con redes de pesca recicladas del Mediterráneo.">
+<meta name="theme-color" content="#01313D">
+<style>
+{{fonts_css}}
+:root{--fondo:#01313D;--formentera:#00ADB5;--deep:#1E6778;--blanco:#FFFFFF;--dark:#101820;--gris:#EEF1F0;--linea:rgba(255,255,255,.14);--linea-dark:rgba(16,24,32,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'Cera Pro',Poppins,system-ui,sans-serif;font-weight:400;background:var(--fondo);color:var(--blanco);line-height:1.6;font-size:17px;overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1180px,100% - 2.5rem);margin-inline:auto}
+.eyebrow{font-weight:500;font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--formentera)}
+h1,h2,h3,.num{font-weight:900;letter-spacing:-.02em;line-height:.96;text-transform:uppercase}
+h2{font-size:clamp(2rem,4.5vw,3.4rem);margin:.6rem 0 1rem}
+h3{font-size:1.05rem;letter-spacing:0;text-transform:none;line-height:1.2}
+p{max-width:34em}
+section{padding:4.5rem 0}
+.light{background:var(--blanco);color:var(--dark)}
+.light .eyebrow{color:var(--formentera)}
+.light p{color:#2c3a42}
+.hl{color:var(--formentera)}
+.light .hl{color:var(--deep)}
+.note{font-size:.8rem;opacity:.75;max-width:40em;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:.6rem;border:1px solid var(--formentera);padding:.9rem 1.4rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem;border-radius:2px;transition:background .2s,color .2s}
+.btn:hover{background:var(--formentera);color:var(--fondo)}
+.btn.solid{background:var(--formentera);color:var(--fondo)}
+.btn.solid:hover{background:var(--blanco);border-color:var(--blanco)}
+
+/* top bar */
+.hero .top{position:absolute;inset:0 0 auto 0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 0}
+.top .logo{width:120px;color:var(--blanco)}
+.top .logo svg{width:100%;height:auto;display:block}
+.top a.all{font-weight:500;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;border-bottom:1px solid var(--formentera);padding-bottom:.25rem}
+
+/* hero */
+.hero{position:relative;min-height:92svh;display:flex;align-items:flex-end;padding:8rem 0 3.5rem;isolation:isolate;overflow:hidden}
+.hero .bg{position:absolute;inset:0;z-index:-2;background:url({{img_textura}}) center/cover no-repeat;transform:scale(1.02)}
+.hero .veil{position:absolute;inset:0;z-index:-1;background:linear-gradient(to top,rgba(1,49,61,.97) 0%,rgba(1,49,61,.72) 38%,rgba(1,49,61,.28) 70%,rgba(1,49,61,.15) 100%)}
+.hero h1{font-size:min(11.5rem,calc((100vw - 2.5rem) / (0.74 * var(--chars,8))));margin:.5rem 0 .8rem;white-space:nowrap}
+.hero .tag{font-size:clamp(1.05rem,2.2vw,1.45rem);max-width:26em;line-height:1.4}
+.hero .sub{font-weight:500;font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;opacity:.75;margin-top:1.4rem}
+.hero .content{position:relative;width:min(1180px,100% - 2.5rem);margin-inline:auto}
+
+/* muestra */
+.muestra .grid{display:grid;gap:2.5rem;align-items:center}
+.muestra figure img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:2px}
+.muestra figure.retrato img{aspect-ratio:3/4}
+.attrs{display:grid;grid-template-columns:auto 1fr;gap:.55rem 1.4rem;margin:1.6rem 0 1.4rem;border-top:1px solid var(--linea-dark);padding-top:1.2rem}
+.attrs dt{font-weight:500;font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--deep);padding-top:.35rem}
+.attrs dd{font-weight:900;font-size:1.15rem;letter-spacing:-.01em;line-height:1.25}
+
+/* cifras */
+.cifras .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2.2rem 1.5rem}
+.cifras .num{font-size:clamp(2.8rem,6vw,4.6rem);color:var(--formentera)}
+.cifras .num small{font-size:.4em;font-weight:500;letter-spacing:.05em;margin-left:.15em}
+.cifras .num .pre{display:block;font-size:.32em;font-weight:500;letter-spacing:.3em;color:var(--blanco);opacity:.7;margin-bottom:.35em}
+.cifras .lbl{font-size:.9rem;margin-top:.5rem;max-width:16em;line-height:1.4}
+
+/* uso */
+.uso .grid{display:grid;gap:1.2rem;margin-top:2rem}
+.uso figure img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:2px}
+.uso figcaption{font-size:.82rem;margin-top:.6rem;color:#2c3a42}
+.uso figcaption::before{content:"";display:inline-block;width:1.2rem;height:1px;background:var(--formentera);vertical-align:middle;margin-right:.6rem}
+
+/* tecnica */
+.tecnica .cols{display:grid;gap:3.5rem}
+.formatos{list-style:none;border-top:1px solid var(--linea)}
+.formatos li{display:grid;grid-template-columns:2.6rem 1fr auto;gap:.6rem 1rem;align-items:baseline;padding:1rem 0;border-bottom:1px solid var(--linea)}
+.formatos .t{font-weight:900;font-size:1.6rem;color:var(--formentera)}
+.formatos .m{font-weight:900;font-size:1.05rem}
+.formatos .d{font-size:.78rem;opacity:.75;grid-column:2/4}
+.formatos .p{font-size:.78rem;opacity:.75;text-align:right;white-space:nowrap}
+.props{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--linea);border:1px solid var(--linea)}
+.props div{background:var(--fondo);padding:1.1rem 1rem}
+.props .v{font-weight:900;font-size:1.6rem;letter-spacing:-.02em;line-height:1;color:var(--formentera)}
+.props .v small{font-size:.5em;font-weight:500;margin-left:.2em;color:var(--blanco);opacity:.8}
+.props .k{font-size:.72rem;letter-spacing:.06em;margin-top:.45rem;opacity:.8;line-height:1.3}
+.tecnica .textura{margin-top:2rem;padding-top:1.4rem;border-top:1px solid var(--linea)}
+
+/* trabajo */
+.chips{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.4rem}
+.chips li{list-style:none;border:1px solid var(--linea-dark);padding:.55rem .9rem;font-size:.85rem;border-radius:2px;background:var(--gris)}
+.chips.apps li{background:transparent;border-color:var(--formentera)}
+.avisos{margin-top:1.8rem;padding:1.2rem 1.4rem;border-left:3px solid var(--formentera);background:var(--gris);font-size:.88rem;display:grid;gap:.5rem}
+.trabajo .cols{display:grid;gap:3rem}
+
+/* circular */
+.circular{position:relative;isolation:isolate;overflow:hidden}
+.circular .bg{position:absolute;inset:0;z-index:-2;background:url({{img_redes}}) center/cover;opacity:.35;filter:grayscale(1)}
+.circular .veil{position:absolute;inset:0;z-index:-1;background:linear-gradient(to right,rgba(1,49,61,.98),rgba(1,49,61,.72))}
+.circular .grid{display:grid;gap:2rem;margin-top:2rem}
+.circular h3{color:var(--formentera);margin-bottom:.4rem}
+.circular p{font-size:.95rem}
+
+/* otros */
+.otros .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem}
+.otros a{display:block}
+.otros img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:2px;transition:transform .25s}
+.otros a:hover img{transform:scale(1.04)}
+.otros span{display:block;font-weight:900;font-size:.95rem;margin-top:.5rem;letter-spacing:-.01em}
+
+/* cta */
+.cta{text-align:left}
+.cta .acts{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:1.8rem}
+.cta .mail{font-weight:900;font-size:clamp(1.2rem,3.5vw,2rem);letter-spacing:-.02em;word-break:break-all;color:var(--formentera)}
+
+footer{padding:3rem 0 2.5rem;border-top:1px solid var(--linea)}
+footer .row{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap}
+footer .logo{width:130px}
+footer .pfo{font-weight:900;font-size:1.3rem;line-height:.96;letter-spacing:-.02em;text-transform:uppercase}
+footer .meta{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;opacity:.7;font-weight:500}
+
+@media (min-width:760px){
+  section{padding:6rem 0}
+  .muestra .grid{grid-template-columns:1fr 1fr;gap:4rem}
+  .cifras .grid{grid-template-columns:repeat(4,1fr)}
+  .uso .grid{grid-template-columns:repeat(3,1fr)}
+  .tecnica .cols{grid-template-columns:1fr 1.1fr;gap:4rem}
+  .props{grid-template-columns:repeat(3,1fr)}
+  .trabajo .cols{grid-template-columns:1.2fr 1fr}
+  .circular .grid{grid-template-columns:repeat(3,1fr)}
+  .otros .grid{grid-template-columns:repeat(6,1fr)}
+  .top .logo{width:150px}
+  .hero{padding-bottom:5rem}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="hero" id="top">
+  <div class="bg" role="img" aria-label="Textura del acabado {{nombre}}"></div><div class="veil"></div>
+  <div class="wrap top"><a class="logo" href="{{web_url}}" aria-label="Gravity Wave">{{logo}}</a><a class="all" href="index.html">Los 12 acabados</a></div>
+  <div class="content">
+    <p class="eyebrow">Acabado {{num}} / 12 · Gravitec®</p>
+    <h1 style="--chars:{{chars}}">{{nombre}}</h1>
+    <p class="tag">{{tagline}}</p>
+    <p class="sub">Panel de redes de pesca recicladas · Gravity Wave</p>
+  </div>
+</div>
+
+<section class="muestra light">
+  <div class="wrap grid">
+    <figure class="{{mano_clase}}"><img src="{{img_mano}}" alt="Muestra del acabado {{nombre}}" loading="eager"></figure>
+    <div>
+      <p class="eyebrow">Así es {{nombre}}</p>
+      <h2>{{titulo}}</h2>
+      <p>{{descripcion}}</p>
+      <dl class="attrs">
+        <dt>Base</dt><dd>{{base}}</dd>
+        <dt>Veta</dt><dd>{{veta}}</dd>
+        <dt>Carácter</dt><dd>{{caracter}}</dd>
+      </dl>
+      <p class="note">{{nota_muestra}}</p>
+    </div>
+  </div>
+</section>
+
+<section class="cifras">
+  <div class="wrap">
+    <p class="eyebrow">Lo que hay detrás de cada panel</p>
+    <div class="grid" style="margin-top:2rem">{{cifras}}</div>
+  </div>
+</section>
+
+<section class="uso light">
+  <div class="wrap">
+    <p class="eyebrow">Gravitec® en uso</p>
+    <h2>Del panel<br>a la pieza</h2>
+    <div class="grid">{{uso}}</div>
+  </div>
+</section>
+
+<section class="tecnica">
+  <div class="wrap">
+    <p class="eyebrow">{{grupo_nombre}}</p>
+    <h2>Formatos y<br>propiedades</h2>
+    <p style="margin-bottom:2.5rem">{{composicion}}</p>
+    <div class="cols">
+      <div>
+        <ul class="formatos">{{formatos}}</ul>
+        <div class="textura"><p class="eyebrow" style="margin-bottom:.6rem">Textura</p><p style="font-size:.95rem">{{textura}}</p></div>
+      </div>
+      <div>
+        <div class="props">{{props}}</div>
+        <p class="note" style="margin-top:1rem">{{nota_tecnica}}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trabajo light">
+  <div class="wrap cols">
+    <div>
+      <p class="eyebrow">Cómo se trabaja</p>
+      <h2>Como la madera,<br>sin astillas</h2>
+      <p>Se corta, se taladra y se lija con herramientas de carpintería. Baja absorción de agua, fácil de limpiar y apto para exterior.</p>
+      <ul class="chips">{{trabajo}}</ul>
+      <div class="avisos">{{avisos}}</div>
+    </div>
+    <div>
+      <p class="eyebrow">Dónde encaja</p>
+      <h2>Aplicaciones</h2>
+      <ul class="chips apps">{{aplicaciones}}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="circular">
+  <div class="bg"></div><div class="veil"></div>
+  <div class="wrap">
+    <p class="eyebrow">Economía circular</p>
+    <h2>Del mar a tu espacio.<br>Y de vuelta.</h2>
+    <div class="grid">{{circular}}</div>
+  </div>
+</section>
+
+<section class="otros light">
+  <div class="wrap">
+    <p class="eyebrow">Los otros once</p>
+    <h2>Elige tu acabado</h2>
+    <div class="grid">{{otros}}</div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <p class="eyebrow">¿Lo vemos en tu proyecto?</p>
+    <h2>Hablemos de {{nombre}}</h2>
+    <p>Cuéntanos qué quieres fabricar y te ayudamos con formatos, espesores, cortes a medida y plazos. Si necesitas más muestras, te las enviamos.</p>
+    <p style="margin-top:1.4rem"><a class="mail" href="mailto:{{email}}?subject=Acabado%20{{nombre_url}}%20Gravitec">{{email}}</a></p>
+    <div class="acts">
+      <a class="btn solid" href="mailto:{{email}}?subject=Acabado%20{{nombre_url}}%20Gravitec">Escríbenos</a>
+      <a class="btn" href="{{web_url}}" target="_blank" rel="noopener">{{web}}</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <div class="logo">{{logo}}</div>
+    <div class="pfo">Plastic<br>Free<br>Oceans</div>
+    <div class="meta">Gravity Wave · Calpe, Alicante · @thegravitywave</div>
+  </div>
+</footer>
+
+</body>
+</html>
