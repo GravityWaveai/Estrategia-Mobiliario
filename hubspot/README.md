@@ -253,7 +253,7 @@ del contacto, así que el puente escribe en los dos.
 
 | Id | Nombre | Qué hace ahora |
 |---|---|---|
-| `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Entra solo por «ha rellenado el formulario web» (07/09: quitados los filtros de historial, ver abajo). Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio en «Información enviada» con nombre `Mobiliario urbano — {{nombre}} {{apellidos}}` (el formulario no pide organización, así que `company` iba siempre vacío) |
+| `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Disparo **por evento** «envío del formulario web» (`eventTypeId 4-1639801`, filtrado por `hs_form_id` = nuestro formulario), con re-inscripción: **cada envío** crea su negocio, tenga el contacto el historial que tenga (07/09, ver abajo). Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio en «Información enviada» con nombre `Mobiliario urbano — {{nombre}} {{apellidos}}` (el formulario no pide organización, así que `company` iba siempre vacío) |
 | `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Entra solo por la lista 2845 (07/09: quitados los mismos filtros de historial). Ídem + añade a la lista 2841 |
 | `4839142587` | MU · Propuesta enviada | Sin cambios |
 | `4839860441` | MU · Respuesta o reunión → Muestra interés | 5 ramales: 3 nativos (sales email, reunión reservada, actividad de reunión) + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
@@ -267,6 +267,15 @@ puente (`bridge/`).
 Estado (07/09/2026): los cuatro de la vía INBOUND (`4839947487`,
 `4839860441`, `4839928017`, `4839041253`) están **activados** para la prueba
 de punta a punta; `4840005827` (OUTBOUND) sigue **desactivado**.
+
+**Por qué INBOUND dispara por evento y no por criterio (07/09):** con el
+criterio «ha rellenado el formulario», HubSpot solo inscribe a quien pasa a
+cumplirlo *por primera vez*; quien ya lo cumplía (un envío anterior) no
+entra aunque envíe el formulario otra vez, y la re-inscripción
+(`reEnrollmentTriggersFilterBranches`) no se puede fijar por API — la API
+acepta el PUT y devuelve el campo vacío. Con el disparo por evento cada
+envío del formulario es una inscripción. Consecuencia asumida: un contacto
+que envía el formulario dos veces tiene dos negocios.
 
 Los dos workflows de entrada tenían además filtros de historial
 (`hs_sales_email_last_replied IS_UNKNOWN`, `engagements_last_meeting_booked

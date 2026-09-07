@@ -73,7 +73,7 @@ VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 # "texto corto" su tope real es 30 y lo impone Apollo — el puente lo detecta
 # por el 422 y reintenta con la frase corta (ver enroll_inbound).
 LIMITE_PRODUCTOS = 60
-LIMITE_MENSAJE = 300
+LIMITE_MENSAJE = 100   # tope real del campo de texto largo de Apollo (comprobado 07/09)
 PRODUCTOS_RESUMIDOS = "una selección del catálogo"
 
 CAMPOS_APOLLO_INBOUND = {
@@ -82,6 +82,16 @@ CAMPOS_APOLLO_INBOUND = {
     "plazo_proyecto": "6a9993d8743850001cfa814f",
     "tipo_entidad": "6a9993caa7323a001c0c786c",
     "message": "6a9993bcc96c2d001cdc2d5b",
+}
+
+# Etiqueta con la que Apollo nombra cada campo en sus errores («Value for
+# Mensaje formulario is over length limit 100») -> id del campo.
+ETIQUETAS_CAMPOS_APOLLO = {
+    "Productos interés": CAMPOS_APOLLO_INBOUND["productos_interes"],
+    "Unidades estimadas": CAMPOS_APOLLO_INBOUND["unidades_estimadas"],
+    "Plazo del proyecto": CAMPOS_APOLLO_INBOUND["plazo_proyecto"],
+    "Tipo de entidad": CAMPOS_APOLLO_INBOUND["tipo_entidad"],
+    "Mensaje formulario": CAMPOS_APOLLO_INBOUND["message"],
 }
 
 # Campo personalizado de Apollo con el municipio, verificado a mano contra el
@@ -298,6 +308,42 @@ def _etiquetas(valor_hubspot, mapa):
     return ", ".join(mapa.get(v, v) for v in valor_hubspot.split(";") if v)
 
 
+def _volcar_en_apollo(email, contact_id, campos):
+    """Escribe los campos del formulario en el contacto de Apollo.
+
+    Apollo impone topes por tipo de campo (texto corto 30, texto largo 100)
+    que no se pueden configurar. Si rechaza un valor por longitud, responde
+    «Value for <campo> is over length limit <N>»: se recorta ese campo a N y
+    se reintenta, en vez de dejar al lead sin inscribir. Como mucho una
+    vuelta por campo."""
+    marca = "is over length limit "
+    for _ in range(len(campos) + 1):
+        try:
+            return write(f"volcar datos del formulario de {email} en Apollo",
+                         lambda: apollo("PATCH", f"/contacts/{contact_id}",
+                                        {"typed_custom_fields": campos}))
+        except RuntimeError as e:
+            msg = str(e)
+            if "Value for " not in msg or marca not in msg:
+                raise
+            etiqueta = msg.split("Value for ", 1)[1].split(marca, 1)[0].strip()
+            digitos = ""
+            for ch in msg.split(marca, 1)[1]:
+                if not ch.isdigit():
+                    break
+                digitos += ch
+            tope = int(digitos or 0)
+            campo = ETIQUETAS_CAMPOS_APOLLO.get(etiqueta)
+            if not campo or not tope or campo not in campos:
+                raise
+            if campo == CAMPOS_APOLLO_INBOUND["productos_interes"] and len(PRODUCTOS_RESUMIDOS) <= tope:
+                campos[campo] = PRODUCTOS_RESUMIDOS
+            else:
+                campos[campo] = campos[campo][:tope - 1] + "…"
+            log(f"  {email}: «{etiqueta}» recortado a {tope} caracteres (tope de Apollo)")
+    raise RuntimeError("no se pudieron encajar los campos en los topes de Apollo")
+
+
 def enroll_inbound(sender_id):
     """Leads del formulario web que aún no están en la secuencia."""
     # lastmodifieddate, no createdate: si el email ya existía en el CRM,
@@ -348,18 +394,7 @@ def enroll_inbound(sender_id):
                     _etiquetas(props.get("tipo_entidad"), ETIQUETAS_TIPO_ENTIDAD),
                 CAMPOS_APOLLO_INBOUND["message"]: mensaje,
             }
-            volcar = lambda cf, c=contacto: apollo("PATCH", f"/contacts/{c['id']}",
-                                                   {"typed_custom_fields": cf})
-            try:
-                write(f"volcar datos del formulario de {email} en Apollo", lambda: volcar(campos))
-            except RuntimeError as e:
-                if "over length limit" not in str(e):
-                    raise
-                # El campo sigue siendo de texto corto en Apollo (tope 30, lo
-                # impone Apollo): mejor la frase que cabe que un lead sin inscribir.
-                campos[CAMPOS_APOLLO_INBOUND["productos_interes"]] = PRODUCTOS_RESUMIDOS
-                write(f"volcar datos del formulario de {email} en Apollo (productos resumidos)",
-                      lambda: volcar(campos))
+            _volcar_en_apollo(email, contacto["id"], campos)
             write(f"inscribir {email} en INBOUND",
                   lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
             hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA,
