@@ -67,6 +67,10 @@ VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 # verdad en vez de hablar en genérico. HubSpot guarda el valor interno
 # ("banco", "6_15"...); estos diccionarios lo traducen a la etiqueta legible
 # antes de escribirlo en Apollo.
+# Los campos de tipo "texto" de Apollo admiten 30 caracteres; "Mensaje
+# formulario" es de texto largo y no tiene ese tope.
+LIMITE_TEXTO_APOLLO = 30
+
 CAMPOS_APOLLO_INBOUND = {
     "productos_interes": "6a9993622c2d76000c949670",
     "unidades_estimadas": "6a9993775f82df000c6e1af6",
@@ -206,10 +210,15 @@ def apollo_contacts(page=1, **filters):
 
 def apollo_find_by_email(email):
     res = apollo_contacts(q_keywords=email)
-    for c in res.get("contacts", []):
-        if (c.get("email") or "").lower() == email.lower():
-            return c
-    return None
+    iguales = [c for c in res.get("contacts", [])
+               if (c.get("email") or "").lower() == email.lower()]
+    if len(iguales) > 1:
+        # Apollo permite duplicar un contacto creándolo a mano aunque ya
+        # exista el que trajo el pull de HubSpot. Se sigue usando el primero
+        # (es el que ya tiene la secuencia si se inscribió antes), pero que
+        # quede en el log: las señales de Apollo se leen de ese registro.
+        log(f"  aviso: {email} tiene {len(iguales)} contactos en Apollo; se usa {iguales[0]['id']}")
+    return iguales[0] if iguales else None
 
 
 def apollo_enroll(sequence_id, contact_ids, sender_id):
@@ -221,8 +230,11 @@ def apollo_enroll(sequence_id, contact_ids, sender_id):
 
 
 def apollo_stop(sequence_id, contact_ids):
-    return apollo("POST", f"/emailer_campaigns/{sequence_id}/remove_or_stop_contact_ids", {
-        "emailer_campaign_id": sequence_id,
+    # A diferencia de add_contact_ids, esta ruta NO lleva el id de la secuencia
+    # y espera las secuencias en plural. Con el id en la ruta Apollo devolvía
+    # 404 y el puente no podía cortar ninguna secuencia.
+    return apollo("POST", "/emailer_campaigns/remove_or_stop_contact_ids", {
+        "emailer_campaign_ids": [sequence_id],
         "contact_ids": contact_ids,
         "mode": "mark_as_finished",
     })
@@ -300,6 +312,7 @@ def enroll_inbound(sender_id):
          "unidades_estimadas", "plazo_proyecto", "tipo_entidad", "message"],
     )
     log(f"INBOUND: {len(leads)} lead(s) pendientes de inscribir")
+    errores = 0
     for lead in leads:
         props = lead["properties"]
         email = props["email"]
@@ -314,9 +327,15 @@ def enroll_inbound(sender_id):
             # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
             # en genérico. Tiene que ir antes de inscribirlo: el primer correo
             # sale nada más entrar.
+            productos = _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES)
+            if len(productos) > LIMITE_TEXTO_APOLLO:
+                # El campo "Productos interés" de Apollo es de texto corto (30
+                # caracteres): con tres productos marcados ya no cabe la lista y
+                # Apollo rechaza el contacto entero. Mejor una frase que quepa
+                # que un lead sin inscribir.
+                productos = "una selección del catálogo"
             campos = {
-                CAMPOS_APOLLO_INBOUND["productos_interes"]:
-                    _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES),
+                CAMPOS_APOLLO_INBOUND["productos_interes"]: productos,
                 CAMPOS_APOLLO_INBOUND["unidades_estimadas"]:
                     _etiquetas(props.get("unidades_estimadas"), ETIQUETAS_UNIDADES_ESTIMADAS),
                 CAMPOS_APOLLO_INBOUND["plazo_proyecto"]:
@@ -338,6 +357,11 @@ def enroll_inbound(sender_id):
             # try/except, una sola excepción aquí mataba también OUTBOUND
             # y REBOTES en cada pasada, aunque no tuvieran nada que ver.
             log(f"  {email}: ERROR al inscribir en INBOUND — {e}")
+            errores += 1
+    if errores:
+        # Que la pasada salga en rojo en Actions: si no, dos leads fallando
+        # cada hora pasan por una ejecución "correcta".
+        raise RuntimeError(f"{errores} lead(s) no se pudieron inscribir (ver arriba)")
 
 
 def enroll_outbound(sender_id):
