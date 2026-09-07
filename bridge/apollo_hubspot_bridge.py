@@ -20,7 +20,10 @@ Apollo envía los correos; HubSpot es el CRM y el pipeline. Este script es la
                 saberlo: un correo que no llegó nunca no genera actividad.
 
 Es idempotente: `apollo_estado` en HubSpot hace de memoria, así que se puede
-relanzar sin duplicar inscripciones.
+relanzar sin duplicar inscripciones. Al inscribir (INBOUND y OUTBOUND) se
+guarda también `apollo_fecha_inscripcion`: las señales de parada solo cuentan
+si son posteriores, para que el historial previo de un contacto que ya estaba
+en el CRM no se confunda con una reacción a esta campaña.
 
 Variables de entorno:
   HUBSPOT_TOKEN          token de la app privada de HubSpot   (obligatorio)
@@ -108,6 +111,17 @@ ESTADO_SOLO_APOLLO = {
 # Estados desde los que todavía se puede pasar a «respondido»
 EN_CURSO = ["enviado", "abierto"]
 
+# Cuándo se inscribió el contacto en Apollo. Las señales de parada (respuesta,
+# reunión, correo entrante) solo cuentan si son posteriores: un contacto que
+# ya estaba en el CRM puede traer respuestas o reuniones de hace años que no
+# tienen nada que ver con esta campaña.
+FECHA_INSCRIPCION = "apollo_fecha_inscripcion"
+
+# Propiedades del puente que existen también en el objeto negocio. Las demás
+# (campana_apollo, municipio, apollo_fecha_inscripcion) solo están en el
+# contacto: mandarlas al negocio hace que HubSpot rechace el PATCH entero.
+PROPS_NEGOCIO = {"apollo_estado", "apollo_fecha_respuesta"}
+
 
 def _req(url, method, headers, body=None):
     data = json.dumps(body).encode() if body is not None else None
@@ -148,6 +162,28 @@ def write(label, fn):
         log(f"    [simulacro] {label}")
         return None
     return fn()
+
+
+def _ahora():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _ts(valor):
+    """Fecha tal y como la devuelve HubSpot (ISO 8601 o epoch en ms) -> datetime."""
+    if not valor:
+        return None
+    if str(valor).isdigit():
+        return datetime.fromtimestamp(int(valor) / 1000, tz=timezone.utc)
+    return datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+
+
+def _tras_inscripcion(fecha, props):
+    """True si `fecha` es posterior a la inscripción del contacto en Apollo.
+    Si no consta la inscripción no se descarta nada, para no perder señales
+    por falta de dato."""
+    inscrito = _ts(props.get(FECHA_INSCRIPCION))
+    f = _ts(fecha)
+    return not inscrito or not f or f >= inscrito
 
 
 # --------------------------------------------------------------------------
@@ -208,16 +244,29 @@ def hs_search_contacts(filter_groups, properties):
 
 
 def hs_deal_ids(contact_id):
+    """Negocios del contacto en el pipeline de Mobiliario Urbano — solo esos.
+    Un contacto puede tener negocios de otros pipelines (cliente de otra línea,
+    pruebas antiguas) y el puente no debe tocarlos."""
     res = hs("GET", f"/crm/v4/objects/contacts/{contact_id}/associations/deals")
-    return [r["toObjectId"] for r in res.get("results", [])]
+    ids = [str(r["toObjectId"]) for r in res.get("results", [])]
+    if not ids:
+        return []
+    lote = hs("POST", "/crm/v3/objects/deals/batch/read",
+              {"inputs": [{"id": i} for i in ids], "properties": ["pipeline"]})
+    return [d["id"] for d in lote.get("results", [])
+            if d["properties"].get("pipeline") == PIPELINE]
 
 
 def hs_stamp(contact_id, props):
-    """Escribe las propiedades en el contacto y en sus negocios del pipeline."""
+    """Escribe las propiedades en el contacto y, las que existen allí, en sus
+    negocios del pipeline."""
     write(f"contacto {contact_id} <- {props}",
           lambda: hs("PATCH", f"/crm/v3/objects/contacts/{contact_id}", {"properties": props}))
-    for deal_id in (hs_deal_ids(contact_id) if ENABLED else []):
-        hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": props})
+    en_negocio = {k: v for k, v in props.items() if k in PROPS_NEGOCIO}
+    if not en_negocio or not ENABLED:
+        return
+    for deal_id in hs_deal_ids(contact_id):
+        hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": en_negocio})
 
 
 # --------------------------------------------------------------------------
@@ -280,7 +329,8 @@ def enroll_inbound(sender_id):
                                                         {"typed_custom_fields": cf}))
             write(f"inscribir {email} en INBOUND",
                   lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
-            hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA})
+            hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA,
+                                  FECHA_INSCRIPCION: _ahora()})
         except Exception as e:
             # Un lead roto (p. ej. la API key de Apollo sin permiso de
             # escritura) no debe tumbar el resto de la pasada: sin este
@@ -324,7 +374,7 @@ def enroll_outbound(sender_id):
         )
     }
     pendientes = [c["id"] for email, c in candidatos.items() if email.lower() not in ya_procesados]
-    municipio_de = {email: (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
+    municipio_de = {email.lower(): (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
                     for email, c in candidatos.items() if email.lower() not in ya_procesados}
     saltados = len(candidatos) - len(pendientes)
 
@@ -351,16 +401,21 @@ def enroll_outbound(sender_id):
     # pueblo mal o en blanco aunque el correo esté perfecto.
     en_hubspot = hs_search_contacts(
         [{"filters": [{"propertyName": "email", "operator": "IN", "values": list(municipio_de)}]}],
-        ["email", "campana_apollo", "municipio"],
+        ["email", "campana_apollo", "municipio", "apollo_estado"],
     )
     marcados = 0
     for h in en_hubspot:
         props = {}
         if h["properties"].get("campana_apollo") != CAMPANA:
             props["campana_apollo"] = CAMPANA
-        municipio = municipio_de.get(h["properties"]["email"])
+        municipio = municipio_de.get((h["properties"].get("email") or "").lower())
         if municipio and h["properties"].get("municipio") != municipio:
             props["municipio"] = municipio
+        # Sin apollo_estado el contacto es invisible para el resto del puente:
+        # ni respuesta, ni reunión, ni descarte lo tocarían nunca.
+        if not h["properties"].get("apollo_estado"):
+            props["apollo_estado"] = "enviado"
+            props[FECHA_INSCRIPCION] = _ahora()
         if props:
             hs_stamp(h["id"], props)
             marcados += 1
@@ -395,8 +450,13 @@ def sync_replies():
             {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO + ["finalizado"]},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
         ]}],
-        ["email", "apollo_estado", "hs_sales_email_last_replied"],
+        ["email", "apollo_estado", "hs_sales_email_last_replied", FECHA_INSCRIPCION],
     )
+    # Solo cuenta la respuesta posterior a la inscripción: un contacto que ya
+    # estaba en el CRM puede traer una respuesta de hace meses a otro correo.
+    respondieron = [h for h in respondieron
+                    if _tras_inscripcion(h["properties"]["hs_sales_email_last_replied"],
+                                         h["properties"])]
     log(f"RESPUESTA: {len(respondieron)} contacto(s) han respondido")
     for h in respondieron:
         props = h["properties"]
@@ -505,11 +565,14 @@ def stop_when_engaged():
              "values": ["respondido", "reunion_agendada", "baja"]},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
          ]}],
-        ["email", "apollo_estado"],
+        ["email", "apollo_estado", "engagements_last_meeting_booked", FECHA_INSCRIPCION],
     )
     for h in por_contacto:
         props = h["properties"]
         if props["apollo_estado"] in EN_CURSO + ["finalizado"]:  # llegó por la reunión
+            # Una reunión de antes de la campaña no es una señal de esta.
+            if not _tras_inscripcion(props.get("engagements_last_meeting_booked"), props):
+                continue
             era_finalizado = props["apollo_estado"] == "finalizado"
             hs_stamp(h["id"], {"apollo_estado": "reunion_agendada"})
             if era_finalizado:
@@ -564,7 +627,7 @@ def stop_on_any_inbound():
             {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
             {"propertyName": "email", "operator": "HAS_PROPERTY"},
         ]}],
-        ["email", "apollo_estado"],
+        ["email", "apollo_estado", FECHA_INSCRIPCION],
     )
     if not activos:
         log("ENTRANTES: no hay contactos en cadencia")
@@ -586,8 +649,10 @@ def stop_on_any_inbound():
         })
         for e in res.get("results", []):
             remitente = (e["properties"].get("hs_email_from_email") or "").lower()
-            if remitente in por_email:
-                parar.add(por_email[remitente]["id"])
+            h = por_email.get(remitente)
+            # Un correo suyo anterior a la inscripción no es respuesta a esta campaña.
+            if h and _tras_inscripcion(e["properties"].get("hs_timestamp"), h["properties"]):
+                parar.add(h["id"])
 
     for h in activos:
         if h["id"] in parar:

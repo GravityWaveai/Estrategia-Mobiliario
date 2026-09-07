@@ -253,8 +253,8 @@ del contacto, así que el puente escribe en los dos.
 
 | Id | Nombre | Qué hace ahora |
 |---|---|---|
-| `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio |
-| `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Ídem + añade a la lista 2841 |
+| `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Entra solo por «ha rellenado el formulario web» (07/09: quitados los filtros de historial, ver abajo). Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio en «Información enviada» con nombre `Mobiliario urbano — {{nombre}} {{apellidos}}` (el formulario no pide organización, así que `company` iba siempre vacío) |
+| `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Entra solo por la lista 2845 (07/09: quitados los mismos filtros de historial). Ídem + añade a la lista 2841 |
 | `4839142587` | MU · Propuesta enviada | Sin cambios |
 | `4839860441` | MU · Respuesta o reunión → Muestra interés | 5 ramales: 3 nativos (sales email, reunión reservada, actividad de reunión) + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
 | `4839928017` | MU · Reunión agendada | 3 ramales: los 2 nativos + `apollo_estado = reunion_agendada` |
@@ -264,7 +264,20 @@ Los dos primeros perdieron el paso de inscripción en secuencia: esa acción
 también está bloqueada por suscripción en la UI. La inscripción la hace el
 puente (`bridge/`).
 
-Los seis están **desactivados** a la espera de la prueba de punta a punta.
+Estado (07/09/2026): los cuatro de la vía INBOUND (`4839947487`,
+`4839860441`, `4839928017`, `4839041253`) están **activados** para la prueba
+de punta a punta; `4840005827` (OUTBOUND) sigue **desactivado**.
+
+Los dos workflows de entrada tenían además filtros de historial
+(`hs_sales_email_last_replied IS_UNKNOWN`, `engagements_last_meeting_booked
+IS_UNKNOWN`, y en OUTBOUND también `hs_email_last_reply_date IS_UNKNOWN`) que
+se quitaron el 07/09: bloqueaban la entrada —y por tanto la creación del
+negocio— a cualquier contacto que alguna vez hubiera respondido a un correo
+de ventas o reservado una reunión, aunque fuera de otro asunto y de hace
+años. Fue lo que dejó sin negocio al lead de prueba `irenehurt@hotmail.com`
+(respuesta de julio a otro correo). El «no molestar a quien ya está en
+conversación» lo decide el puente comparando fechas con
+`apollo_fecha_inscripcion`, no el workflow.
 
 `4839860441` tenía además una sexta rama (`hs_latest_marketing_email_reply_date
 IS_KNOWN`) que se ha quitado (04/09): esa propiedad no existe en el portal
