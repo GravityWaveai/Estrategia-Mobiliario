@@ -312,9 +312,20 @@ def hs_deal_ids(contact_id):
             if d["properties"].get("pipeline") == PIPELINE]
 
 
+# Contactos sellados en esta pasada. El índice de búsqueda de HubSpot tarda
+# unos segundos en reflejar un PATCH, así que una fase posterior que busque
+# «contactos en curso» todavía ve el estado viejo: el 07/09 RESPUESTA marcó a
+# un contacto como respondido y, 3 s después, SIN RESPUESTA lo encontró aún
+# «enviado», vio su secuencia terminada (la acabábamos de parar nosotros) y lo
+# pasó a finalizado y su negocio a Descartado. Lo que ya se selló en la pasada
+# no se vuelve a evaluar hasta la siguiente.
+SELLADOS = set()
+
+
 def hs_stamp(contact_id, props):
     """Escribe las propiedades en el contacto y, las que existen allí, en sus
     negocios del pipeline."""
+    SELLADOS.add(contact_id)
     write(f"contacto {contact_id} <- {props}",
           lambda: hs("PATCH", f"/crm/v3/objects/contacts/{contact_id}", {"properties": props}))
     en_negocio = {k: v for k, v in props.items() if k in PROPS_NEGOCIO}
@@ -681,6 +692,8 @@ def stop_when_engaged():
         ["email", "apollo_estado", "engagements_last_meeting_booked", FECHA_INSCRIPCION],
     )
     for h in por_contacto:
+        if h["id"] in SELLADOS:
+            continue
         props = h["properties"]
         if props["apollo_estado"] in EN_CURSO + ["finalizado"]:  # llegó por la reunión
             # Una reunión de antes de la campaña no es una señal de esta.
@@ -742,6 +755,7 @@ def stop_on_any_inbound():
         ]}],
         ["email", "apollo_estado", FECHA_INSCRIPCION],
     )
+    activos = [h for h in activos if h["id"] not in SELLADOS]
     if not activos:
         log("ENTRANTES: no hay contactos en cadencia")
         return
@@ -792,6 +806,7 @@ def mark_sin_respuesta():
         ]}],
         ["email", "apollo_estado"],
     )
+    activos = [h for h in activos if h["id"] not in SELLADOS]
     descartados = 0
     for h in activos:
         contacto = apollo_find_by_email(h["properties"]["email"])

@@ -243,6 +243,14 @@ key de Apollo, no algo que se arregle desde este repo.
   `/emailer_campaigns/remove_or_stop_contact_ids`, con `emailer_campaign_ids`
   en plural en el cuerpo. Sin esto, RESPUESTA y PARADA marcaban el estado en
   HubSpot pero el contacto seguía recibiendo correos.
+- **Una respuesta pasaba a «Descartado» en la misma pasada.** RESPUESTA
+  sellaba `respondido` y paraba la secuencia; 3 segundos después SIN
+  RESPUESTA buscaba «contactos en curso», el índice de búsqueda de HubSpot
+  aún devolvía el estado viejo, veía la secuencia terminada (la acabábamos
+  de parar nosotros) y marcaba `finalizado` + negocio a Descartado. La
+  pasada siguiente lo deshacía. Ahora `hs_stamp()` apunta cada contacto
+  sellado (`SELLADOS`) y PARADA, ENTRANTES y SIN RESPUESTA no reevalúan en
+  la misma pasada a nadie que ya se haya sellado.
 - **"Productos interés" en Apollo es un campo de texto corto (30
   caracteres)**: con tres productos marcados («Banco, Papelera, Parque
   infantil», 32) Apollo rechazaba el contacto entero y el lead no se
