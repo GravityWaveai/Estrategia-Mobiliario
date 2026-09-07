@@ -221,11 +221,17 @@ key de Apollo, no algo que se arregle desde este repo.
 - **"Productos interés" en Apollo es un campo de texto corto (30
   caracteres)**: con tres productos marcados («Banco, Papelera, Parque
   infantil», 32) Apollo rechazaba el contacto entero y el lead no se
-  inscribía. Si la lista no cabe, el puente escribe «una selección del
-  catálogo» y sigue. Para que el correo cite la lista completa hay que
-  cambiar ese campo a texto largo en Apollo (Settings → Custom Fields):
-  si al hacerlo cambia el id, actualizar `CAMPOS_APOLLO_INBOUND`.
-  «Mensaje formulario» ya es de texto largo.
+  inscribía. El puente pone sus propios topes a lo que escribe — la lista
+  de productos hasta `LIMITE_PRODUCTOS` (60) y el mensaje hasta
+  `LIMITE_MENSAJE` (300) — y, si Apollo aun así devuelve «over length
+  limit» porque el campo sigue siendo de texto corto, reintenta con «una
+  selección del catálogo». Los límites de Apollo no se pueden fijar a un
+  número: los marca el tipo de campo (texto corto = 30 fijo; texto largo =
+  sin ese tope), y el tipo solo se cambia desde su interfaz (Settings →
+  Custom Fields), no por API. Para que el correo cite la lista completa hay
+  que pasar «Productos interés» a texto largo; si al hacerlo cambia el id,
+  actualizar `CAMPOS_APOLLO_INBOUND`. «Mensaje formulario» ya es de texto
+  largo.
 - **Apollo puede tener dos contactos con el mismo email** (uno creado a mano
   y otro traído del pull de HubSpot). El puente usa el primero que devuelve
   la búsqueda y lo avisa en el log; conviene borrar el duplicado a mano.

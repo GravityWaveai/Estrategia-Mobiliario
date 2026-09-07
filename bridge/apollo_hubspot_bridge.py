@@ -67,9 +67,14 @@ VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 # verdad en vez de hablar en genérico. HubSpot guarda el valor interno
 # ("banco", "6_15"...); estos diccionarios lo traducen a la etiqueta legible
 # antes de escribirlo en Apollo.
-# Los campos de tipo "texto" de Apollo admiten 30 caracteres; "Mensaje
-# formulario" es de texto largo y no tiene ese tope.
-LIMITE_TEXTO_APOLLO = 30
+# Topes de lo que se escribe en Apollo. La lista de productos se cita en el
+# correo, así que se recorta a una frase si no cabe; el mensaje solo es
+# contexto para Amaia y se trunca. Ojo: si el campo de Apollo es de tipo
+# "texto corto" su tope real es 30 y lo impone Apollo — el puente lo detecta
+# por el 422 y reintenta con la frase corta (ver enroll_inbound).
+LIMITE_PRODUCTOS = 60
+LIMITE_MENSAJE = 300
+PRODUCTOS_RESUMIDOS = "una selección del catálogo"
 
 CAMPOS_APOLLO_INBOUND = {
     "productos_interes": "6a9993622c2d76000c949670",
@@ -328,12 +333,11 @@ def enroll_inbound(sender_id):
             # en genérico. Tiene que ir antes de inscribirlo: el primer correo
             # sale nada más entrar.
             productos = _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES)
-            if len(productos) > LIMITE_TEXTO_APOLLO:
-                # El campo "Productos interés" de Apollo es de texto corto (30
-                # caracteres): con tres productos marcados ya no cabe la lista y
-                # Apollo rechaza el contacto entero. Mejor una frase que quepa
-                # que un lead sin inscribir.
-                productos = "una selección del catálogo"
+            if len(productos) > LIMITE_PRODUCTOS:
+                productos = PRODUCTOS_RESUMIDOS
+            mensaje = props.get("message") or ""
+            if len(mensaje) > LIMITE_MENSAJE:
+                mensaje = mensaje[:LIMITE_MENSAJE - 1] + "…"
             campos = {
                 CAMPOS_APOLLO_INBOUND["productos_interes"]: productos,
                 CAMPOS_APOLLO_INBOUND["unidades_estimadas"]:
@@ -342,11 +346,20 @@ def enroll_inbound(sender_id):
                     _etiquetas(props.get("plazo_proyecto"), ETIQUETAS_PLAZO_PROYECTO),
                 CAMPOS_APOLLO_INBOUND["tipo_entidad"]:
                     _etiquetas(props.get("tipo_entidad"), ETIQUETAS_TIPO_ENTIDAD),
-                CAMPOS_APOLLO_INBOUND["message"]: props.get("message") or "",
+                CAMPOS_APOLLO_INBOUND["message"]: mensaje,
             }
-            write(f"volcar datos del formulario de {email} en Apollo",
-                  lambda c=contacto, cf=campos: apollo("PATCH", f"/contacts/{c['id']}",
-                                                        {"typed_custom_fields": cf}))
+            volcar = lambda cf, c=contacto: apollo("PATCH", f"/contacts/{c['id']}",
+                                                   {"typed_custom_fields": cf})
+            try:
+                write(f"volcar datos del formulario de {email} en Apollo", lambda: volcar(campos))
+            except RuntimeError as e:
+                if "over length limit" not in str(e):
+                    raise
+                # El campo sigue siendo de texto corto en Apollo (tope 30, lo
+                # impone Apollo): mejor la frase que cabe que un lead sin inscribir.
+                campos[CAMPOS_APOLLO_INBOUND["productos_interes"]] = PRODUCTOS_RESUMIDOS
+                write(f"volcar datos del formulario de {email} en Apollo (productos resumidos)",
+                      lambda: volcar(campos))
             write(f"inscribir {email} en INBOUND",
                   lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
             hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA,
