@@ -11,7 +11,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
-| **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
+| **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
@@ -98,6 +98,31 @@ negocio las propiedades que existen en ese objeto (`apollo_estado`,
 PATCH entero si va una que no existe. Y solo toca los negocios del pipeline
 de Mobiliario Urbano: un contacto puede tener negocios de otras líneas de
 Gravity Wave y el puente no debe pisarlos.
+
+## INBOUND no depende del pull nativo
+
+Un lead del formulario llega a Apollo, en condiciones normales, por la
+integración nativa Apollo ↔ HubSpot (pull cada ~10 min). El puente le da
+`ESPERA_PULL_MIN` (15) minutos desde el envío del formulario
+(`recent_conversion_date`): si en ese plazo el contacto aparece, se usa ese
+—queda enlazado al id de HubSpot y no hay duplicados—. Si no, **el puente
+crea el contacto en Apollo por API** (nombre, apellidos, email, empresa,
+cargo y teléfono, tal y como los dio en el formulario) y lo inscribe en esa
+misma pasada. Al crear por API, Apollo actualiza el contacto existente si ya
+hubiera uno con ese email, en vez de duplicarlo.
+
+Por qué: el 07/09 la integración dejó de traer durante horas un contacto que
+se había actualizado varias veces en HubSpot, y sin este paso el lead se
+quedaba en «todavía no está en Apollo, se reintenta en la próxima pasada»
+indefinidamente —y, peor, en silencio: pasados 30 días sin cambios en la
+ficha salía del filtro de INBOUND y no se inscribía nunca. Ahora el peor
+caso es que un formulario enviado en los 15 min anteriores a una pasada
+espere a la siguiente (una hora).
+
+Si el pull trajera más tarde un segundo registro con el mismo email,
+`apollo_find_by_email()` prefiere el que ya está en una de nuestras
+secuencias, así que las señales (respuesta, rebote, parada) se siguen
+leyendo del contacto correcto.
 
 ## Descarte automático sin respuesta
 
@@ -235,8 +260,10 @@ key de Apollo, no algo que se arregle desde este repo.
   hay que pasar «Productos interés» a texto largo; si al hacerlo cambia el
   id, actualizar `CAMPOS_APOLLO_INBOUND` y `ETIQUETAS_CAMPOS_APOLLO`.
 - **Apollo puede tener dos contactos con el mismo email** (uno creado a mano
-  y otro traído del pull de HubSpot). El puente usa el primero que devuelve
-  la búsqueda y lo avisa en el log; conviene borrar el duplicado a mano.
+  o por el puente y otro traído del pull de HubSpot). El puente prefiere el
+  que está en una de nuestras secuencias y, si ninguno lo está, el primero
+  que devuelve la búsqueda; lo avisa en el log. Conviene borrar el duplicado
+  a mano.
 - Un lead que falla ya pone la pasada en rojo en Actions: antes dos leads
   fallando cada hora pasaban por una ejecución correcta.
 
