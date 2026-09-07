@@ -174,7 +174,8 @@ def _ts(valor):
         return None
     if str(valor).isdigit():
         return datetime.fromtimestamp(int(valor) / 1000, tz=timezone.utc)
-    return datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+    dt = datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def _tras_inscripcion(fecha, props):
