@@ -256,9 +256,9 @@ del contacto, así que el puente escribe en los dos.
 | `4839947487` | MU · INBOUND — Lead web (propiedades y negocio) | Disparo **por evento** «envío del formulario web» (`eventTypeId 4-1639801`, filtrado por `hs_form_id` = nuestro formulario), con re-inscripción: **cada envío** crea su negocio, tenga el contacto el historial que tenga (07/09, ver abajo). Propietario, `inbound__outbound`, `lifecyclestage`, crea el negocio en «Información enviada» con nombre `Mobiliario urbano — {{nombre}} {{apellidos}}` (el formulario no pide organización, así que `company` iba siempre vacío) |
 | `4840005827` | MU · OUTBOUND — Ayuntamientos (propiedades y negocio) | Entra solo por la lista 2845 (07/09: quitados los mismos filtros de historial). Ídem + añade a la lista 2841 |
 | `4839142587` | MU · Propuesta enviada | Sin cambios |
-| `4839860441` | MU · Respuesta o reunión → Muestra interés | 5 ramales: 3 nativos (sales email, reunión reservada, actividad de reunión) + `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno |
-| `4839928017` | MU · Reunión agendada | 3 ramales: los 2 nativos + `apollo_estado = reunion_agendada` |
-| `4839041253` | MU · Reunión realizada → Negociación | Sin cambios |
+| `4839860441` | MU · Respuesta o reunión → Muestra interés | **2 ramales** (07/09, ver abajo): `apollo_estado = respondido` + `apollo_fecha_respuesta` relleno. Quitados los 3 ramales nativos (sales email, reunión reservada, actividad de reunión) |
+| `4839928017` | MU · Reunión agendada | **1 ramal** (07/09): `apollo_estado = reunion_agendada`. Quitados los 2 ramales nativos |
+| `4839041253` | MU · Reunión realizada → Negociación | Sin cambios — protegido en cascada: solo se entra desde «Reunión Agendada», y a esa etapa ya no se llega por historial nativo |
 
 Los dos primeros perdieron el paso de inscripción en secuencia: esa acción
 también está bloqueada por suscripción en la UI. La inscripción la hace el
@@ -287,6 +287,33 @@ años. Fue lo que dejó sin negocio al lead de prueba `irenehurt@hotmail.com`
 (respuesta de julio a otro correo). El «no molestar a quien ya está en
 conversación» lo decide el puente comparando fechas con
 `apollo_fecha_inscripcion`, no el workflow.
+
+**El mismo fallo, más adelante en el embudo (07/09)**: `4839860441` y
+`4839928017` tenían el problema inverso y más grave — no bloqueaban la
+entrada, la *forzaban*: cualquier negocio nuevo de un contacto con
+`hs_latest_sales_email_reply_date`, `engagements_last_meeting_booked` o
+`hs_latest_meeting_activity` rellenos (de cualquier fecha, de cualquier
+asunto) saltaba directamente a «Muestra interés» o «Reunión Agendada» al
+crearse, sin que hubiera pasado nada de verdad en esta campaña. Se
+descubrió con `irene@thegravitywave.com` (dirección interna, con años de
+actividad real en el CRM): su negocio de prueba nació ya en «Muestra
+interés». Cualquier contacto con historial —compañeros, leads antiguos,
+cualquiera que ya haya interactuado con Gravity Wave antes— habría dado el
+mismo falso positivo, y con muchos ayuntamientos de OUTBOUND que llevan
+años de trato es exactamente el caso normal, no la excepción.
+
+Se quitaron esas ramas nativas de ambos workflows. Ahora solo reaccionan a
+`apollo_estado` / `apollo_fecha_respuesta`, que el puente ya escribe con la
+comparación de fecha correcta (`apollo_fecha_inscripcion` — ver
+`bridge/README.md`). `4839041253` no necesitó tocarse: solo entra desde
+«Reunión Agendada», y a esa etapa ya no se llega por historial nativo, así
+que queda protegido en cascada.
+
+**Coste asumido**: antes la etapa cambiaba casi al instante al detectar la
+señal nativa; ahora depende de que el puente corra (hasta 1h de retraso,
+la pasada horaria). Es el precio de que sea correcto — con reinscripciones
+de contactos con historial real, que van a ser la mayoría, la velocidad no
+compensaba los falsos positivos.
 
 `4839860441` tenía además una sexta rama (`hs_latest_marketing_email_reply_date
 IS_KNOWN`) que se ha quitado (04/09): esa propiedad no existe en el portal
