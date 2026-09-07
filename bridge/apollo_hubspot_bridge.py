@@ -76,6 +76,10 @@ LIMITE_PRODUCTOS = 60
 LIMITE_MENSAJE = 100   # tope real del campo de texto largo de Apollo (comprobado 07/09)
 PRODUCTOS_RESUMIDOS = "una selección del catálogo"
 
+# Minutos que se le dan al pull nativo HubSpot->Apollo para traer un lead del
+# formulario antes de que el puente cree el contacto en Apollo por su cuenta.
+ESPERA_PULL_MIN = 15
+
 CAMPOS_APOLLO_INBOUND = {
     "productos_interes": "6a9993622c2d76000c949670",
     "unidades_estimadas": "6a9993775f82df000c6e1af6",
@@ -228,12 +232,35 @@ def apollo_find_by_email(email):
     iguales = [c for c in res.get("contacts", [])
                if (c.get("email") or "").lower() == email.lower()]
     if len(iguales) > 1:
-        # Apollo permite duplicar un contacto creándolo a mano aunque ya
-        # exista el que trajo el pull de HubSpot. Se sigue usando el primero
-        # (es el que ya tiene la secuencia si se inscribió antes), pero que
-        # quede en el log: las señales de Apollo se leen de ese registro.
-        log(f"  aviso: {email} tiene {len(iguales)} contactos en Apollo; se usa {iguales[0]['id']}")
+        # Apollo permite duplicar un contacto (uno creado a mano o por el
+        # puente y otro traído después por el pull de HubSpot). Se prefiere
+        # el que ya está en una de nuestras secuencias: es del que hay que
+        # leer el estado y al que hay que parar. Si ninguno lo está, el
+        # primero. Que quede en el log, en cualquier caso.
+        nuestras = {SEQ_INBOUND, SEQ_OUTBOUND}
+        en_secuencia = [c for c in iguales
+                        if nuestras & set(c.get("emailer_campaign_ids") or [])]
+        elegido = (en_secuencia or iguales)[0]
+        log(f"  aviso: {email} tiene {len(iguales)} contactos en Apollo; se usa {elegido['id']}")
+        return elegido
     return iguales[0] if iguales else None
+
+
+def apollo_create_contact(props):
+    """Crea en Apollo el contacto de un lead del formulario con sus datos de
+    identidad. Los campos del formulario van después, por `_volcar_en_apollo`,
+    que es quien sabe recortarlos a los topes de Apollo. Si Apollo ya tuviera
+    ese email, devuelve el existente en vez de duplicarlo."""
+    body = {"email": props["email"]}
+    for prop_hs, prop_apollo in (("firstname", "first_name"), ("lastname", "last_name"),
+                                 ("company", "organization_name"), ("jobtitle", "title"),
+                                 ("phone", "direct_phone")):
+        if props.get(prop_hs):
+            body[prop_apollo] = props[prop_hs]
+    contacto = apollo("POST", "/contacts", body).get("contact")
+    if not contacto or not contacto.get("id"):
+        raise RuntimeError(f"Apollo no devolvió el contacto creado para {props['email']}")
+    return contacto
 
 
 def apollo_enroll(sequence_id, contact_ids, sender_id):
@@ -359,7 +386,8 @@ def enroll_inbound(sender_id):
             {"propertyName": "apollo_estado", "operator": "NOT_HAS_PROPERTY"},
             {"propertyName": "lastmodifieddate", "operator": "GTE", "value": desde},
         ]}],
-        ["email", "firstname", "apollo_estado", "productos_interes",
+        ["email", "firstname", "lastname", "company", "jobtitle", "phone",
+         "recent_conversion_date", "apollo_estado", "productos_interes",
          "unidades_estimadas", "plazo_proyecto", "tipo_entidad", "message"],
     )
     log(f"INBOUND: {len(leads)} lead(s) pendientes de inscribir")
@@ -370,9 +398,21 @@ def enroll_inbound(sender_id):
         try:
             contacto = apollo_find_by_email(email)
             if not contacto:
-                # El pull de HubSpot->Apollo tarda hasta 15 min; se reintenta luego.
-                log(f"  {email}: todavía no está en Apollo, se reintenta en la próxima pasada")
-                continue
+                # Lo normal es que el pull nativo HubSpot->Apollo traiga al lead
+                # en ~10 min, y se le da esa oportunidad (así el contacto queda
+                # enlazado al CRM y no hay duplicados). Si no llega, el puente
+                # lo crea él mismo: INBOUND no debe depender de la integración
+                # nativa ni el lead quedarse horas —o para siempre— esperando.
+                formulario = _ts(props.get("recent_conversion_date"))
+                espera = datetime.now(timezone.utc) - formulario if formulario else None
+                if espera is not None and espera < timedelta(minutes=ESPERA_PULL_MIN):
+                    log(f"  {email}: todavía no está en Apollo; se espera al pull nativo "
+                        f"hasta la próxima pasada ({ESPERA_PULL_MIN} min desde el formulario)")
+                    continue
+                log(f"  {email}: no está en Apollo pasados {ESPERA_PULL_MIN} min; lo crea el puente")
+                contacto = write(f"crear {email} en Apollo", lambda: apollo_create_contact(props))
+                if not contacto:
+                    continue   # simulacro: sin id no hay nada más que anunciar
 
             # Vuelca lo que contó en el formulario a los campos personalizados de
             # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
