@@ -253,33 +253,40 @@ def enroll_inbound(sender_id):
     for lead in leads:
         props = lead["properties"]
         email = props["email"]
-        contacto = apollo_find_by_email(email)
-        if not contacto:
-            # El pull de HubSpot->Apollo tarda hasta 15 min; se reintenta luego.
-            log(f"  {email}: todavía no está en Apollo, se reintenta en la próxima pasada")
-            continue
+        try:
+            contacto = apollo_find_by_email(email)
+            if not contacto:
+                # El pull de HubSpot->Apollo tarda hasta 15 min; se reintenta luego.
+                log(f"  {email}: todavía no está en Apollo, se reintenta en la próxima pasada")
+                continue
 
-        # Vuelca lo que contó en el formulario a los campos personalizados de
-        # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
-        # en genérico. Tiene que ir antes de inscribirlo: el primer correo
-        # sale nada más entrar.
-        campos = {
-            CAMPOS_APOLLO_INBOUND["productos_interes"]:
-                _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES),
-            CAMPOS_APOLLO_INBOUND["unidades_estimadas"]:
-                _etiquetas(props.get("unidades_estimadas"), ETIQUETAS_UNIDADES_ESTIMADAS),
-            CAMPOS_APOLLO_INBOUND["plazo_proyecto"]:
-                _etiquetas(props.get("plazo_proyecto"), ETIQUETAS_PLAZO_PROYECTO),
-            CAMPOS_APOLLO_INBOUND["tipo_entidad"]:
-                _etiquetas(props.get("tipo_entidad"), ETIQUETAS_TIPO_ENTIDAD),
-            CAMPOS_APOLLO_INBOUND["message"]: props.get("message") or "",
-        }
-        write(f"volcar datos del formulario de {email} en Apollo",
-              lambda c=contacto, cf=campos: apollo("PATCH", f"/contacts/{c['id']}",
-                                                    {"typed_custom_fields": cf}))
-        write(f"inscribir {email} en INBOUND",
-              lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
-        hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA})
+            # Vuelca lo que contó en el formulario a los campos personalizados de
+            # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
+            # en genérico. Tiene que ir antes de inscribirlo: el primer correo
+            # sale nada más entrar.
+            campos = {
+                CAMPOS_APOLLO_INBOUND["productos_interes"]:
+                    _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES),
+                CAMPOS_APOLLO_INBOUND["unidades_estimadas"]:
+                    _etiquetas(props.get("unidades_estimadas"), ETIQUETAS_UNIDADES_ESTIMADAS),
+                CAMPOS_APOLLO_INBOUND["plazo_proyecto"]:
+                    _etiquetas(props.get("plazo_proyecto"), ETIQUETAS_PLAZO_PROYECTO),
+                CAMPOS_APOLLO_INBOUND["tipo_entidad"]:
+                    _etiquetas(props.get("tipo_entidad"), ETIQUETAS_TIPO_ENTIDAD),
+                CAMPOS_APOLLO_INBOUND["message"]: props.get("message") or "",
+            }
+            write(f"volcar datos del formulario de {email} en Apollo",
+                  lambda c=contacto, cf=campos: apollo("PATCH", f"/contacts/{c['id']}",
+                                                        {"typed_custom_fields": cf}))
+            write(f"inscribir {email} en INBOUND",
+                  lambda c=contacto: apollo_enroll(SEQ_INBOUND, [c["id"]], sender_id))
+            hs_stamp(lead["id"], {"apollo_estado": "enviado", "campana_apollo": CAMPANA})
+        except Exception as e:
+            # Un lead roto (p. ej. la API key de Apollo sin permiso de
+            # escritura) no debe tumbar el resto de la pasada: sin este
+            # try/except, una sola excepción aquí mataba también OUTBOUND
+            # y REBOTES en cada pasada, aunque no tuvieran nada que ver.
+            log(f"  {email}: ERROR al inscribir en INBOUND — {e}")
 
 
 def enroll_outbound(sender_id):
@@ -628,6 +635,19 @@ def mark_sin_respuesta():
     log(f"SIN RESPUESTA: {descartados}/{len(activos)} negocio(s) pasan a Descartado")
 
 
+def _fase(nombre, fn):
+    """Corre una fase de la pasada de forma aislada: si una revienta (una API
+    key mal configurada, un timeout...) no debe impedir que las demás corran
+    — sin esto, un solo fallo en INBOUND se llevaba por delante OUTBOUND y
+    REBOTES en cada pasada, aunque no tuvieran nada que ver."""
+    try:
+        fn()
+        return True
+    except Exception as e:
+        log(f"### {nombre} FALLÓ: {e}")
+        return False
+
+
 def main():
     if not HUBSPOT_TOKEN or not APOLLO_API_KEY:
         sys.exit("Faltan HUBSPOT_TOKEN o APOLLO_API_KEY")
@@ -636,11 +656,12 @@ def main():
     sender_id = apollo_sender_account_id()
     # Primero lo que corta, luego lo que inscribe: así nunca se escribe a
     # alguien que ya ha respondido o tiene reunión.
-    sync_replies()
-    stop_when_engaged()
-    stop_on_any_inbound()
-    mark_sin_respuesta()
-    enroll_inbound(sender_id)
+    ok = True
+    ok &= _fase("RESPUESTA", sync_replies)
+    ok &= _fase("PARADA", stop_when_engaged)
+    ok &= _fase("ENTRANTES", stop_on_any_inbound)
+    ok &= _fase("SIN RESPUESTA", mark_sin_respuesta)
+    ok &= _fase("INBOUND", lambda: enroll_inbound(sender_id))
     # OUTBOUND solo inscribe una vez al día, a esta hora — si no, el tope de
     # 50 se salta: el cron corre cada hora, así que sin este freno un lunes
     # con mucho pendiente (importación semanal) metería 50 en la primera
@@ -648,11 +669,13 @@ def main():
     if not OUTBOUND_ENABLED:
         log("OUTBOUND: desactivado explícitamente (OUTBOUND_ENABLED=0)")
     elif datetime.now(timezone.utc).hour == HORA_ENVIO_OUTBOUND:
-        enroll_outbound(sender_id)
+        ok &= _fase("OUTBOUND", lambda: enroll_outbound(sender_id))
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
-    sync_bounces()
-    log("Listo.")
+    ok &= _fase("REBOTES", sync_bounces)
+    log("Listo." if ok else "Listo, con fallos — revisa los ### de arriba.")
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

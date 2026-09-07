@@ -161,6 +161,27 @@ antes que `apollo_enroll` en esa función. Los IDs de esos campos están en
 `CAMPOS_APOLLO_INBOUND`; si se borran o se renombran en Apollo (Settings →
 Custom Fields → Contacts) hay que actualizar esa constante.
 
+## Cada fase corre aislada
+
+Si una fase revienta (una excepción sin capturar, típicamente una llamada a
+la API que falla), no se lleva por delante a las demás: `_fase()` en `main()`
+captura el error, lo deja en el log con `###` delante, y sigue con la
+siguiente. Antes de esto, un solo lead con datos raros en INBOUND tumbaba
+también OUTBOUND y REBOTES en la misma pasada, aunque no tuvieran relación.
+Si alguna fase falla, el proceso sigue terminando con código de salida 1
+(para que la pestaña Actions lo marque en rojo), pero ya con todo lo demás
+intentado.
+
+**Caso real que motivó esto (07/09/2026)**: la `APOLLO_API_KEY` configurada
+en GitHub no tenía permiso de escritura sobre contactos
+(`api/v1/contacts/update` devolvía 403 `API_INACCESSIBLE`). Como
+`enroll_inbound()` no capturaba la excepción, cada pasada horaria fallaba
+en cuanto encontraba un lead pendiente — ni inscribía a nadie, ni llegaba
+a correr OUTBOUND ni REBOTES, durante días, sin que se notara porque el
+log solo se mira si alguien entra a comprobarlo. La key necesita el scope
+de escritura de contactos (Apollo → Settings → Integrations → API); es una
+key de Apollo, no algo que se arregle desde este repo.
+
 ## Idempotencia
 
 `apollo_estado` en HubSpot es la memoria del puente: si está relleno, el
