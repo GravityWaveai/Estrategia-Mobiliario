@@ -12,7 +12,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado` |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `campana_apollo` y `municipio` en los que ya estén en HubSpot |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -70,6 +70,34 @@ HubSpot, y miran los últimos 45 días.
 
 Además, poner `apollo_estado` a mano en HubSpot también corta la cadencia. No hace
 falta para nada — es una salida de emergencia, no parte del funcionamiento.
+
+## Fecha de inscripción: el historial anterior no cuenta
+
+Al inscribir a un contacto (INBOUND u OUTBOUND) el puente escribe
+`apollo_fecha_inscripcion`. Las tres señales de parada solo se tienen en
+cuenta si son **posteriores** a esa fecha: `hs_sales_email_last_replied`,
+`engagements_last_meeting_booked` y el `hs_timestamp` de los correos
+entrantes. Sin esto, un contacto que ya estaba en el CRM —un ayuntamiento
+que escribió a Amaia el año pasado, una cuenta interna de pruebas— quedaba
+marcado como «respondido» una hora después de inscribirse, por una
+respuesta que no tenía nada que ver con la campaña, y su secuencia se
+cortaba antes del segundo correo. Se descubrió probando con
+`irenehurt@hotmail.com`, que traía una respuesta de julio.
+
+Por el mismo motivo se quitaron de los dos workflows de entrada de HubSpot
+(`4839947487` INBOUND y `4840005827` OUTBOUND) los filtros «nunca ha
+respondido a un correo de ventas / nunca ha reservado reunión»: para
+INBOUND impedían crear el negocio a cualquier lead con pasado en el CRM
+(era exactamente el caso de la prueba), y para OUTBOUND habrían dejado sin
+negocio a ayuntamientos a los que Apollo ya les había escrito.
+
+**Qué se escribe en el negocio y qué no**: `hs_stamp()` solo copia al
+negocio las propiedades que existen en ese objeto (`apollo_estado`,
+`apollo_fecha_respuesta`); `campana_apollo`, `municipio` y
+`apollo_fecha_inscripcion` solo existen en el contacto, y HubSpot rechaza el
+PATCH entero si va una que no existe. Y solo toca los negocios del pipeline
+de Mobiliario Urbano: un contacto puede tener negocios de otras líneas de
+Gravity Wave y el puente no debe pisarlos.
 
 ## Descarte automático sin respuesta
 
@@ -185,7 +213,9 @@ key de Apollo, no algo que se arregle desde este repo.
 ## Idempotencia
 
 `apollo_estado` en HubSpot es la memoria del puente: si está relleno, el
-contacto ya se inscribió. Relanzar el job no duplica nada.
+contacto ya se inscribió. Relanzar el job no duplica nada. Lo escribe tanto
+INBOUND como OUTBOUND — hasta el 07/09 OUTBOUND no lo escribía, y sin él
+sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 
 ## Configuración en GitHub
 
