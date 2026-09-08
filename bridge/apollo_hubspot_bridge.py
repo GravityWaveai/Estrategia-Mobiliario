@@ -338,6 +338,21 @@ def hs_stamp(contact_id, props):
 # --------------------------------------------------------------------------
 # Tareas
 
+def _productos_legibles(valor_hubspot):
+    """Lo que marcó en «productos de interés», dicho como lo diría una persona.
+
+    «Otro» es una casilla del formulario, no un producto: en el correo, «tu
+    solicitud de Otro» delata la plantilla. Si es lo único que marcó, se
+    habla de «mobiliario urbano»; si va con otras cosas, se quita y se cierra
+    con «y otras piezas». El resto de etiquetas salen como siempre."""
+    valores = [v for v in (valor_hubspot or "").split(";") if v]
+    otros = [ETIQUETAS_PRODUCTOS_INTERES.get(v, v) for v in valores if v != "otro"]
+    if not otros:
+        return "mobiliario urbano"
+    texto = ", ".join(otros)
+    return f"{texto} y otras piezas" if len(otros) < len(valores) else texto
+
+
 def _etiquetas(valor_hubspot, mapa):
     """Traduce uno o varios valores internos de HubSpot (separados por ';')
     a sus etiquetas legibles, para que el correo cite algo con sentido."""
@@ -429,7 +444,7 @@ def enroll_inbound(sender_id):
             # Apollo, para que la secuencia INBOUND lo cite de verdad y no hable
             # en genérico. Tiene que ir antes de inscribirlo: el primer correo
             # sale nada más entrar.
-            productos = _etiquetas(props.get("productos_interes"), ETIQUETAS_PRODUCTOS_INTERES)
+            productos = _productos_legibles(props.get("productos_interes"))
             if len(productos) > LIMITE_PRODUCTOS:
                 productos = PRODUCTOS_RESUMIDOS
             mensaje = props.get("message") or ""
