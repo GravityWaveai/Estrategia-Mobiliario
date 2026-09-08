@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# Exportaciones de contactos (Apollo/HubSpot): datos personales de terceros.
+# No entran en git: una vez en el historial no se pueden borrar de verdad, y
+# eso choca con el derecho de supresión del RGPD. Las copias de seguridad se
+# guardan fuera del repositorio.
+exports/
