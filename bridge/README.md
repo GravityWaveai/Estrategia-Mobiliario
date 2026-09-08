@@ -195,16 +195,22 @@ Ninguno de los dos depende del puente para el envío del correo en sí — solo
 `{{productos_interes}}` etc. de INBOUND lo necesitan, porque esos datos no
 existen en Apollo hasta que el puente los escribe.
 
-Los 10 correos (5 de INBOUND + 5 de OUTBOUND) incluyen el enlace de reservas de
+Los correos 1–4 de INBOUND y 1–2 de OUTBOUND incluyen el enlace de reservas de
 Amaia (`https://meetings-eu1.hubspot.com/amaia-rodriguez`, su página de
 Meetings en HubSpot) como llamada a la acción, para que el ayuntamiento pueda
 agendar directamente mirando su disponibilidad real, sin esperar a que
 alguien conteste el correo. Es un enlace fijo en el HTML de cada plantilla,
 no depende del puente — si Amaia cambia de página de reservas hay que
-actualizar las 10 plantillas a mano en Apollo (o pedir que se haga vía MCP).
+actualizar esas plantillas a mano en Apollo (o pedir que se haga vía MCP).
 
 Los correos de INBOUND citan lo que el lead contó en el formulario web
 (`{{productos_interes}}`, `{{unidades_estimadas}}`, `{{plazo_proyecto}}`).
+Al volcar «productos de interés», el puente no escribe la casilla «Otro» tal
+cual: si es lo único que marcó el lead, escribe «mobiliario urbano»; si va con
+otros productos, la quita y cierra con «y otras piezas» («Banco, Papelera y
+otras piezas»). «Tu solicitud de Otro» delataba la plantilla. Las etiquetas
+«sin definir» de unidades y plazo sí se escriben literalmente: el correo las
+muestra entre paréntesis como resumen de lo que él mismo eligió.
 Esto sí depende del puente: la integración nativa HubSpot↔Apollo no
 sincroniza propiedades personalizadas, así que `enroll_inbound()` traduce
 los valores internos de HubSpot (p. ej. `6_15`) a su etiqueta legible
