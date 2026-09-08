@@ -130,6 +130,12 @@ section{margin-top:44px}
 /* ---------- Tarjetas de cifra ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
 .tile{background:var(--ground);padding:20px;display:flex;flex-direction:column;gap:8px;min-height:124px}
+/* La conversión a reunión es el dato de la campaña: ocupa toda la primera
+   columna y va al doble de cuerpo que el resto. */
+.tiles .tile.faro{grid-row:span 1;background:var(--surface);border-left:3px solid var(--accent-mark)}
+.tiles .tile.faro .v{font-size:64px}
+.tiles .tile.faro .k{color:var(--accent)}
+@media(min-width:900px){.tiles.con-faro{grid-template-columns:1.4fr 1fr 1fr 1fr}}
 .tile .v{font-weight:900;font-size:42px;line-height:.92;letter-spacing:-.03em;display:flex;align-items:baseline;gap:6px;order:1}
 .tile .v.destacado{color:var(--accent)}
 .tile .v.nulo{color:var(--ink-faint)}
@@ -140,7 +146,7 @@ section{margin-top:44px}
 
 /* ---------- Embudo ---------- */
 .embudo{display:flex;flex-direction:column;gap:2px}
-.etapa{display:grid;grid-template-columns:minmax(150px,210px) 1fr auto;gap:16px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.etapa{display:grid;grid-template-columns:minmax(160px,265px) 1fr auto;gap:16px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft)}
 .etapa:last-child{border-bottom:0}
 .etapa .nom{font-size:13px;font-weight:500;color:var(--ink-soft);display:flex;align-items:center;gap:9px}
 .etapa .prob{font-size:10px;color:var(--ink-faint);letter-spacing:.08em;font-weight:500}
@@ -149,7 +155,7 @@ section{margin-top:44px}
 .barra i{display:block;height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 @media (prefers-reduced-motion:reduce){.barra i{transition:none}}
 .etapa .cifras{display:flex;align-items:baseline;gap:14px;min-width:112px;justify-content:flex-end}
-.embudo.semanal .etapa{grid-template-columns:minmax(140px,200px) 1fr 260px}
+.embudo.semanal .etapa{grid-template-columns:minmax(160px,240px) 1fr 260px}
 .embudo.semanal .cifras{min-width:0;gap:12px}
 .embudo.semanal .previa{font-size:12px;color:var(--ink-faint);min-width:62px;text-align:right}
 .embudo.semanal .delta{min-width:88px;text-align:right}
@@ -157,6 +163,12 @@ section{margin-top:44px}
 .etapa .n{font-weight:900;font-size:19px;letter-spacing:-.02em}
 .etapa .pct{font-size:12px;color:var(--ink-faint);min-width:46px;text-align:right}
 .etapa.perdida .nom{color:var(--ink-faint)}
+/* La etapa que persigue la campaña. Sin trucos de margen: una etiqueta y el
+   nombre a plena luz bastan para que destaque entre las otras seis. */
+.etapa.objetivo .nom{color:var(--ink);font-weight:900}
+.etapa.objetivo .n{color:var(--accent)}
+.marca-obj{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--accent);border-radius:1px;padding:1px 5px;white-space:nowrap}
 .embudo.sin-datos .barra{height:6px}
 
 /* ---------- Doble columna ---------- */
@@ -184,6 +196,8 @@ section{margin-top:44px}
 .tabla-comp tbody td{font-weight:900;letter-spacing:-.01em}
 .tabla-comp tbody td:first-child{font-weight:400}
 .tabla-comp tbody tr:last-child td{border-bottom:0}
+.tabla-comp tbody tr.clave td{background:var(--surface);color:var(--accent)}
+.tabla-comp tbody tr.clave td:first-child{color:var(--accent);font-weight:500}
 .chip{display:inline-flex;align-items:center;gap:6px}
 .chip::before{content:"";width:8px;height:8px;border-radius:1px;background:var(--serie-in)}
 .chip.out::before{background:var(--serie-out)}
@@ -274,6 +288,14 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     <button class="cerrar" id="cerrar-apagado">Ocultar</button>
   </div>
 
+  <section id="s-reuniones">
+    <div class="sec-cab">
+      <h2>Reuniones conseguidas</h2>
+      <p class="sec-nota">El objetivo de la campaña. Sale del calendario de Amaia, no de la etapa del negocio: uno que tuvo reunión y acabó descartado sigue contando.</p>
+    </div>
+    <div class="tiles" id="tiles-reuniones"></div>
+  </section>
+
   <section id="s-productos" class="oculto">
     <div class="sec-cab">
       <h2>Productos de interés</h2>
@@ -305,14 +327,6 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     </div>
   </section>
 
-  <section id="s-resultados">
-    <div class="sec-cab">
-      <h2>Resultados</h2>
-      <p class="sec-nota">Conversión de punta a punta y dinero. El ponderado usa la probabilidad de la etapa en la que está cada negocio.</p>
-    </div>
-    <div class="tiles" id="tiles-resultados"></div>
-  </section>
-
   <section id="s-comparativa" class="oculto">
     <div class="sec-cab">
       <h2>Inbound frente a outbound</h2>
@@ -330,17 +344,29 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <h2>Lo que ha pasado esta semana</h2>
       <p class="sec-nota" id="nota-semana"></p>
     </div>
+    <h3 class="sub-tit">Reuniones conseguidas</h3>
+    <p class="sub-nota">El objetivo de la campaña. La conversión es <strong>acumulada a la fecha de corte</strong> de cada ventana, igual que en las otras pestañas: comparar lo conseguido esta semana con lo creado esta semana mezclaría cohortes y podría pasar del 100 %. Las demás cifras sí son de la semana.</p>
+    <div class="tiles" id="tiles-reuniones-semana"></div>
+
     <h3 class="sub-tit">Negocios por etapa</h3>
     <p class="sub-nota" id="nota-etapas-semana"></p>
     <div class="embudo" id="embudo-semana"></div>
 
-    <h3 class="sub-tit">Resultados</h3>
-    <p class="sub-nota" id="nota-resultados-semana"></p>
-    <div class="tiles" id="tiles-semana"></div>
-
     <h3 class="sub-tit">Movimiento de la semana</h3>
     <p class="sub-nota">Todo lo que <em>ocurrió</em> dentro de cada ventana de siete días. Las dos últimas columnas reparten la semana en curso por origen.</p>
     <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
+
+    <h3 class="sub-tit">Resultados económicos</h3>
+    <p class="sub-nota" id="nota-resultados-semana"></p>
+    <div class="tiles" id="tiles-semana"></div>
+  </section>
+
+  <section id="s-resultados">
+    <div class="sec-cab">
+      <h2>Resultados económicos</h2>
+      <p class="sec-nota">Lo que pasa después de la reunión: cierre y dinero. El ponderado usa la probabilidad de la etapa en la que está cada negocio.</p>
+    </div>
+    <div class="tiles" id="tiles-resultados"></div>
   </section>
 
   <footer>
@@ -377,7 +403,7 @@ var ETAPAS_BASE = [
   {id:"5948376269", nom:"Ganado",                                prob:1.00, tipo:"ganada",  css:"--stage-6"},
   {id:"5948376270", nom:"Descartado",                            prob:0.00, tipo:"perdida", css:"--stage-lost"}
 ];
-var ID_GANADO = "5948376269", ID_PERDIDO = "5948376270";
+var ID_REUNION = "5948376267", ID_GANADO = "5948376269", ID_PERDIDO = "5948376270";
 
 var ETAPAS = ETAPAS_BASE.slice(), IDX = {};
 var etiquetasVivas = null;   /* stageId -> etiqueta, de get_properties */
@@ -468,7 +494,7 @@ function fecha(v){
 /* El TSV que devuelve query_crm_data trae cabecera "Etiqueta [nombre_interno]",
    nulos como "Unassigned" y enumeraciones como "Etiqueta (valor)". El orden de
    columnas NO es el del SELECT, así que hay que mapear por nombre interno. */
-function parseTSV(texto){
+function parseTSV(texto, renombra){
   if(typeof texto !== "string") return [];
   var i = texto.indexOf("Dataset TSV:");
   if(i < 0) return [];
@@ -476,7 +502,12 @@ function parseTSV(texto){
     return l.trim() !== "" && l.indexOf("Showing ") !== 0;
   });
   if(lineas.length < 2) return [];
+  /* Un cruce entre objetos puede devolver DOS columnas con el mismo nombre
+     interno —la reunión y su negocio son las dos `hs_object_id`— y solo se
+     distinguen por la etiqueta. `renombra` mapea etiqueta -> clave propia. */
   var claves = lineas[0].split("\t").map(function(c){
+    var etiqueta = c.replace(/\s*\[[^\]]*\]\s*$/, "").trim();
+    if(renombra && renombra[etiqueta]) return renombra[etiqueta];
     var m = c.match(/\[([^\]\[]+)\]\s*$/);
     return m ? m[1] : c.trim();
   });
@@ -506,7 +537,7 @@ function valorTSV(c){
    Estado
    ============================================================ */
 var D = {
-  negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reuniones:{},
+  negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reuniones:{}, reunionDe:{},
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
@@ -690,6 +721,32 @@ function arranca(){
     etiquetasVivas = mapa;
   }, {refetchInterval:REFRESCO_LENTO});
 
+  /* Qué negocio tiene reunión. Es el dato clave de la campaña, así que se
+     lee del calendario y no se deduce de la etapa: un negocio que tuvo
+     reunión y acabó descartado sigue contando como reunión conseguida.
+     El cruce devuelve dos columnas `hs_object_id` —la reunión y el negocio—
+     y solo la etiqueta las separa; de ahí el renombrado. */
+  vigila("reunion-negocio", "query_crm_data", {
+    sql:"SELECT DEAL.hs_object_id, hs_meeting_start_time, hs_meeting_outcome "+
+        "FROM MEETING WHERE hubspot_owner_id = '"+AMAIA+"' AND DEAL.pipeline = '"+PIPELINE+"'",
+    verbosityLevel:"LOW"
+  }, function(p){
+    var filas = [], porNegocio = {};
+    if(p && p.results) p.results.forEach(function(b){
+      filas = filas.concat(parseTSV(b.content, {"Negocio":"deal_id"}));
+    });
+    filas.forEach(function(f){
+      if(!f.deal_id || f.hs_meeting_outcome === "CANCELED") return;
+      var t = fecha(f.hs_meeting_start_time);
+      if(t === null) return;
+      /* La primera reunión es la que cuenta como conversión. */
+      if(porNegocio[f.deal_id] === undefined || t < porNegocio[f.deal_id]){
+        porNegocio[f.deal_id] = t;
+      }
+    });
+    D.reunionDe = porNegocio;
+  }, {refetchInterval:REFRESCO_LENTO});
+
   /* Reuniones de Amaia atadas a un negocio de este pipeline. El cruce con
      DEAL.pipeline es lo que las separa del resto de su calendario. */
   vigila("reuniones", "query_crm_data", {
@@ -740,7 +797,8 @@ function metricas(seg){
   var lista = negociosDe(seg);
   var m = {
     total:lista.length, porEtapa:{}, ganados:0, perdidos:0, abiertos:0,
-    valorAbierto:0, valorPonderado:0, ingresos:0, motivos:{}, tiempos:{}, dwell:{}
+    valorAbierto:0, valorPonderado:0, ingresos:0, motivos:{}, tiempos:{}, dwell:{},
+    conReunion:0
   };
   ETAPAS.forEach(function(e){ m.porEtapa[e.id] = 0; });
 
@@ -750,6 +808,7 @@ function metricas(seg){
     var et = n.dealstage, i = IDX[et];
     if(i === undefined) return;
     m.porEtapa[et]++;
+    if(D.reunionDe[n.__id] !== undefined) m.conReunion++;
     if(n.hs_deal_stage_probability !== undefined && n.hs_deal_stage_probability !== null &&
        probsVivas[et] === undefined){
       var pv = parseFloat(n.hs_deal_stage_probability);
@@ -802,6 +861,7 @@ function metricas(seg){
   });
 
   m.conversion   = pct(m.ganados, m.total);
+  m.tasaReunion  = pct(m.conReunion, m.total);
   m.hayTransito  = ETAPAS.some(function(e){ return m.tiempos[e.id] !== null; });
 
   /* Cabecera del embudo, distinta en cada origen. */
@@ -833,6 +893,19 @@ function porProducto(){
      a «qué producto funciona más» se lea sin contar cifras. */
   filas.forEach(function(f, i){ f.color = (i === 0 ? "--stage-6" : "--stage-2"); });
   return {filas:filas, leads:leads};
+}
+
+/* Reuniones del calendario de Amaia atadas a este pipeline. Cuenta cada
+   reunión, así que un negocio con dos citas suma dos: por eso la conversión
+   usa `conReunion`, que cuenta negocios, y no esta cifra. */
+function reunionesEnPeriodo(){
+  var r = {agendadas:0};
+  Object.keys(D.reuniones).forEach(function(k){
+    var m = D.reuniones[k];
+    if(m.hs_meeting_outcome === "CANCELED") return;
+    if(enPeriodo(fecha(m.hs_meeting_start_time))) r.agendadas++;
+  });
+  return r;
 }
 
 /* ============================================================
@@ -869,6 +942,32 @@ function cero(){ return {a:0, b:0}; }
    existía y todavía no se había cerrado. El importe es el de hoy —el
    histórico no se guarda—, así que un negocio revalorizado desde entonces
    arrastra su importe nuevo hacia atrás. */
+/* Una conversión de la ventana —lo conseguido esta semana entre lo creado
+   esta semana— mezcla cohortes y puede pasar del 100 %: las reuniones de esta
+   semana son de negocios entrados hace meses. Así que se mide igual que en
+   las otras pestañas, acumulada, y lo que se compara son dos fotos. */
+function tasaEn(lista, corte, cumple){
+  var base = 0, ok = 0;
+  lista.forEach(function(neg){
+    var c = fecha(neg.createdate);
+    if(c === null || c > corte) return;
+    base++;
+    if(cumple(neg, corte)) ok++;
+  });
+  return base ? Math.round(ok / base * 1000) / 10 : null;
+}
+
+function tuvoReunionEn(neg, corte){
+  var t = D.reunionDe[neg.__id];
+  return t !== undefined && t <= corte;
+}
+
+function ganadoEn(neg, corte){
+  if(neg.dealstage !== ID_GANADO) return false;
+  var k = fecha(neg.closedate) || entroEn(neg, ID_GANADO);
+  return k !== null && k <= corte;
+}
+
 function abiertoEn(lista, corte){
   var total = 0;
   lista.forEach(function(neg){
@@ -889,7 +988,8 @@ function metricasSemana(seg){
   var s = {
     nuevos:cero(), movimientos:cero(), ganados:cero(), perdidos:cero(), ingresos:cero(),
     formularios:cero(), contactados:cero(), respuestas:cero(),
-    agendadas:cero(), porEtapa:{}, exacto:false, abierto:cero(), conversion:cero()
+    agendadas:cero(), porEtapa:{}, exacto:false, abierto:cero(), conversion:cero(),
+    conReunion:cero(), tasaReunion:cero()
   };
   ETAPAS.forEach(function(e){ s.porEtapa[e.id] = cero(); });
   var enSegmento = [];
@@ -901,6 +1001,8 @@ function metricasSemana(seg){
 
     suma(s.nuevos, ventana(fecha(neg.createdate)));
     suma(s.movimientos, ventana(fecha(neg.hs_v2_date_entered_current_stage)));
+    /* La conversión cuenta la PRIMERA reunión del negocio, no cada una. */
+    suma(s.conReunion, ventana(D.reunionDe[neg.__id]));
 
     ETAPAS.forEach(function(e){
       var t = entroEn(neg, e.id);
@@ -932,15 +1034,17 @@ function metricasSemana(seg){
     });
   }
 
-  /* Valor del pipeline al cierre de cada ventana. */
+  /* Fotos al cierre de cada ventana: pipeline abierto y conversiones. */
   var ahora = Date.now();
   s.abierto.a = abiertoEn(enSegmento, ahora);
   s.abierto.b = abiertoEn(enSegmento, ahora - SEMANA);
 
   /* Ganados sobre creados dentro de la misma ventana. No es la conversión
      acumulada del embudo: son cohortes distintas, y así se dice arriba. */
-  s.conversion.a = s.nuevos.a ? Math.round(s.ganados.a / s.nuevos.a * 1000) / 10 : null;
-  s.conversion.b = s.nuevos.b ? Math.round(s.ganados.b / s.nuevos.b * 1000) / 10 : null;
+  s.conversion.a  = tasaEn(enSegmento, ahora, ganadoEn);
+  s.conversion.b  = tasaEn(enSegmento, ahora - SEMANA, ganadoEn);
+  s.tasaReunion.a = tasaEn(enSegmento, ahora, tuvoReunionEn);
+  s.tasaReunion.b = tasaEn(enSegmento, ahora - SEMANA, tuvoReunionEn);
 
   /* Las reuniones no se reparten por origen; solo se dan en el total. */
   if(seg === "todo"){
@@ -977,12 +1081,27 @@ function barras(items, formato){
 function pinta(){
   reconstruyeEtapas();
   if(vista === "semana"){ pintaSemana(); return; }
-  var m = metricas(segmento);
+  var m = metricas(segmento), r = reunionesEnPeriodo();
 
   /* Contadores del conmutador */
   $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);
   $("n-outbound").textContent = fmtN.format(negociosDe("outbound").length);
   $("n-todo").textContent     = fmtN.format(negociosDe("todo").length);
+
+  /* --- Reuniones: el objetivo, arriba del todo --- */
+  var faro = '<div class="tile faro"><span class="v destacado">'+esc(txtPct(m.tasaReunion))+
+    '</span><span class="k">Conversión a reunión</span>'+
+    '<span class="sub">'+fmtN.format(m.conReunion)+' de '+fmtN.format(m.total)+
+    ' negocios han llegado a sentarse</span></div>';
+  var rt = faro;
+  rt += tile("Negocios con reunión", fmtN.format(m.conReunion), "",
+    "Reunión en el calendario de Amaia");
+  rt += tile("Reuniones agendadas", fmtN.format(r.agendadas), "",
+    "Incluye las repetidas con el mismo negocio");
+  rt += tile("Aún sin reunión", fmtN.format(Math.max(0, m.total - m.conReunion)), "",
+    "Negocios del embudo pendientes de sentarse");
+  $("tiles-reuniones").className = "tiles con-faro";
+  $("tiles-reuniones").innerHTML = rt;
 
   /* --- Productos de interés, solo en inbound --- */
   var esInbound = segmento === "inbound";
@@ -1003,8 +1122,10 @@ function pinta(){
   $("embudo").className = "embudo" + (m.total ? "" : " sin-datos");
   $("embudo").innerHTML = ETAPAS.map(function(e){
     var n = m.porEtapa[e.id];
-    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+'">'+
+    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+
+      (e.id===ID_REUNION?" objetivo":"")+'">'+
       '<span class="nom">'+esc(e.nom)+
+        (e.id===ID_REUNION?'<span class="marca-obj">objetivo</span>':'')+
         (e.ausente?'<span class="prob avisa">ya no está en el pipeline</span>':
          e.tipo==="nueva"?'<span class="prob avisa">etapa nueva</span>':
          '<span class="prob">'+Math.round(e.prob*100)+'%</span>')+'</span>'+
@@ -1037,7 +1158,8 @@ function pinta(){
 
   /* --- Resultados --- */
   var res = "";
-  res += tile("Conversión global", txtPct(m.conversion), "", "Información enviada → Ganado", true);
+  res += tile("Conversión a ganado", txtPct(m.conversion), "",
+    fmtN.format(m.ganados)+" de "+fmtN.format(m.total)+" negocios, de punta a punta");
   res += tile("Pipeline abierto", fmtE.format(m.valorAbierto), "",
     fmtN.format(m.abiertos)+" negocios vivos");
   res += tile("Ponderado por probabilidad", fmtE.format(m.valorPonderado), "",
@@ -1060,8 +1182,10 @@ function pintaComparativa(){
   var filas = [
     ["Entradas al embudo", fmtN.format(a.formularios)+" formularios", fmtN.format(b.contactados)+" contactados"],
     ["Negocios creados", fmtN.format(a.total), fmtN.format(b.total)],
-    ["Ganados", fmtN.format(a.ganados), fmtN.format(b.ganados)],
+    ["Negocios con reunión", fmtN.format(a.conReunion), fmtN.format(b.conReunion)],
+    ["Conversión a reunión", txtPct(a.tasaReunion), txtPct(b.tasaReunion)],
     ["Descartados", fmtN.format(a.perdidos), fmtN.format(b.perdidos)],
+    ["Ganados", fmtN.format(a.ganados), fmtN.format(b.ganados)],
     ["Conversión a ganado", txtPct(a.conversion), txtPct(b.conversion)],
     ["Pipeline abierto", fmtE.format(a.valorAbierto), fmtE.format(b.valorAbierto)],
     ["Ponderado", fmtE.format(a.valorPonderado), fmtE.format(b.valorPonderado)],
@@ -1071,7 +1195,9 @@ function pintaComparativa(){
     '<thead><tr><th>Métrica</th><th><span class="chip">Inbound</span></th>'+
     '<th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
     filas.map(function(f){
-      return '<tr><td>'+esc(f[0])+'</td><td>'+esc(f[1])+'</td><td>'+esc(f[2])+'</td></tr>';
+      var clave = f[0] === "Conversión a reunión";
+      return '<tr'+(clave?' class="clave"':'')+'><td>'+esc(f[0])+'</td><td>'+
+        esc(f[1])+'</td><td>'+esc(f[2])+'</td></tr>';
     }).join("")+'</tbody>';
 }
 
@@ -1086,6 +1212,7 @@ var FILAS_SEMANA = [
   {k:"respuestas",   et:"Respuestas al outbound", bueno:"sube", dinero:false},
   {k:"nuevos",       et:"Negocios creados", bueno:"sube", dinero:false},
   {k:"movimientos",  et:"Negocios que cambiaron de etapa", bueno:"sube", dinero:false},
+  {k:"conReunion",   et:"Negocios que consiguieron reunión", bueno:"sube", dinero:false},
   {k:"agendadas",    et:"Reuniones agendadas", bueno:"sube", dinero:false},
   {k:"ganados",      et:"Negocios ganados", bueno:"sube", dinero:false},
   {k:"perdidos",     et:"Negocios descartados", bueno:"baja", dinero:false},
@@ -1126,8 +1253,10 @@ function pintaSemana(){
   $("embudo-semana").innerHTML = ETAPAS.map(function(e){
     var v = T.porEtapa[e.id] || cero();
     var bueno = (e.id === ID_PERDIDO) ? "baja" : "sube";
-    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+'">'+
-      '<span class="nom">'+esc(e.nom)+'</span>'+
+    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+
+      (e.id===ID_REUNION?" objetivo":"")+'">'+
+      '<span class="nom">'+esc(e.nom)+
+        (e.id===ID_REUNION?'<span class="marca-obj">objetivo</span>':'')+'</span>'+
       '<span class="barra"><i style="width:'+(v.a ? Math.max(2,(v.a/maxSem)*100) : 0)+
         '%;background:var('+e.css+')"></i></span>'+
       '<span class="cifras"><span class="n">'+fmtN.format(v.a)+'</span>'+
@@ -1135,9 +1264,28 @@ function pintaSemana(){
         delta(v.a, v.b, bueno, false)+'</span></div>';
   }).join("");
 
-  /* --- Resultados: las mismas cifras que en combinado, comparadas --- */
+  /* --- Reuniones: el objetivo, comparado --- */
+  var faroS = '<div class="tile faro"><span class="v destacado">'+esc(txtPct(T.tasaReunion.a))+
+    '</span><span class="k">Conversión a reunión</span><span class="sub">'+
+    ((T.tasaReunion.a === null || T.tasaReunion.b === null)
+      ? '<span class="delta igual">sin comparar</span>'
+      : delta(T.tasaReunion.a, T.tasaReunion.b, "sube", false, true))+
+    ' &middot; '+txtPct(T.tasaReunion.b)+' la anterior</span></div>';
+  var rs = faroS;
+  rs += tile("Se sentaron esta semana", fmtN.format(T.conReunion.a), "",
+    delta(T.conReunion.a, T.conReunion.b, "sube", false)+' &middot; '+
+    fmtN.format(T.conReunion.b)+' la anterior');
+  rs += tile("Reuniones agendadas", fmtN.format(T.agendadas.a), "",
+    delta(T.agendadas.a, T.agendadas.b, "sube", false)+' &middot; '+
+    fmtN.format(T.agendadas.b)+' la anterior');
+  rs += tile("Inbound / Outbound", fmtN.format(I.conReunion.a)+" / "+fmtN.format(O.conReunion.a), "",
+    "Negocios con reunión esta semana, por origen");
+  $("tiles-reuniones-semana").className = "tiles con-faro";
+  $("tiles-reuniones-semana").innerHTML = rs;
+
+  /* --- Resultados económicos: al final, como en las otras pestañas --- */
   $("nota-resultados-semana").textContent =
-    "El pipeline abierto se reconstruye a la fecha de corte de cada ventana —qué negocios existían y aún no estaban cerrados—, con el importe de hoy. El ponderado no aparece: haría falta saber en qué etapa estaba cada negocio hace una semana, y eso HubSpot no lo guarda.";
+    "La conversión a ganado y el pipeline abierto son fotos a la fecha de corte de cada ventana; ganados e ingresos son de la semana. El pipeline se reconstruye —qué negocios existían y aún no estaban cerrados— con el importe de hoy. El ponderado no aparece: haría falta saber en qué etapa estaba cada negocio hace una semana, y eso HubSpot no lo guarda.";
   var res = [
     {k:"conversion", et:"Conversión a ganado", bueno:"sube", tipo:"pct"},
     {k:"ganados",    et:"Negocios ganados",    bueno:"sube", tipo:"n"},
@@ -1242,7 +1390,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), fun
       o.setAttribute("aria-selected", String(o === b));
     });
     var semanal = vista === "semana";
-    ["s-productos","s-embudo","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
+    ["s-reuniones","s-productos","s-embudo","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
       $(id).classList.toggle("oculto", semanal);
     });
     $("s-semana").classList.toggle("oculto", !semanal);

@@ -32,6 +32,19 @@ Solo se usan dos herramientas del conector, y cada una para lo que sabe hacer:
 | `search_crm_objects` | Negocios del pipeline, contactos de formulario, contactos de Apollo | Devuelve JSON limpio, `total` para paginar, y **omite sin fallar las propiedades que no existen** |
 | `query_crm_data` | Origen de cada negocio y reuniones del pipeline | Es la única que cruza objetos (`CONTACT.…` desde `DEAL`, `DEAL.pipeline` desde `MEETING`) |
 
+### Reuniones — el objetivo de la campaña
+
+Es lo primero de cada pestaña, con la conversión a reunión como cifra
+protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
+«objetivo».
+
+| Métrica | Definición exacta |
+|---|---|
+| Negocios con reunión | Negocios del segmento con al menos una reunión de Amaia asociada. **Sale del calendario, no de la etapa**: un negocio que se sentó y acabó descartado sigue contando, que es lo que mide el esfuerzo comercial |
+| Conversión a reunión | Negocios con reunión ÷ negocios creados |
+| Reuniones agendadas | Reuniones, no negocios: un negocio con dos citas suma dos. Por eso la conversión usa la cifra de negocios |
+| Aún sin reunión | Negocios del embudo que todavía no se han sentado |
+
 ### Embudo
 
 | Métrica | Definición exacta |
@@ -50,12 +63,14 @@ al embudo» de la comparativa y en las dos primeras filas de la tabla semanal.
 Compara los últimos 7 días con los 7 anteriores, con las mismas métricas que
 la pestaña combinada. Tres bloques:
 
-1. **Negocios por etapa** — el mismo embudo, pero contando cuántos negocios
+1. **Reuniones conseguidas** — el objetivo, con la conversión a reunión de
+   protagonista.
+2. **Negocios por etapa** — el mismo embudo, pero contando cuántos negocios
    **entraron** en cada etapa dentro de cada ventana, con el número de la
    semana anterior y el signo al lado.
-2. **Resultados** — conversión, ganados, ingresos y pipeline abierto.
 3. **Movimiento de la semana** — la tabla completa, con el desglose
    inbound/outbound de la semana en curso.
+4. **Resultados económicos** — al final, como en las demás pestañas.
 
 Casi todo son **hechos con fecha dentro de la ventana**, que son exactos. Dos
 excepciones, marcadas en la propia pestaña:
@@ -64,9 +79,11 @@ excepciones, marcadas en la propia pestaña:
   un negocio estaba abierto si ya existía y aún no se había cerrado. El
   importe es el de hoy, porque el histórico no se guarda, así que un negocio
   revalorizado desde entonces arrastra su importe nuevo hacia atrás.
-- **Conversión a ganado** de la semana es ganados ÷ creados **dentro de la
-  misma ventana**. No es la conversión acumulada del embudo: son cohortes
-  distintas.
+- **Las dos conversiones** —a reunión y a ganado— se miden **acumuladas a la
+  fecha de corte** de cada ventana, igual que en las demás pestañas, y lo que
+  se compara son dos fotos. Medirlas dentro de la ventana (lo conseguido esta
+  semana ÷ lo creado esta semana) mezclaría cohortes y llegaba a dar **150 %**:
+  las reuniones de esta semana son de negocios entrados hace meses.
 
 **El ponderado no aparece** en esta pestaña, y es a propósito: haría falta
 saber en qué etapa estaba cada negocio hace una semana para conocer su
@@ -93,11 +110,14 @@ cada etapa» solo puede fechar la etapa **actual** de cada negocio: uno que pas�
 por dos etapas en la misma semana cuenta solo en la última. El panel lo dice en
 la propia tabla y deja de decirlo en cuanto las fechas existen.
 
-### Resultados
+### Resultados económicos
+
+Van **al final de cada pestaña**, a propósito: la campaña se mide por
+reuniones cerradas, y el dinero es la consecuencia.
 
 | Métrica | Definición exacta |
 |---|---|
-| Conversión global | «Información enviada» → «Ganado», sobre todos los negocios del segmento |
+| Conversión a ganado | «Información enviada» → «Ganado», sobre todos los negocios del segmento |
 | Pipeline abierto | Suma de `amount_in_home_currency` de los negocios que no están en «Ganado» ni «Descartado» |
 | Ponderado | Suma de `hs_projected_amount_in_home_currency`, que HubSpot calcula como importe × probabilidad de la etapa. Si falta, se calcula con la probabilidad de la tabla de etapas |
 | Ingresos ganados | Suma de importes de los negocios en «Ganado» con `closedate` dentro del periodo |
