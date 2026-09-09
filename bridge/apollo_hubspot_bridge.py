@@ -60,6 +60,9 @@ PIPELINE = "4080461018"
 ETAPA_LEAD = "5948376264"   # «Información enviada», la primera
 ETAPA_MUESTRA_INTERES = "5948376265"
 ETAPA_DESCARTADO = "5948376270"
+# Opción de `motivo_perdida` (negocio). HubSpot lo exige al mover a
+# «Descartado», así que el descarte automático tiene que ponerlo él mismo.
+MOTIVO_SIN_RESPUESTA = "sin_respuesta"
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
 
 # Campos personalizados de Apollo (contacto) donde se vuelca lo que el lead
@@ -610,7 +613,8 @@ def sync_replies():
                 if deal["properties"].get("dealstage") == ETAPA_DESCARTADO:
                     write(f"reabrir el negocio {deal_id} — respuesta tardía tras el descarte",
                           lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
-                                                {"properties": {"dealstage": ETAPA_MUESTRA_INTERES}}))
+                                                {"properties": {"dealstage": ETAPA_MUESTRA_INTERES,
+                                                                "motivo_perdida": ""}}))
         # Apollo suele parar solo al detectar la respuesta, pero si el correo
         # entró por otra vía (respondieron a Amaia directamente) no se entera.
         contacto, activas = _apollo_sequences_of(props["email"])
@@ -722,7 +726,8 @@ def stop_when_engaged():
                     if deal["properties"].get("dealstage") == ETAPA_DESCARTADO:
                         write(f"reabrir el negocio {deal_id} — reunión agendada tras el descarte",
                               lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
-                                                    {"properties": {"dealstage": ETAPA_MUESTRA_INTERES}}))
+                                                    {"properties": {"dealstage": ETAPA_MUESTRA_INTERES,
+                                                                    "motivo_perdida": ""}}))
             _sacar_de_apollo(props["email"], "reunión agendada")
         else:                                       # ya estaba marcado
             _sacar_de_apollo(props["email"], f"estado {props['apollo_estado']}")
@@ -838,7 +843,8 @@ def mark_sin_respuesta():
             if deal["properties"].get("dealstage") == ETAPA_LEAD:
                 write(f"descartar el negocio {deal_id} — sin respuesta tras la secuencia",
                       lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
-                                            {"properties": {"dealstage": ETAPA_DESCARTADO}}))
+                                            {"properties": {"dealstage": ETAPA_DESCARTADO,
+                                                            "motivo_perdida": MOTIVO_SIN_RESPUESTA}}))
         descartados += 1
     log(f"SIN RESPUESTA: {descartados}/{len(activos)} negocio(s) pasan a Descartado")
 

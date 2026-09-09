@@ -76,7 +76,10 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
    (Conditional stage properties de la etapa). Lo rellena el agente al
    generar la propuesta — nunca queda a 0 €.
 2. **`motivo_perdida` obligatorio** al mover a «Descartado»; si el motivo es
-   «ahora no», rellenar también `fecha_reactivacion`.
+   «ahora no», rellenar también `fecha_reactivacion`. El descarte automático
+   del puente (secuencia agotada sin respuesta) lo rellena él solo con «Sin
+   respuesta» (`sin_respuesta`): la obligatoriedad es de la interfaz, así que
+   por API habría que ponerlo a mano o el negocio se quedaría sin motivo.
 3. **No existe etapa «Frío»**: un negocio parado se pierde con motivo y fecha
    de reactivación, y la automatización 6 lo reabre ese día.
 
@@ -105,24 +108,53 @@ El formulario web crea el negocio directamente en **«Información enviada»**
 ### Criterios de flujo y caducidad (confirmados por Norberto, 9/09/2026)
 
 Reparto humano/agente: **las propuestas y todo el seguimiento los lleva el
-equipo a mano**. La única automatización de etapas es del agente detector
-(horario), sobre negocios en «Información enviada»: si el lead **agenda
-reunión** (meeting registrado en HubSpot) lo mueve a «Reunión Agendada»; si
-**responde** (email entrante registrado) lo mueve a «Muestra interés».
+equipo a mano**. El movimiento de etapa desde «Información enviada» lo hace
+**el puente**, no un agente: marca `apollo_estado` en el contacto
+(`respondido` desde `hs_sales_email_last_replied` o desde un correo entrante
+del propio contacto; `reunion_agendada` desde `engagements_last_meeting_booked`)
+y los workflows `4839860441` y `4839928017` mueven el negocio a «Muestra
+interés» y a «Reunión Agendada». Los «ahora no» los mueve Amaia a mano a
+«Descartado».
+
 Ningún agente crea tareas ni informes: los agentes 5 y 6 (recordatorios)
 quedaron desactivados y el agente 7 (informe semanal) eliminado el
-9/09/2026 — el equipo usa su propio panel. Los «ahora no» los mueve Amaia
-a mano a «Descartado».
+9/09/2026 — el equipo usa su propio panel.
+
+**El agente 2 ya no mueve etapas (9/09/2026)**. Hacía exactamente lo mismo
+que el puente —leer respuesta y reunión de HubSpot para mover el negocio— y
+lo hacía peor: solo de 9 a 18 h de lunes a viernes, frente a la pasada
+horaria del puente los siete días, y sin la comparación contra
+`apollo_fecha_inscripcion` que evita los falsos positivos por historial
+previo (ver `bridge/README.md`). Le queda solo la red de seguridad: crear el
+negocio en «Información enviada» a los contactos con `canal_origen` relleno
+que se hayan quedado sin él. Con una sola tarea que ya no depende de reaccionar
+rápido, su cadencia baja de 10 pasadas diarias a **una, laborables a las 9:00**.
+
+**Hueco conocido**: el puente solo mira contactos con `apollo_estado` relleno
+(y, para la respuesta, `campana_apollo = mobiliario_urbano`), que es lo que
+escribe al inscribirlos en Apollo. Si la inscripción falla —como el 7/09, con
+la `APOLLO_API_KEY` sin permiso de escritura— ese lead no tiene
+`apollo_estado`, y entonces nadie mueve su negocio aunque responda. Se ve en
+el log de Actions (`### INBOUND FALLÓ`, `ERROR al inscribir`) y en la pasada
+en rojo.
+
+Desde el 9/09 ese hueco lo **vigila el chequeo diario del funnel** (Routine
+`trig_01BMvH1DvpXdzZCCSnXk6gxs`, 10:00 todos los días), en su comprobación E:
+busca contactos con `canal_origen` relleno y sin negocio en el pipeline, y lo
+reporta como bug por Slack si el contacto ya debería tenerlo —lead del
+formulario, o contacto con `apollo_estado` relleno—. No crea nada: solo avisa.
+A los contactos `email_ayuntamientos` sin `apollo_estado` no los cuenta, porque
+mientras el outbound siga apagado es correcto que no tengan negocio.
 
 | Etapa | Entra cuando | Sale cuando |
 |---|---|---|
-| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → **agente** lo mueve a «Muestra interés»; si agenda reunión → **agente** lo mueve a «Reunión Agendada» |
+| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → **el puente** marca `apollo_estado` y el workflow lo mueve a «Muestra interés»; si agenda reunión → a «Reunión Agendada» |
 | Muestra interés / Intención de compra | El lead responde o pide más | El equipo prepara y envía la propuesta a mano |
 | Propuesta enviada | El equipo envía la propuesta | Reunión reservada o descarte |
 | Reunión Agendada | El lead agenda reunión (o el equipo la fija) | Reunión celebrada |
 | Negociación | Reunión hecha · en negociación | Acuerdo o descarte |
 | Ganado | Pedido confirmado por escrito | — |
-| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` | Reapertura manual del equipo |
+| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` · el puente descarta solo, con «Sin respuesta», al agotarse la secuencia | Reapertura manual del equipo, o automática del puente si contesta tarde (que además vacía el motivo) |
 
 ## Datos fijos del portal
 
