@@ -124,7 +124,8 @@ horaria del puente los siete días, y sin la comparación contra
 `apollo_fecha_inscripcion` que evita los falsos positivos por historial
 previo (ver `bridge/README.md`). Le queda solo la red de seguridad: crear el
 negocio en «Información enviada» a los contactos con `canal_origen` relleno
-que se hayan quedado sin él.
+que se hayan quedado sin él. Con una sola tarea que ya no depende de reaccionar
+rápido, su cadencia baja de 10 pasadas diarias a **una, laborables a las 9:00**.
 
 **Hueco conocido**: el puente solo mira contactos con `apollo_estado` relleno
 (y, para la respuesta, `campana_apollo = mobiliario_urbano`), que es lo que
