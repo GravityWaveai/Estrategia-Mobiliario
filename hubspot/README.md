@@ -11,7 +11,7 @@ Documento operativo de referencia: artifact **«Embudo Mobiliario Urbano»**
 
 | Pieza | Detalle | Spec |
 |---|---|---|
-| Pipeline de negocios «Mobiliario Urbano» | 7 etapas con probabilidades 10/20/35/55/75/100/0 % | `spec/pipeline-mobiliario-urbano.json` |
+| Pipeline de negocios «Mobiliario Urbano» | 7 etapas (ya creado en la UI, id `4080461018`) | `spec/pipeline-mobiliario-urbano.json` |
 | 5 propiedades de contacto | `tipo_entidad`, `municipio`, `productos_interes`, `canal_origen`, `plazo_proyecto` | `spec/contact-properties.json` |
 | 5 propiedades de negocio | `estado_agente`, `url_propuesta`, `url_mockup`, `motivo_perdida`, `fecha_reactivacion` | `spec/deal-properties.json` |
 | Grupo de propiedades «Mobiliario Urbano» | En contactos y en negocios, para que las diez queden agrupadas | (implícito en las specs) |
@@ -42,7 +42,7 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 ## Reglas del pipeline (configuración en UI, no cubierta por API)
 
-1. **Importe obligatorio** desde «Propuesta en preparación»
+1. **Importe obligatorio** desde «Muestra interés / Intención de compra»
    (Conditional stage properties de la etapa). Lo rellena el agente con los
    precios por volumen del configurador — nunca queda a 0 €.
 2. **`motivo_perdida` obligatorio** al mover a «Descartado»; si el motivo es
@@ -52,15 +52,18 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 ## Etapas — criterios y caducidad
 
-| Etapa | Prob. | Entra cuando | Sale cuando | Máx. días |
-|---|---|---|---|---|
-| Lead mobiliario | 10 % | El formulario crea el negocio | El agente termina propuesta + mockups | 1 |
-| Propuesta en preparación | 20 % | Agente trabajando · importe puesto | Amaia aprueba el envío | 2 |
-| Propuesta entregada | 35 % | Email enviado con propuesta + agenda | Reunión reservada | 14 |
-| Reunión agendada | 55 % | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
-| Ajuste de propuesta | 75 % | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
-| Acuerdo firmado (ganado) | 100 % | Pedido confirmado por escrito | — | — |
-| Descartado (perdido) | 0 % | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
+Etapas reales del pipeline en HubSpot (id `4080461018`, snapshot
+09/09/2026 — HubSpot es la fuente de verdad; probabilidades en la UI):
+
+| Etapa (HubSpot) | Entra cuando | Sale cuando | Máx. días |
+|---|---|---|---|
+| Información enviada | Email de campaña enviado / el formulario crea el negocio | Respuesta del ayuntamiento | 14 |
+| Muestra interés / Intención de compra | Respuesta positiva · importe puesto | Propuesta lista y aprobada | 2 |
+| Propuesta enviada | Email con propuesta + agenda | Reunión reservada | 14 |
+| Reunión Agendada | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
+| Negociación | Reunión hecha · ajuste de propuesta | Acuerdo o descarte | 21 |
+| Ganado | Pedido confirmado por escrito | — | — |
+| Descartado | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
 
 ## Datos fijos del portal
 
@@ -79,7 +82,7 @@ Con la estructura creada, Claude:
 
 1. Verifica pipeline y propiedades contra estas specs.
 2. Mete un lead de prueba de punta a punta
-   (formulario → contacto + negocio en «Lead mobiliario» → propuesta → tarea).
+   (formulario → contacto + negocio en «Información enviada» → propuesta → tarea).
 3. Deja programados los agentes 2, 5, 6 y 7 del documento operativo
    (generación de propuestas, seguimiento 5/12/14 días, reactivaciones,
    informe semanal del lunes 8:00).
