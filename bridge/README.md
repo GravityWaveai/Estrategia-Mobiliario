@@ -10,7 +10,7 @@ es la única pieza que los une. Se lanza cada hora desde
 |---|---|---|
 | **RESPUESTA** | Contactos de HubSpot con `hs_sales_email_last_replied` relleno | Marca `apollo_estado = respondido`, copia la fecha y los saca de la secuencia |
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
-| **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
+| **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado», con `motivo_perdida = Sin respuesta` |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 50 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
@@ -136,13 +136,23 @@ cuando pasa a `"finished"` sin que el contacto haya llegado antes a
 Solo mueve el negocio si sigue en la primera etapa — si ya avanzó por otro
 motivo, no lo toca.
 
+En el mismo PATCH escribe **`motivo_perdida = sin_respuesta`** («Sin
+respuesta»). HubSpot lo exige al entrar en «Descartado» —es una conditional
+stage property de esa etapa—, pero esa obligatoriedad solo la impone la
+interfaz: por API el negocio se movería igual y se quedaría descartado sin
+motivo, invisible en cualquier informe de motivos de pérdida. Por eso lo pone
+el puente. El valor interno es `sin_respuesta`, verificado en el portal (no
+basta con la etiqueta: HubSpot rechaza el PATCH si no coincide con una opción
+del enumerado).
+
 **Respuesta o reunión tardía, después del descarte**: puede pasar — el
 ayuntamiento contesta semanas después, cuando el negocio ya está en
 «Descartado». El workflow de HubSpot que mueve a «Muestra interés» solo
 dispara desde «Información enviada», así que no lo reabriría por su cuenta.
 Por eso `sync_replies()` y la parte de reunión de `stop_when_engaged()`
 también miran a los contactos en estado `finalizado`, y si su negocio sigue
-en «Descartado», lo reabren a mano a «Muestra interés» antes de que el
+en «Descartado», lo **vacían el `motivo_perdida`** —ya no es cierto que no
+hubiera respuesta— y lo reabren a mano a «Muestra interés» antes de que el
 workflow siga desde ahí con el resto de etapas.
 
 **Por qué la parada la hace el puente y no Apollo**: Apollo corta solo cuando

@@ -76,7 +76,10 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
    (Conditional stage properties de la etapa). Lo rellena el agente al
    generar la propuesta — nunca queda a 0 €.
 2. **`motivo_perdida` obligatorio** al mover a «Descartado»; si el motivo es
-   «ahora no», rellenar también `fecha_reactivacion`.
+   «ahora no», rellenar también `fecha_reactivacion`. El descarte automático
+   del puente (secuencia agotada sin respuesta) lo rellena él solo con «Sin
+   respuesta» (`sin_respuesta`): la obligatoriedad es de la interfaz, así que
+   por API habría que ponerlo a mano o el negocio se quedaría sin motivo.
 3. **No existe etapa «Frío»**: un negocio parado se pierde con motivo y fecha
    de reactivación, y la automatización 6 lo reabre ese día.
 
@@ -151,7 +154,7 @@ mientras el outbound siga apagado es correcto que no tengan negocio.
 | Reunión Agendada | El lead agenda reunión (o el equipo la fija) | Reunión celebrada |
 | Negociación | Reunión hecha · en negociación | Acuerdo o descarte |
 | Ganado | Pedido confirmado por escrito | — |
-| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` | Reapertura manual del equipo |
+| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` · el puente descarta solo, con «Sin respuesta», al agotarse la secuencia | Reapertura manual del equipo, o automática del puente si contesta tarde (que además vacía el motivo) |
 
 ## Datos fijos del portal
 
