@@ -104,19 +104,22 @@ El formulario web crea el negocio directamente en **«Información enviada»**
 
 ### Criterios de flujo y caducidad (confirmados por Norberto, 9/09/2026)
 
-La señal para que el agente genere la propuesta es que **el equipo mueva el
-negocio a «Muestra interés»** cuando el lead responde — no la entrada del
-lead en el pipeline.
+Reparto humano/agente: **las propuestas las prepara el equipo a mano**; el
+agente solo automatiza el paso «Información enviada» → «Muestra interés»
+cuando detecta que el lead ha respondido (email entrante registrado en
+HubSpot) o ha agendado reunión. Los «ahora no» los mueve Amaia a mano a
+«Descartado»; al cumplirse `fecha_reactivacion` el agente solo crea una
+tarea de recordatorio, sin mover etapas.
 
 | Etapa | Entra cuando | Sale cuando | Máx. días |
 |---|---|---|---|
-| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → el equipo lo mueve a «Muestra interés» | 7 (sin respuesta → toque) |
-| Muestra interés / Intención de compra | El lead responde o pide más | El agente genera propuesta (importe + nota + tarea) y Amaia la envía | 2 |
-| Propuesta enviada | Amaia envía la propuesta | Reunión reservada o descarte | 14 |
+| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde o agenda reunión → **el agente lo mueve** a «Muestra interés» | 7 (sin respuesta → toque) |
+| Muestra interés / Intención de compra | El lead responde o pide más | El equipo prepara y envía la propuesta a mano | 2 |
+| Propuesta enviada | El equipo envía la propuesta | Reunión reservada o descarte | 14 |
 | Reunión Agendada | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
 | Negociación | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
 | Ganado | Pedido confirmado por escrito | — | — |
-| Descartado | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
+| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` (tarea de recordatorio, sin mover) | — |
 
 ## Datos fijos del portal
 
