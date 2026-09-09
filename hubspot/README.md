@@ -109,10 +109,10 @@ equipo a mano**. La única automatización de etapas es del agente detector
 (horario), sobre negocios en «Información enviada»: si el lead **agenda
 reunión** (meeting registrado en HubSpot) lo mueve a «Reunión Agendada»; si
 **responde** (email entrante registrado) lo mueve a «Muestra interés».
-Ningún agente crea tareas de recordatorio (los antiguos agentes 5 y 6
-quedaron desactivados el 9/09/2026). Los «ahora no» los mueve Amaia a mano
-a «Descartado». Sigue activo el informe semanal de los lunes (tarea única
-para Norberto).
+Ningún agente crea tareas ni informes: los agentes 5 y 6 (recordatorios)
+quedaron desactivados y el agente 7 (informe semanal) eliminado el
+9/09/2026 — el equipo usa su propio panel. Los «ahora no» los mueve Amaia
+a mano a «Descartado».
 
 | Etapa | Entra cuando | Sale cuando |
 |---|---|---|
