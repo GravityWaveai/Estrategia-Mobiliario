@@ -135,6 +135,14 @@ la `APOLLO_API_KEY` sin permiso de escritura— ese lead no tiene
 el log de Actions (`### INBOUND FALLÓ`, `ERROR al inscribir`) y en la pasada
 en rojo.
 
+Desde el 9/09 ese hueco lo **vigila el chequeo diario del funnel** (Routine
+`trig_01BMvH1DvpXdzZCCSnXk6gxs`, 10:00 todos los días), en su comprobación E:
+busca contactos con `canal_origen` relleno y sin negocio en el pipeline, y lo
+reporta como bug por Slack si el contacto ya debería tenerlo —lead del
+formulario, o contacto con `apollo_estado` relleno—. No crea nada: solo avisa.
+A los contactos `email_ayuntamientos` sin `apollo_estado` no los cuenta, porque
+mientras el outbound siga apagado es correcto que no tengan negocio.
+
 | Etapa | Entra cuando | Sale cuando |
 |---|---|---|
 | Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → **el puente** marca `apollo_estado` y el workflow lo mueve a «Muestra interés»; si agenda reunión → a «Reunión Agendada» |
