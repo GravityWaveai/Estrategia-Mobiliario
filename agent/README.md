@@ -46,7 +46,9 @@ Baleares y Canarias; 156 con email institucional, 67 sin email localizado.
    (https://app.apollo.io/#/lists/6a983205f242c800107386c8), la que
    alimenta las secuencias de outbound. Apollo deduplica por email.
 6. Da de alta cada contacto en HubSpot (upsert por email) con
-   `tipo_entidad=ayuntamiento`, `municipio` y
+   `tipo_entidad=ayuntamiento`, `municipio`, la provincia verificada en la
+   propiedad estándar `state` («Estado/Región»; cuando exista la propiedad
+   personalizada `provincia` de la spec, también en ella) y
    `canal_origen=email_ayuntamientos` — las propiedades que ya usa el
    embudo, de modo que los workflows de HubSpot siguen desde ahí.
    El resultado queda en la columna `hubspot_sync`

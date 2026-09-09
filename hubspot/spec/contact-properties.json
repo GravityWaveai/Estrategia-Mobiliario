@@ -25,6 +25,13 @@
       "fieldType": "text"
     },
     {
+      "name": "provincia",
+      "label": "Provincia",
+      "groupName": "mobiliario_urbano",
+      "type": "string",
+      "fieldType": "text"
+    },
+    {
       "name": "productos_interes",
       "label": "Productos de interés",
       "groupName": "mobiliario_urbano",
