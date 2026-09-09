@@ -104,22 +104,25 @@ El formulario web crea el negocio directamente en **«Información enviada»**
 
 ### Criterios de flujo y caducidad (confirmados por Norberto, 9/09/2026)
 
-Reparto humano/agente: **las propuestas las prepara el equipo a mano**; el
-agente solo automatiza el paso «Información enviada» → «Muestra interés»
-cuando detecta que el lead ha respondido (email entrante registrado en
-HubSpot) o ha agendado reunión. Los «ahora no» los mueve Amaia a mano a
-«Descartado»; al cumplirse `fecha_reactivacion` el agente solo crea una
-tarea de recordatorio, sin mover etapas.
+Reparto humano/agente: **las propuestas y todo el seguimiento los lleva el
+equipo a mano**. La única automatización de etapas es del agente detector
+(horario), sobre negocios en «Información enviada»: si el lead **agenda
+reunión** (meeting registrado en HubSpot) lo mueve a «Reunión Agendada»; si
+**responde** (email entrante registrado) lo mueve a «Muestra interés».
+Ningún agente crea tareas de recordatorio (los antiguos agentes 5 y 6
+quedaron desactivados el 9/09/2026). Los «ahora no» los mueve Amaia a mano
+a «Descartado». Sigue activo el informe semanal de los lunes (tarea única
+para Norberto).
 
-| Etapa | Entra cuando | Sale cuando | Máx. días |
-|---|---|---|---|
-| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde o agenda reunión → **el agente lo mueve** a «Muestra interés» | 7 (sin respuesta → toque) |
-| Muestra interés / Intención de compra | El lead responde o pide más | El equipo prepara y envía la propuesta a mano | 2 |
-| Propuesta enviada | El equipo envía la propuesta | Reunión reservada o descarte | 14 |
-| Reunión Agendada | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
-| Negociación | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
-| Ganado | Pedido confirmado por escrito | — | — |
-| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` (tarea de recordatorio, sin mover) | — |
+| Etapa | Entra cuando | Sale cuando |
+|---|---|---|
+| Información enviada | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → **agente** lo mueve a «Muestra interés»; si agenda reunión → **agente** lo mueve a «Reunión Agendada» |
+| Muestra interés / Intención de compra | El lead responde o pide más | El equipo prepara y envía la propuesta a mano |
+| Propuesta enviada | El equipo envía la propuesta | Reunión reservada o descarte |
+| Reunión Agendada | El lead agenda reunión (o el equipo la fija) | Reunión celebrada |
+| Negociación | Reunión hecha · en negociación | Acuerdo o descarte |
+| Ganado | Pedido confirmado por escrito | — |
+| Descartado | Amaia lo mueve a mano · exige `motivo_perdida` | Reapertura manual del equipo |
 
 ## Datos fijos del portal
 
