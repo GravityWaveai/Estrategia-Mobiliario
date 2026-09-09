@@ -710,7 +710,7 @@ def stop_when_engaged():
         if h["id"] in SELLADOS:
             continue
         props = h["properties"]
-        if props["apollo_estado"] in EN_CURSO + ["finalizado"]:  # llegó por la reunión
+        if props["apollo_estado"] in EN_CURSO + ["finalizado", "respondido"]:  # llegó por la reunión
             # Una reunión de antes de la campaña no es una señal de esta.
             if not _tras_inscripcion(props.get("engagements_last_meeting_booked"), props):
                 continue
