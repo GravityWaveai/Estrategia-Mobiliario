@@ -42,9 +42,9 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 ## Reglas del pipeline (configuración en UI, no cubierta por API)
 
-1. **Importe obligatorio** desde «Propuesta en preparación»
-   (Conditional stage properties de la etapa). Lo rellena el agente con los
-   precios por volumen del configurador — nunca queda a 0 €.
+1. **Importe obligatorio** desde «Muestra interés / Intención de compra»
+   (Conditional stage properties de la etapa). Lo rellena el agente al
+   generar la propuesta — nunca queda a 0 €.
 2. **`motivo_perdida` obligatorio** al mover a «Descartado»; si el motivo es
    «ahora no», rellenar también `fecha_reactivacion`.
 3. **No existe etapa «Frío»**: un negocio parado se pierde con motivo y fecha
@@ -52,15 +52,21 @@ nombres internos, etiquetas, tipos y valores exactos para crearlo a mano en
 
 ## Etapas — criterios y caducidad
 
-| Etapa | Prob. | Entra cuando | Sale cuando | Máx. días |
-|---|---|---|---|---|
-| Lead mobiliario | 10 % | El formulario crea el negocio | El agente termina propuesta + mockups | 1 |
-| Propuesta en preparación | 20 % | Agente trabajando · importe puesto | Amaia aprueba el envío | 2 |
-| Propuesta entregada | 35 % | Email enviado con propuesta + agenda | Reunión reservada | 14 |
-| Reunión agendada | 55 % | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
-| Ajuste de propuesta | 75 % | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
-| Acuerdo firmado (ganado) | 100 % | Pedido confirmado por escrito | — | — |
-| Descartado (perdido) | 0 % | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
+> ⚠️ El 9/09/2026 el equipo renombró las etapas en HubSpot (los IDs no
+> cambiaron, siguen siendo 5948376264–70; los ficheros de `spec/` conservan
+> las etiquetas con las que se creó el pipeline). La señal para que el
+> agente genere la propuesta es que **el equipo mueva el negocio a
+> «Muestra interés»** cuando el lead responde — no la entrada del lead.
+
+| Etapa (ID) | Entra cuando | Sale cuando | Máx. días |
+|---|---|---|---|
+| Información enviada (…264) | El formulario/campaña crea el negocio; la info ya está enviada | El lead responde → el equipo lo mueve a «Muestra interés» | 7 (sin respuesta → toque) |
+| Muestra interés / Intención de compra (…265) | El lead responde o pide más | El agente genera propuesta (importe + nota + tarea) y Amaia la envía | 2 |
+| Propuesta enviada (…266) | Amaia envía la propuesta | Reunión reservada o descarte | 14 |
+| Reunión Agendada (…267) | Hueco en el calendario de Amaia | Reunión celebrada | 10 |
+| Negociación (…268) | Reunión hecha · en negociación | Acuerdo o descarte | 21 |
+| Ganado (…269) | Pedido confirmado por escrito | — | — |
+| Descartado (…270) | No hay proyecto · exige `motivo_perdida` | «ahora no» → `fecha_reactivacion` | — |
 
 ## Datos fijos del portal
 
