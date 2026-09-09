@@ -20,6 +20,33 @@ El efecto del botón «Pedir propuesta» de la barra superior (gradiente
 animado `gw-proposal-flow`) va ahora **dentro del fragmento**, así que se
 conserva aunque se pierda el CSS adicional de WordPress.
 
+## Cambios de la revisión 09/09/2026 — versión SIN PRECIOS
+
+La landing ya no publica ningún importe: el precio se da en la propuesta
+personalizada que envía el equipo. Qué se sustituyó:
+
+| Antes | Ahora |
+|---|---|
+| Portada: «Desde 265 € por pieza» | «Trazabilidad con chapa QR» |
+| Titular: «Tres familias, tarifa oficial» | «Tres familias, un mismo material» |
+| «Banco con respaldo · 654 €» · «Papelera cúbica · 265 €» | Sin importe (medidas, material y CO₂ intactos) |
+| Parques, KPI «Desde 632 €» | KPI «Modelos · 16 referencias» |
+| Letras, KPI «1.250 €/letra» | KPI «Altura · 1 metro» |
+| «Pedir precio de las letras» | «Pedir información de las letras» |
+| Nota «Los precios no incluyen IVA…» | Nota solo de ficha técnica y plazo de respuesta |
+| Compra pública: «tarifa oficial por referencia» | «propuesta adaptada a tu proyecto» |
+| Formulario: «mismo precio por unidad, pidas 1 o 20 piezas» | «Propuesta adaptada a tu proyecto, con las referencias que encajan en tu espacio» |
+| Pantalla de gracias: «propuesta con la tarifa oficial» | «propuesta con las condiciones de tu proyecto» |
+
+Los plazos, medidas, materiales, normativa y ahorro de CO₂ se mantienen.
+La versión con precios queda en el historial de git (commit `d8fff73`).
+
+En esta misma revisión el repositorio se puso al día con la página en vivo:
+botón del catálogo al PDF `2026/09/catalogomobiliariourbano2026.pdf`,
+cargador de imágenes que prueba varias carpetas de Medios y retira del
+carrusel las que falten, y `HS_FORM_GUID` ya relleno (el formulario envía a
+HubSpot; el respaldo por mailto solo actúa si se vacía el GUID).
+
 ## Cambios de la revisión 31/08/2026
 
 - **CO₂ en las fichas** (datos del catálogo Canva 2026): banco 12,13 kg ·
