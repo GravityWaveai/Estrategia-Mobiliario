@@ -125,10 +125,13 @@ que el puente —leer respuesta y reunión de HubSpot para mover el negocio— y
 lo hacía peor: solo de 9 a 18 h de lunes a viernes, frente a la pasada
 horaria del puente los siete días, y sin la comparación contra
 `apollo_fecha_inscripcion` que evita los falsos positivos por historial
-previo (ver `bridge/README.md`). Le queda solo la red de seguridad: crear el
-negocio en «Información enviada» a los contactos con `canal_origen` relleno
-que se hayan quedado sin él. Con una sola tarea que ya no depende de reaccionar
-rápido, su cadencia baja de 10 pasadas diarias a **una, laborables a las 9:00**.
+previo (ver `bridge/README.md`). Le quedó solo la red de seguridad —crear el
+negocio en «Información enviada» a los contactos con `canal_origen` relleno que
+se hayan quedado sin él—, primero a una pasada diaria y **desactivada del todo
+el 10/09**: esa vigilancia la hace ya el chequeo diario en su comprobación E, y
+avisar es más seguro que crear negocios solos (la lista de exclusión que decidía
+a quién no tocar vivía en una conversación, no en el código). La Routine queda
+desactivada, no borrada, por si hace falta recuperarla.
 
 **Hueco conocido**: el puente solo mira contactos con `apollo_estado` relleno
 (y, para la respuesta, `campana_apollo = mobiliario_urbano`), que es lo que
