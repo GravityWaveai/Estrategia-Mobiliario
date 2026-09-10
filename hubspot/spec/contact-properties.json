@@ -78,6 +78,18 @@
         { "label": "6–12 meses", "value": "6_12_meses", "displayOrder": 2 },
         { "label": "Sin definir", "value": "sin_definir", "displayOrder": 3 }
       ]
+    },
+    {
+      "name": "landing_variant",
+      "label": "Variante de landing",
+      "description": "Variante de la landing de mobiliario urbano por la que entró el lead (prueba A/B con precios vs. sin precios). La asigna el reparto 50/50 de la web y viaja en el envío del formulario.",
+      "groupName": "mobiliario_urbano",
+      "type": "enumeration",
+      "fieldType": "select",
+      "options": [
+        { "label": "A · Con precios", "value": "A_con_precios", "displayOrder": 0 },
+        { "label": "B · Sin precios", "value": "B_sin_precios", "displayOrder": 1 }
+      ]
     }
   ]
 }
