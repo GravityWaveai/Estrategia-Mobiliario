@@ -42,8 +42,6 @@ protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
 |---|---|
 | Negocios con reunión | Negocios del segmento con al menos una reunión de Amaia asociada. **Sale del calendario, no de la etapa**: un negocio que se sentó y acabó descartado sigue contando, que es lo que mide el esfuerzo comercial |
 | Conversión a reunión | Negocios con reunión ÷ negocios creados |
-| Reuniones agendadas | Reuniones, no negocios: un negocio con dos citas suma dos. Por eso la conversión usa la cifra de negocios |
-| Aún sin reunión | Negocios del embudo que todavía no se han sentado |
 
 ### Embudo
 
@@ -52,8 +50,7 @@ protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
 | Canal de entrada (solo inbound) | Por dónde llegó cada lead, de `hs_analytics_source` + `hs_analytics_source_data_1`. **No se usa `canal_origen`** — ver abajo |
 | Lead a lead (solo inbound) | La misma fuente, pero sin agregar: una fila por persona que envió el formulario, con su origen, qué pidió y la primera página que vio. El nombre enlaza a su ficha de HubSpot. Va encima de los resultados económicos. Quien rechaza las cookies de seguimiento entra sin fuente y sale como «Sin fuente», contado aparte en la nota en vez de repartido a ojo |
 | Productos de interés (solo inbound) | Leads que marcaron cada opción de `productos_interes`. Es una casilla múltiple, así que un lead cuenta en todos los que pidió y la suma pasa del total de leads a propósito: lo que compara la barra es producto contra producto. El más pedido va en Formentera para que la respuesta se lea sin contar cifras. Una opción nueva del formulario aparece con su valor interno en vez de desaparecer del recuento |
-| Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018` |
-| Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
+| Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018`, en columnas tipo kanban: una por etapa, en el orden del pipeline, con el porcentaje sobre el total del segmento |
 | Motivos de pérdida | `motivo_perdida` de los negocios en «Descartado» |
 
 El total de formularios completados y de ayuntamientos contactados ya no tiene
@@ -62,55 +59,19 @@ al embudo» de la comparativa y en las dos primeras filas de la tabla semanal.
 
 ### vs semana pasada
 
-Compara los últimos 7 días con los 7 anteriores, con las mismas métricas que
-la pestaña combinada. Tres bloques:
+**Cinco cifras y nada más** (simplificada el 11/09/2026): la conversión a
+reunión de protagonista, y al lado se sentaron, negocios nuevos, ganados e
+ingresos. Cada una con su cambio contra la semana anterior.
 
-1. **Reuniones conseguidas** — el objetivo, con la conversión a reunión de
-   protagonista.
-2. **Negocios por etapa** — el mismo embudo, pero contando cuántos negocios
-   **entraron** en cada etapa dentro de cada ventana, con el número de la
-   semana anterior y el signo al lado.
-3. **Movimiento de la semana** — la tabla completa, con el desglose
-   inbound/outbound de la semana en curso.
-4. **Resultados económicos** — al final, como en las demás pestañas.
+Cuatro son **hechos con fecha dentro de la ventana**, exactos. La quinta, la
+**conversión a reunión**, se mide **acumulada a la fecha de corte** de cada
+ventana —igual que en las demás pestañas—, y lo que se compara son dos fotos.
+Medirla dentro de la ventana (lo conseguido esta semana ÷ lo creado esta
+semana) mezclaría cohortes y llegaba a dar **150 %**: las reuniones de esta
+semana son de negocios entrados hace meses. Lo dice la nota de la pestaña.
 
-Casi todo son **hechos con fecha dentro de la ventana**, que son exactos. Dos
-excepciones, marcadas en la propia pestaña:
-
-- **Pipeline abierto** se *reconstruye* a la fecha de corte de cada ventana:
-  un negocio estaba abierto si ya existía y aún no se había cerrado. El
-  importe es el de hoy, porque el histórico no se guarda, así que un negocio
-  revalorizado desde entonces arrastra su importe nuevo hacia atrás.
-- **Las dos conversiones** —a reunión y a ganado— se miden **acumuladas a la
-  fecha de corte** de cada ventana, igual que en las demás pestañas, y lo que
-  se compara son dos fotos. Medirlas dentro de la ventana (lo conseguido esta
-  semana ÷ lo creado esta semana) mezclaría cohortes y llegaba a dar **150 %**:
-  las reuniones de esta semana son de negocios entrados hace meses.
-
-**El ponderado no aparece** en esta pestaña, y es a propósito: haría falta
-saber en qué etapa estaba cada negocio hace una semana para conocer su
-probabilidad de entonces, y HubSpot no guarda ese dato.
-
-| Fila | Qué cuenta |
-|---|---|
-| Formularios completados · Ayuntamientos contactados | Contactos creados dentro de la ventana |
-| Respuestas al outbound | `apollo_fecha_respuesta` dentro de la ventana |
-| Negocios creados | `createdate` dentro de la ventana |
-| Negocios que cambiaron de etapa | `hs_v2_date_entered_current_stage` dentro de la ventana |
-| Reuniones agendadas | Reuniones de Amaia (`681386458`) atadas a un negocio de este pipeline, con inicio dentro de la ventana. Sin repartir por origen. Es el único sitio del panel donde salen |
-| Ganados · Descartados · Ingresos | `closedate` dentro de la ventana; si falta, la fecha de entrada en la etapa |
-| Negocios por etapa | Entradas en cada etapa dentro de la ventana, con la fecha exacta cuando existe y, si no, la de la etapa actual |
-| Pipeline abierto | Reconstruido a la fecha de corte: creado antes y no cerrado todavía, con el importe de hoy |
-| Conversión a ganado | Ganados ÷ creados dentro de la misma ventana |
-
-El signo se colorea por si **mejora o empeora**, no por si sube o baja: más
-descartados sale en gris, no en verde. Sin rojos ni ámbares, que la marca no
-admite.
-
-Mientras HubSpot no cree las fechas de entrada por etapa, la tabla «Entradas en
-cada etapa» solo puede fechar la etapa **actual** de cada negocio: uno que pasó
-por dos etapas en la misma semana cuenta solo en la última. El panel lo dice en
-la propia tabla y deja de decirlo en cuanto las fechas existen.
+Se retiraron el embudo semanal por etapa, la tabla de diez métricas y el
+bloque económico. Están en el historial de git si vuelven a hacer falta.
 
 ### Resultados económicos
 
@@ -121,7 +82,6 @@ reuniones cerradas, y el dinero es la consecuencia.
 |---|---|
 | Conversión a ganado | «Información enviada» → «Ganado», sobre todos los negocios del segmento |
 | Pipeline abierto | Suma de `amount_in_home_currency` de los negocios que no están en «Ganado» ni «Descartado» |
-| Ponderado | Suma de `hs_projected_amount_in_home_currency`, que HubSpot calcula como importe × probabilidad de la etapa. Si falta, se calcula con la probabilidad de la tabla de etapas |
 | Ingresos ganados | Suma de importes de los negocios en «Ganado» con `closedate` dentro del periodo |
 
 ## Instagram, LinkedIn o web: de dónde sale ese dato
@@ -221,6 +181,24 @@ HubSpot:
 > depende de ellas —usa `hs_projected_amount_in_home_currency`, que lo calcula
 > HubSpot—, pero conviene confirmarlas en Settings → Objects → Deals →
 > Pipelines.
+
+## Qué se quitó y por qué (11/09/2026)
+
+Sobraba información y costaba encontrar lo que importa.
+
+| Quitado | Motivo |
+|---|---|
+| «Reuniones agendadas» | Contaba citas, no negocios; la conversión usa negocios, así que invitaba a comparar dos cosas distintas |
+| «Aún sin reunión» | Es el total menos los que se sentaron, y el faro ya dice «5 de 10» en su pie |
+| Tiempo medio en cada etapa | Pedido |
+| Ponderado por probabilidad | Pedido |
+| Probabilidad de etapa en el kanban | No se pidió, pero se quedaba sin sentido: solo alimentaba el ponderado. Sin él eran dos porcentajes juntos y sin etiqueta |
+| Embudo semanal, tabla de diez métricas y bloque económico semanal | La pestaña baja a cinco cifras |
+
+No es solo ocultar: se borró el cálculo que ya no pinta nadie. Y con
+«Reuniones agendadas» se cae **una consulta entera a HubSpot** por refresco,
+porque el recuento del calendario solo alimentaba esa tarjeta. Quedan **7
+consultas donde había 10**.
 
 ## Limitaciones conocidas
 
