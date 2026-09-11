@@ -114,22 +114,43 @@ Comprobado en navegador, los ocho casos:
 
 ## Esquema UTM
 
+Solo se etiquetan los canales de captación **inbound**:
+
 | Canal | `utm_source` | `utm_medium` | `utm_campaign` |
 |---|---|---|---|
-| Campaña ayuntamientos (OUTBOUND) | `email` | `email` | `mobiliario-ayuntamientos-2026` |
 | Instagram | `instagram` | `social` | `mobiliario-2026` |
 | LinkedIn | `linkedin` | `social` | `mobiliario-2026` |
 
-Los enlaces a la landing de los 5 pasos de la secuencia OUTBOUND de Apollo
-(`6a9844f7d0bf520010f72cc1`) tienen que llevar esas tres UTM **antes** de que
-la secuencia se encienda. Si se enciende sin ellas, el tráfico entra como
-directo y no hay forma de recuperar la atribución después.
+**Las secuencias de Apollo van sin UTM, las dos, por decisión (11/09/2026).**
 
-La secuencia INBOUND (`6a9844b94208650014fc4754`) va **sin UTM** a propósito:
-se envía a gente que ya convirtió, no aporta atribución de captación y sí
-podría ensuciar `canal_origen`. Si algún día se quiere medir, con la
-`canalOrigen()` corregida ya es seguro usar
-`utm_source=email&utm_campaign=mobiliario-inbound-2026`.
+- **OUTBOUND** (`6a9844f7d0bf520010f72cc1`): no hace falta etiquetarlo porque
+  ya se sabe que es outbound. Esos contactos llevan `campana_apollo =
+  mobiliario_urbano`, que es lo que usa el panel para separar inbound de
+  outbound — no las UTM. Etiquetar los correos solo añadiría trabajo y una
+  forma más de que algo se ponga mal.
+- **INBOUND** (`6a9844b94208650014fc4754`): se envía a gente que ya convirtió,
+  así que no aporta atribución de captación.
+
+El enumerado `canal_origen` de HubSpot conserva `email_ayuntamientos`, y la
+función lo sigue produciendo, pero como **red de seguridad**: si algún día
+alguien etiqueta un correo, el valor cae donde debe en vez de contarse como
+`web_directo`. Hoy es un camino que no se recorre.
+
+### El precio de no etiquetar el outbound
+
+Un ayuntamiento que recibe el correo frío, pincha el enlace y rellena el
+formulario entra sin etiqueta, así que se anota como `web_directo` — y sale
+en el gráfico «Canal de entrada» de la pestaña inbound junto al tráfico web
+de verdad.
+
+No afecta al reparto inbound/outbound del panel, que va por `campana_apollo`
+y por quién rellenó el formulario, no por `canal_origen`. Y es coherente con
+la regla de atribución ya decidida: manda el último toque, así que un contacto
+de Apollo que rellena el formulario **cuenta como inbound** de todas formas.
+
+Si en algún momento molesta ver esos leads mezclados en el gráfico de canales,
+se arregla en el panel —excluyendo del gráfico los contactos con
+`campana_apollo`—, no etiquetando correos.
 
 ## Cómo pedir un informe de GA4
 
