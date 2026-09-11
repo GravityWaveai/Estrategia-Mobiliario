@@ -135,7 +135,10 @@ section{margin-top:44px}
 .tiles .tile.faro{grid-row:span 1;background:var(--surface);border-left:3px solid var(--accent-mark)}
 .tiles .tile.faro .v{font-size:64px}
 .tiles .tile.faro .k{color:var(--accent)}
-@media(min-width:900px){.tiles.con-faro{grid-template-columns:1.4fr 1fr 1fr 1fr}}
+@media(min-width:900px){
+  .tiles.con-faro{grid-template-columns:1.4fr 1fr}
+  .tiles.con-faro.semanal{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr}
+}
 .tile .v{font-weight:900;font-size:42px;line-height:.92;letter-spacing:-.03em;display:flex;align-items:baseline;gap:6px;order:1}
 .tile .v.destacado{color:var(--accent)}
 .tile .v.nulo{color:var(--ink-faint)}
@@ -144,36 +147,38 @@ section{margin-top:44px}
 .tile .sub{font-size:12px;color:var(--ink-faint);margin-top:auto;order:3}
 .tile .sub b{font-weight:500;color:var(--ink-soft)}
 
-/* ---------- Embudo ---------- */
-.embudo{display:flex;flex-direction:column;gap:2px}
-.etapa{display:grid;grid-template-columns:minmax(160px,265px) 1fr auto;gap:16px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft)}
-.etapa:last-child{border-bottom:0}
-.etapa .nom{font-size:13px;font-weight:500;color:var(--ink-soft);display:flex;align-items:center;gap:9px}
-.etapa .prob{font-size:10px;color:var(--ink-faint);letter-spacing:.08em;font-weight:500}
-.etapa .prob.avisa{color:var(--accent);text-transform:uppercase;letter-spacing:.12em}
-.barra{height:24px;transition:height .3s ease;background:var(--surface);border-radius:1px;position:relative;overflow:hidden;min-width:20px}
-.barra i{display:block;height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,1,.36,1)}
-@media (prefers-reduced-motion:reduce){.barra i{transition:none}}
-.etapa .cifras{display:flex;align-items:baseline;gap:14px;min-width:112px;justify-content:flex-end}
-.embudo.semanal .etapa{grid-template-columns:minmax(160px,240px) 1fr 260px}
-.embudo.semanal .cifras{min-width:0;gap:12px}
-.embudo.semanal .previa{font-size:12px;color:var(--ink-faint);min-width:62px;text-align:right}
-.embudo.semanal .delta{min-width:88px;text-align:right}
-@media(max-width:760px){.embudo.semanal .etapa{grid-template-columns:1fr 260px}}
-.etapa .n{font-weight:900;font-size:19px;letter-spacing:-.02em}
-.etapa .pct{font-size:12px;color:var(--ink-faint);min-width:46px;text-align:right}
-.etapa.perdida .nom{color:var(--ink-faint)}
-/* La etapa que persigue la campaña. Sin trucos de margen: una etiqueta y el
-   nombre a plena luz bastan para que destaque entre las otras seis. */
-.etapa.objetivo .nom{color:var(--ink);font-weight:900}
-.etapa.objetivo .n{color:var(--accent)}
+/* ---------- Embudo, en columnas tipo kanban ----------
+   Una columna por etapa, siempre en una sola fila: si no caben, la caja se
+   desplaza en horizontal en vez de partir el embudo en dos líneas, que
+   rompería la lectura de izquierda a derecha. */
+.kanban{
+  display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);
+  gap:1px;background:var(--line);border:1px solid var(--line);
+  border-radius:2px;overflow-x:auto;
+}
+.kanban .col{
+  background:var(--ground);padding:0 14px 14px;display:flex;flex-direction:column;
+  gap:5px;min-height:158px;border-top:4px solid var(--c);
+}
+.col .nom{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--ink-soft);margin-top:14px;line-height:1.35;min-height:2.7em}
+.col .n{font-weight:900;font-size:34px;line-height:1;letter-spacing:-.03em;margin-top:auto}
+.col .pie{font-size:11px;color:var(--ink-faint);letter-spacing:.04em}
+.col .bh{height:4px;background:var(--surface);border-radius:1px;overflow:hidden;margin-top:4px}
+.col .bh i{display:block;height:100%;background:var(--c)}
+/* La etapa que persigue la campaña: nombre a plena luz y cifra en acento. */
+.col.objetivo .nom{color:var(--ink);font-weight:900}
+.col.objetivo .n{color:var(--accent)}
+.col.perdida .nom{color:var(--ink-faint)}
+.col .marca-obj{display:inline-block;margin-top:5px}
 .marca-obj{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
   color:var(--accent);border:1px solid var(--accent);border-radius:1px;padding:1px 5px;white-space:nowrap}
-.embudo.sin-datos .barra{height:6px}
+.avisa{font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 
 /* ---------- Doble columna ---------- */
 .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:36px}
 .panel-b{border:1px solid var(--line);border-radius:2px;padding:20px;background:var(--ground)}
+.panel-medio{max-width:620px}
 .panel-b h3{font-size:14px;margin-bottom:4px}
 .panel-b .nota{font-size:12px;color:var(--ink-faint);margin:0 0 16px}
 
@@ -334,23 +339,16 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
   <section id="s-embudo">
     <div class="sec-cab">
       <h2>Negocios por etapa</h2>
-      <p class="sec-nota">El porcentaje es sobre el total de negocios del segmento. La probabilidad es la que tiene configurada cada etapa en el pipeline.</p>
+      <p class="sec-nota">Una columna por etapa, en el orden del pipeline. El porcentaje es sobre el total de negocios del segmento.</p>
     </div>
-    <div class="embudo" id="embudo"></div>
+    <div class="kanban" id="embudo"></div>
   </section>
 
   <section id="s-diagnostico">
-    <div class="duo">
-      <div class="panel-b">
-        <h3>Tiempo medio en cada etapa</h3>
-        <p class="nota" id="nota-tiempos"></p>
-        <div id="tiempos"></div>
-      </div>
-      <div class="panel-b">
-        <h3>Motivos de pérdida</h3>
-        <p class="nota">De los negocios movidos a «Descartado». El motivo es obligatorio al cerrar en perdido.</p>
-        <div id="motivos"></div>
-      </div>
+    <div class="panel-b panel-medio">
+      <h3>Motivos de pérdida</h3>
+      <p class="nota">De los negocios movidos a «Descartado». El motivo es obligatorio al cerrar en perdido.</p>
+      <div id="motivos"></div>
     </div>
   </section>
 
@@ -384,20 +382,6 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <h2>Lo que ha pasado esta semana</h2>
       <p class="sec-nota" id="nota-semana"></p>
     </div>
-    <h3 class="sub-tit">Reuniones conseguidas</h3>
-    <p class="sub-nota">El objetivo de la campaña. La conversión es <strong>acumulada a la fecha de corte</strong> de cada ventana, igual que en las otras pestañas: comparar lo conseguido esta semana con lo creado esta semana mezclaría cohortes y podría pasar del 100 %. Las demás cifras sí son de la semana.</p>
-    <div class="tiles" id="tiles-reuniones-semana"></div>
-
-    <h3 class="sub-tit">Negocios por etapa</h3>
-    <p class="sub-nota" id="nota-etapas-semana"></p>
-    <div class="embudo" id="embudo-semana"></div>
-
-    <h3 class="sub-tit">Movimiento de la semana</h3>
-    <p class="sub-nota">Todo lo que <em>ocurrió</em> dentro de cada ventana de siete días. Las dos últimas columnas reparten la semana en curso por origen.</p>
-    <div style="overflow-x:auto"><table class="tabla-comp" id="tabla-semana"></table></div>
-
-    <h3 class="sub-tit">Resultados económicos</h3>
-    <p class="sub-nota" id="nota-resultados-semana"></p>
     <div class="tiles" id="tiles-semana"></div>
   </section>
 
@@ -538,16 +522,6 @@ function txtPct(p){ return p===null ? "—" : String(p).replace(".",",")+" %"; }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
-function dias(ms){
-  if(!isFinite(ms)||ms<=0) return null;
-  var d = ms/86400000;
-  return d<1 ? Math.round(d*10)/10 : Math.round(d*10)/10;
-}
-function txtDias(d){
-  if(d===null) return "—";
-  if(d<1) return String(Math.round(d*24))+" h";
-  return String(d).replace(".",",")+(d===1?" día":" días");
-}
 function fecha(v){
   if(!v) return null;
   var t = Date.parse(v);
@@ -600,8 +574,7 @@ function valorTSV(c){
    Estado
    ============================================================ */
 var D = {
-  negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reuniones:{}, reunionDe:{},
-  plantillaUrl:null,
+  negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reunionDe:{}, plantillaUrl:null,
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
@@ -640,7 +613,7 @@ function falla(clave, err){
      c === "approval_required"){
     /* Denegación de acceso: los datos que hubiera dejan de ser fiables. */
     if(c === "needs_reauth" || c === "server_not_connected" || c === "selection_required"){
-      D.negocios = {}; D.origen = {}; D.cInbound = {}; D.cOutbound = {}; D.reuniones = {};
+      D.negocios = {}; D.origen = {}; D.cInbound = {}; D.cOutbound = {}; D.reunionDe = {};
     }
     avisoConector(c, err.server || SERVIDOR);
   }
@@ -815,19 +788,6 @@ function arranca(){
     });
     D.reunionDe = porNegocio;
   }, {refetchInterval:REFRESCO_LENTO});
-
-  /* Reuniones de Amaia atadas a un negocio de este pipeline. El cruce con
-     DEAL.pipeline es lo que las separa del resto de su calendario. */
-  vigila("reuniones", "query_crm_data", {
-    sql:"SELECT hs_object_id, hs_meeting_start_time, hs_meeting_end_time, hs_meeting_outcome "+
-        "FROM MEETING WHERE hubspot_owner_id = '"+AMAIA+"' AND DEAL.pipeline = '"+PIPELINE+"'",
-    verbosityLevel:"LOW"
-  }, function(p){
-    var filas = [], r = {};
-    if(p && p.results) p.results.forEach(function(b){ filas = filas.concat(parseTSV(b.content)); });
-    filas.forEach(function(f){ if(f.hs_object_id) r[f.hs_object_id] = f; });
-    D.reuniones = r;
-  }, {refetchInterval:REFRESCO_LENTO});
 }
 
 function aplana(r){
@@ -909,12 +869,9 @@ function metricas(seg){
   var lista = negociosDe(seg);
   var m = {
     total:lista.length, porEtapa:{}, ganados:0, perdidos:0, abiertos:0,
-    valorAbierto:0, valorPonderado:0, ingresos:0, motivos:{}, tiempos:{}, dwell:{},
-    conReunion:0
+    valorAbierto:0, ingresos:0, motivos:{}, conReunion:0
   };
   ETAPAS.forEach(function(e){ m.porEtapa[e.id] = 0; });
-
-  var acumTiempo = {}, cuentaTiempo = {}, acumDwell = {}, cuentaDwell = {};
 
   lista.forEach(function(n){
     var et = n.dealstage, i = IDX[et];
@@ -940,41 +897,11 @@ function metricas(seg){
     } else {
       m.abiertos++;
       m.valorAbierto += num(n.amount_in_home_currency || n.amount);
-      var pond = n.hs_projected_amount_in_home_currency;
-      m.valorPonderado += pond ? num(pond)
-        : num(n.amount_in_home_currency || n.amount) * ETAPAS[i].prob;
-    }
-
-    /* Tránsito real: de una etapa a la siguiente por la que pasó. */
-    for(var a = 0; a < ETAPAS.length - 1; a++){
-      var t0 = fecha(n["hs_v2_date_entered_"+ETAPAS[a].id]);
-      if(t0 === null) continue;
-      for(var b = a + 1; b < ETAPAS.length; b++){
-        var t1 = fecha(n["hs_v2_date_entered_"+ETAPAS[b].id]);
-        if(t1 === null) continue;
-        if(t1 > t0){
-          acumTiempo[ETAPAS[a].id] = (acumTiempo[ETAPAS[a].id] || 0) + (t1 - t0);
-          cuentaTiempo[ETAPAS[a].id] = (cuentaTiempo[ETAPAS[a].id] || 0) + 1;
-        }
-        break;
-      }
-    }
-    /* Reposo: lo que lleva parado ahora mismo el negocio en su etapa. */
-    var desde = fecha(n.hs_v2_date_entered_current_stage);
-    if(desde !== null && et !== ID_GANADO && et !== ID_PERDIDO){
-      acumDwell[et] = (acumDwell[et] || 0) + (Date.now() - desde);
-      cuentaDwell[et] = (cuentaDwell[et] || 0) + 1;
     }
   });
 
-  ETAPAS.forEach(function(e){
-    m.tiempos[e.id] = cuentaTiempo[e.id] ? dias(acumTiempo[e.id] / cuentaTiempo[e.id]) : null;
-    m.dwell[e.id]   = cuentaDwell[e.id]  ? dias(acumDwell[e.id]  / cuentaDwell[e.id])  : null;
-  });
-
-  m.conversion   = pct(m.ganados, m.total);
-  m.tasaReunion  = pct(m.conReunion, m.total);
-  m.hayTransito  = ETAPAS.some(function(e){ return m.tiempos[e.id] !== null; });
+  m.conversion  = pct(m.ganados, m.total);
+  m.tasaReunion = pct(m.conReunion, m.total);
 
   /* Cabecera del embudo, distinta en cada origen. */
   m.formularios = Object.keys(D.cInbound).filter(function(k){
@@ -1057,19 +984,6 @@ function leadsInbound(){
   });
 }
 
-/* Reuniones del calendario de Amaia atadas a este pipeline. Cuenta cada
-   reunión, así que un negocio con dos citas suma dos: por eso la conversión
-   usa `conReunion`, que cuenta negocios, y no esta cifra. */
-function reunionesEnPeriodo(){
-  var r = {agendadas:0};
-  Object.keys(D.reuniones).forEach(function(k){
-    var m = D.reuniones[k];
-    if(m.hs_meeting_outcome === "CANCELED") return;
-    if(enPeriodo(fecha(m.hs_meeting_start_time))) r.agendadas++;
-  });
-  return r;
-}
-
 /* ============================================================
    Semana contra semana. Solo cuenta HECHOS con fecha dentro de la ventana
    —negocios creados, etapas alcanzadas, cierres, reuniones—, nunca fotos del
@@ -1099,11 +1013,6 @@ function entroEn(neg, id){
 
 function cero(){ return {a:0, b:0}; }
 
-/* Cuánto pipeline había abierto en una fecha. HubSpot no guarda la foto del
-   embudo, pero sí se puede reconstruir: un negocio estaba abierto en T si ya
-   existía y todavía no se había cerrado. El importe es el de hoy —el
-   histórico no se guarda—, así que un negocio revalorizado desde entonces
-   arrastra su importe nuevo hacia atrás. */
 /* Una conversión de la ventana —lo conseguido esta semana entre lo creado
    esta semana— mezcla cohortes y puede pasar del 100 %: las reuniones de esta
    semana son de negocios entrados hace meses. Así que se mide igual que en
@@ -1124,36 +1033,13 @@ function tuvoReunionEn(neg, corte){
   return t !== undefined && t <= corte;
 }
 
-function ganadoEn(neg, corte){
-  if(neg.dealstage !== ID_GANADO) return false;
-  var k = fecha(neg.closedate) || entroEn(neg, ID_GANADO);
-  return k !== null && k <= corte;
-}
-
-function abiertoEn(lista, corte){
-  var total = 0;
-  lista.forEach(function(neg){
-    var creado = fecha(neg.createdate);
-    if(creado === null || creado > corte) return;
-    var cerrado = (neg.dealstage === ID_GANADO || neg.dealstage === ID_PERDIDO);
-    if(cerrado){
-      var k = fecha(neg.closedate) || entroEn(neg, neg.dealstage);
-      if(k === null || k <= corte) return;   /* ya estaba cerrado en T */
-    }
-    total += num(neg.amount_in_home_currency || neg.amount);
-  });
-  return total;
-}
 function suma(acc, v, val){ if(v) acc[v] += (val === undefined ? 1 : val); }
 
 function metricasSemana(seg){
   var s = {
-    nuevos:cero(), movimientos:cero(), ganados:cero(), perdidos:cero(), ingresos:cero(),
-    formularios:cero(), contactados:cero(), respuestas:cero(),
-    agendadas:cero(), porEtapa:{}, exacto:false, abierto:cero(), conversion:cero(),
+    nuevos:cero(), ganados:cero(), ingresos:cero(),
     conReunion:cero(), tasaReunion:cero()
   };
-  ETAPAS.forEach(function(e){ s.porEtapa[e.id] = cero(); });
   var enSegmento = [];
 
   Object.keys(D.negocios).forEach(function(id){
@@ -1162,60 +1048,23 @@ function metricasSemana(seg){
     enSegmento.push(neg);
 
     suma(s.nuevos, ventana(fecha(neg.createdate)));
-    suma(s.movimientos, ventana(fecha(neg.hs_v2_date_entered_current_stage)));
     /* La conversión cuenta la PRIMERA reunión del negocio, no cada una. */
     suma(s.conReunion, ventana(D.reunionDe[neg.__id]));
-
-    ETAPAS.forEach(function(e){
-      var t = entroEn(neg, e.id);
-      if(t === null) return;
-      if(neg["hs_v2_date_entered_"+e.id]) s.exacto = true;
-      suma(s.porEtapa[e.id], ventana(t));
-    });
 
     if(neg.dealstage === ID_GANADO){
       var vG = ventana(fecha(neg.closedate)) || ventana(entroEn(neg, ID_GANADO));
       suma(s.ganados, vG);
       suma(s.ingresos, vG, num(neg.amount_in_home_currency || neg.amount));
     }
-    if(neg.dealstage === ID_PERDIDO){
-      suma(s.perdidos, ventana(fecha(neg.closedate)) || ventana(entroEn(neg, ID_PERDIDO)));
-    }
   });
 
-  if(seg !== "outbound"){
-    Object.keys(D.cInbound).forEach(function(k){
-      suma(s.formularios, ventana(fecha(D.cInbound[k].createdate)));
-    });
-  }
-  if(seg !== "inbound"){
-    Object.keys(D.cOutbound).forEach(function(k){
-      var c = D.cOutbound[k];
-      suma(s.contactados, ventana(fecha(c.createdate)));
-      suma(s.respuestas, ventana(fecha(c.apollo_fecha_respuesta)));
-    });
-  }
-
-  /* Fotos al cierre de cada ventana: pipeline abierto y conversiones. */
+  /* La conversión a reunión se mide acumulada a la fecha de corte, como en
+     las demás pestañas: medirla dentro de la ventana —lo conseguido esta
+     semana entre lo creado esta semana— mezcla cohortes y llega a pasar del
+     100 %, porque las reuniones de esta semana son de negocios de hace meses. */
   var ahora = Date.now();
-  s.abierto.a = abiertoEn(enSegmento, ahora);
-  s.abierto.b = abiertoEn(enSegmento, ahora - SEMANA);
-
-  /* Ganados sobre creados dentro de la misma ventana. No es la conversión
-     acumulada del embudo: son cohortes distintas, y así se dice arriba. */
-  s.conversion.a  = tasaEn(enSegmento, ahora, ganadoEn);
-  s.conversion.b  = tasaEn(enSegmento, ahora - SEMANA, ganadoEn);
   s.tasaReunion.a = tasaEn(enSegmento, ahora, tuvoReunionEn);
   s.tasaReunion.b = tasaEn(enSegmento, ahora - SEMANA, tuvoReunionEn);
-
-  /* Las reuniones no se reparten por origen; solo se dan en el total. */
-  if(seg === "todo"){
-    Object.keys(D.reuniones).forEach(function(k){
-      var r = D.reuniones[k];
-      if(r.hs_meeting_outcome === "CANCELED") return;
-      suma(s.agendadas, ventana(fecha(r.hs_meeting_start_time)));
-    });
-  }
   return s;
 }
 
@@ -1243,7 +1092,7 @@ function barras(items, formato){
 function pinta(){
   reconstruyeEtapas();
   if(vista === "semana"){ pintaSemana(); return; }
-  var m = metricas(segmento), r = reunionesEnPeriodo();
+  var m = metricas(segmento);
 
   /* Contadores del conmutador */
   $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);
@@ -1255,15 +1104,10 @@ function pinta(){
     '</span><span class="k">Conversión a reunión</span>'+
     '<span class="sub">'+fmtN.format(m.conReunion)+' de '+fmtN.format(m.total)+
     ' negocios han llegado a sentarse</span></div>';
-  var rt = faro;
-  rt += tile("Negocios con reunión", fmtN.format(m.conReunion), "",
-    "Reunión en el calendario de Amaia");
-  rt += tile("Reuniones agendadas", fmtN.format(r.agendadas), "",
-    "Incluye las repetidas con el mismo negocio");
-  rt += tile("Aún sin reunión", fmtN.format(Math.max(0, m.total - m.conReunion)), "",
-    "Negocios del embudo pendientes de sentarse");
   $("tiles-reuniones").className = "tiles con-faro";
-  $("tiles-reuniones").innerHTML = rt;
+  $("tiles-reuniones").innerHTML = faro +
+    tile("Negocios con reunión", fmtN.format(m.conReunion), "",
+      "Reunión en el calendario de Amaia");
 
   /* --- Productos de interés, solo en inbound --- */
   var esInbound = segmento === "inbound";
@@ -1296,33 +1140,19 @@ function pinta(){
 
   /* --- Embudo --- */
   var maxEtapa = Math.max.apply(null, ETAPAS.map(function(e){ return m.porEtapa[e.id]; })) || 1;
-  $("embudo").className = "embudo" + (m.total ? "" : " sin-datos");
   $("embudo").innerHTML = ETAPAS.map(function(e){
     var n = m.porEtapa[e.id];
-    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+
-      (e.id===ID_REUNION?" objetivo":"")+'">'+
+    var aviso = e.ausente ? "ya no está" : (e.tipo === "nueva" ? "etapa nueva" : "");
+    return '<div class="col'+(e.tipo==="perdida"||e.ausente?" perdida":"")+
+      (e.id===ID_REUNION?" objetivo":"")+'" style="--c:var('+e.css+')">'+
       '<span class="nom">'+esc(e.nom)+
-        (e.id===ID_REUNION?'<span class="marca-obj">objetivo</span>':'')+
-        (e.ausente?'<span class="prob avisa">ya no está en el pipeline</span>':
-         e.tipo==="nueva"?'<span class="prob avisa">etapa nueva</span>':
-         '<span class="prob">'+Math.round(e.prob*100)+'%</span>')+'</span>'+
-      '<span class="barra"><i style="width:'+(n ? Math.max(2,(n/maxEtapa)*100) : 0)+
-        '%;background:var('+e.css+')"></i></span>'+
-      '<span class="cifras"><span class="n">'+fmtN.format(n)+'</span>'+
-        '<span class="pct">'+(m.total ? txtPct(pct(n, m.total)) : "—")+'</span></span></div>';
+        (e.id===ID_REUNION?'<br><span class="marca-obj">objetivo</span>':'')+
+        (aviso?'<br><span class="avisa">'+aviso+'</span>':'')+'</span>'+
+      '<span class="n">'+fmtN.format(n)+'</span>'+
+      '<span class="pie">'+(m.total ? txtPct(pct(n, m.total))+" del total" : "—")+'</span>'+
+      '<span class="bh"><i style="width:'+(n ? Math.max(3,(n/maxEtapa)*100) : 0)+'%"></i></span>'+
+      '</div>';
   }).join("");
-
-  /* --- Tiempos --- */
-  var usaTransito = m.hayTransito;
-  $("nota-tiempos").textContent = usaTransito
-    ? "Tiempo real de tránsito: de entrar en una etapa a entrar en la siguiente."
-    : "Todavía no hay tránsitos completos, así que se muestra lo que llevan parados ahora mismo los negocios abiertos en cada etapa.";
-  var filasT = ETAPAS.filter(function(e){ return e.tipo === "abierta"; }).map(function(e){
-    return {et:e.nom, v:(usaTransito ? m.tiempos[e.id] : m.dwell[e.id]) || 0, color:e.css};
-  }).filter(function(f){ return f.v > 0; });
-  $("tiempos").innerHTML = filasT.length
-    ? barras(filasT, txtDias)
-    : '<p class="vacio">Ningún negocio ha estado el tiempo suficiente en una etapa.</p>';
 
   /* --- Motivos de pérdida --- */
   var filasM = Object.keys(m.motivos).map(function(k){
@@ -1339,8 +1169,6 @@ function pinta(){
     fmtN.format(m.ganados)+" de "+fmtN.format(m.total)+" negocios, de punta a punta");
   res += tile("Pipeline abierto", fmtE.format(m.valorAbierto), "",
     fmtN.format(m.abiertos)+" negocios vivos");
-  res += tile("Ponderado por probabilidad", fmtE.format(m.valorPonderado), "",
-    "Importe × probabilidad de etapa");
   res += tile("Ingresos ganados", fmtE.format(m.ingresos), "",
     periodoDias ? "Cerrados en el periodo" : "Desde el inicio de la campaña");
   $("tiles-resultados").innerHTML = res;
@@ -1365,7 +1193,6 @@ function pintaComparativa(){
     ["Ganados", fmtN.format(a.ganados), fmtN.format(b.ganados)],
     ["Conversión a ganado", txtPct(a.conversion), txtPct(b.conversion)],
     ["Pipeline abierto", fmtE.format(a.valorAbierto), fmtE.format(b.valorAbierto)],
-    ["Ponderado", fmtE.format(a.valorPonderado), fmtE.format(b.valorPonderado)],
     ["Ingresos ganados", fmtE.format(a.ingresos), fmtE.format(b.ingresos)]
   ];
   $("comparativa").innerHTML =
@@ -1455,21 +1282,9 @@ function pintaAB(){
 /* ============================================================
    Pintado de la semana
    ============================================================ */
-/* «Mejor» no es siempre «más»: más descartados es peor. Sin rojos ni verdes
-   —la marca no los admite—: mejora en Formentera, empeora en gris azulado. */
-var FILAS_SEMANA = [
-  {k:"formularios",  et:"Formularios completados", bueno:"sube", dinero:false},
-  {k:"contactados",  et:"Ayuntamientos contactados", bueno:"sube", dinero:false},
-  {k:"respuestas",   et:"Respuestas al outbound", bueno:"sube", dinero:false},
-  {k:"nuevos",       et:"Negocios creados", bueno:"sube", dinero:false},
-  {k:"movimientos",  et:"Negocios que cambiaron de etapa", bueno:"sube", dinero:false},
-  {k:"conReunion",   et:"Negocios que consiguieron reunión", bueno:"sube", dinero:false},
-  {k:"agendadas",    et:"Reuniones agendadas", bueno:"sube", dinero:false},
-  {k:"ganados",      et:"Negocios ganados", bueno:"sube", dinero:false},
-  {k:"perdidos",     et:"Negocios descartados", bueno:"baja", dinero:false},
-  {k:"ingresos",     et:"Ingresos ganados", bueno:"sube", dinero:true}
-];
-
+/* «Mejor» no es siempre «más», pero de las cinco que quedan todas mejoran al
+   subir. Sin rojos ni verdes —la marca no los admite—: mejora en Formentera,
+   empeora en gris azulado. */
 function delta(a, b, bueno, dinero, puntos){
   var d = a - b;
   if(d === 0) return '<span class="delta igual">sin cambio</span>';
@@ -1483,97 +1298,34 @@ function delta(a, b, bueno, dinero, puntos){
 function celda(v, dinero){ return dinero ? fmtE.format(v) : fmtN.format(v); }
 
 function pintaSemana(){
-  var T = metricasSemana("todo"), I = metricasSemana("inbound"), O = metricasSemana("outbound");
+  var T = metricasSemana("todo");
   var f = new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short"});
   var hoy = Date.now();
   $("nota-semana").textContent =
     "Del "+f.format(new Date(hoy - SEMANA))+" al "+f.format(new Date(hoy))+
-    ", frente a los siete días anteriores (del "+f.format(new Date(hoy - 2*SEMANA))+
-    " al "+f.format(new Date(hoy - SEMANA))+").";
+    ", frente a los siete días anteriores. La conversión a reunión es acumulada "+
+    "a la fecha de corte de cada ventana; las otras cuatro cifras son de la semana.";
 
-  /* --- Negocios por etapa: el mismo embudo que en combinado, pero contando
-         entradas dentro de cada ventana en vez del reparto de hoy. --- */
-  $("nota-etapas-semana").textContent = T.exacto
-    ? "Negocios que entraron en cada etapa dentro de la ventana, con la fecha exacta que guarda HubSpot."
-    : "HubSpot todavía no ha creado las fechas de entrada de este pipeline, así que solo se puede fechar la entrada en la etapa donde está hoy cada negocio. Uno que pasó por dos etapas la misma semana cuenta solo en la última.";
-  var picos = ETAPAS.map(function(e){
-    var v = T.porEtapa[e.id] || cero(); return Math.max(v.a, v.b); });
-  var maxSem = Math.max.apply(null, picos) || 1;
-  var hayEntradas = picos.some(function(x){ return x > 0; });
-  $("embudo-semana").className = "embudo semanal" + (hayEntradas ? "" : " sin-datos");
-  $("embudo-semana").innerHTML = ETAPAS.map(function(e){
-    var v = T.porEtapa[e.id] || cero();
-    var bueno = (e.id === ID_PERDIDO) ? "baja" : "sube";
-    return '<div class="etapa'+(e.tipo==="perdida"||e.ausente?" perdida":"")+
-      (e.id===ID_REUNION?" objetivo":"")+'">'+
-      '<span class="nom">'+esc(e.nom)+
-        (e.id===ID_REUNION?'<span class="marca-obj">objetivo</span>':'')+'</span>'+
-      '<span class="barra"><i style="width:'+(v.a ? Math.max(2,(v.a/maxSem)*100) : 0)+
-        '%;background:var('+e.css+')"></i></span>'+
-      '<span class="cifras"><span class="n">'+fmtN.format(v.a)+'</span>'+
-        '<span class="previa">'+fmtN.format(v.b)+' antes</span>'+
-        delta(v.a, v.b, bueno, false)+'</span></div>';
-  }).join("");
-
-  /* --- Reuniones: el objetivo, comparado --- */
-  var faroS = '<div class="tile faro"><span class="v destacado">'+esc(txtPct(T.tasaReunion.a))+
+  var faro = '<div class="tile faro"><span class="v destacado">'+esc(txtPct(T.tasaReunion.a))+
     '</span><span class="k">Conversión a reunión</span><span class="sub">'+
     ((T.tasaReunion.a === null || T.tasaReunion.b === null)
       ? '<span class="delta igual">sin comparar</span>'
       : delta(T.tasaReunion.a, T.tasaReunion.b, "sube", false, true))+
     ' &middot; '+txtPct(T.tasaReunion.b)+' la anterior</span></div>';
-  var rs = faroS;
-  rs += tile("Se sentaron esta semana", fmtN.format(T.conReunion.a), "",
-    delta(T.conReunion.a, T.conReunion.b, "sube", false)+' &middot; '+
-    fmtN.format(T.conReunion.b)+' la anterior');
-  rs += tile("Reuniones agendadas", fmtN.format(T.agendadas.a), "",
-    delta(T.agendadas.a, T.agendadas.b, "sube", false)+' &middot; '+
-    fmtN.format(T.agendadas.b)+' la anterior');
-  rs += tile("Inbound / Outbound", fmtN.format(I.conReunion.a)+" / "+fmtN.format(O.conReunion.a), "",
-    "Negocios con reunión esta semana, por origen");
-  $("tiles-reuniones-semana").className = "tiles con-faro";
-  $("tiles-reuniones-semana").innerHTML = rs;
 
-  /* --- Resultados económicos: al final, como en las otras pestañas --- */
-  $("nota-resultados-semana").textContent =
-    "La conversión a ganado y el pipeline abierto son fotos a la fecha de corte de cada ventana; ganados e ingresos son de la semana. El pipeline se reconstruye —qué negocios existían y aún no estaban cerrados— con el importe de hoy. El ponderado no aparece: haría falta saber en qué etapa estaba cada negocio hace una semana, y eso HubSpot no lo guarda.";
-  var res = [
-    {k:"conversion", et:"Conversión a ganado", bueno:"sube", tipo:"pct"},
-    {k:"ganados",    et:"Negocios ganados",    bueno:"sube", tipo:"n"},
-    {k:"ingresos",   et:"Ingresos ganados",    bueno:"sube", tipo:"eur"},
-    {k:"abierto",    et:"Pipeline abierto",    bueno:"sube", tipo:"eur"}
+  var filas = [
+    {k:"conReunion", et:"Se sentaron",      dinero:false},
+    {k:"nuevos",     et:"Negocios nuevos",  dinero:false},
+    {k:"ganados",    et:"Ganados",          dinero:false},
+    {k:"ingresos",   et:"Ingresos",         dinero:true}
   ];
-  $("tiles-semana").innerHTML = res.map(function(d){
-    var v = T[d.k], dinero = d.tipo === "eur";
-    var pinta = d.tipo === "pct"
-      ? txtPct(v.a)
-      : (dinero ? fmtE.format(v.a) : fmtN.format(v.a));
-    var antes = d.tipo === "pct"
-      ? txtPct(v.b)
-      : (dinero ? fmtE.format(v.b) : fmtN.format(v.b));
-    var sig = (d.tipo === "pct")
-      ? (v.a === null || v.b === null
-          ? '<span class="delta igual">sin comparar</span>'
-          : delta(v.a, v.b, d.bueno, false, true))
-      : delta(v.a, v.b, d.bueno, dinero);
-    return tile(d.et, pinta, "", sig + ' &middot; ' + antes + ' la anterior', v.a > 0);
+  $("tiles-semana").className = "tiles con-faro semanal";
+  $("tiles-semana").innerHTML = faro + filas.map(function(d){
+    var v = T[d.k];
+    return tile(d.et, celda(v.a, d.dinero), "",
+      delta(v.a, v.b, "sube", d.dinero)+' &middot; '+celda(v.b, d.dinero)+' la anterior',
+      v.a > 0);
   }).join("");
-
-  /* --- Movimiento de la semana --- */
-  $("tabla-semana").innerHTML =
-    '<thead><tr><th>Métrica</th><th>Esta semana</th><th>Semana pasada</th><th>Cambio</th>'+
-    '<th><span class="chip">Inbound</span></th><th><span class="chip out">Outbound</span></th></tr></thead><tbody>'+
-    FILAS_SEMANA.map(function(r){
-      var v = T[r.k], reparte = (r.k !== "agendadas");
-      return '<tr><td>'+esc(r.et)+'</td>'+
-        '<td>'+celda(v.a, r.dinero)+'</td>'+
-        '<td>'+celda(v.b, r.dinero)+'</td>'+
-        '<td>'+delta(v.a, v.b, r.bueno, r.dinero)+'</td>'+
-        (reparte
-          ? '<td>'+celda(I[r.k].a, r.dinero)+'</td><td>'+celda(O[r.k].a, r.dinero)+'</td>'
-          : '<td colspan="2" style="text-align:center;color:var(--ink-faint);font-weight:400">sin repartir por origen</td>')+
-        '</tr>';
-    }).join("")+'</tbody>';
 
   $("n-inbound").textContent  = fmtN.format(negociosDe("inbound").length);
   $("n-outbound").textContent = fmtN.format(negociosDe("outbound").length);
