@@ -298,10 +298,21 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
 
   <section id="s-productos" class="oculto">
     <div class="sec-cab">
-      <h2>Productos de interés</h2>
-      <p class="sec-nota" id="nota-productos"></p>
+      <h2>De dónde vienen y qué piden</h2>
+      <p class="sec-nota">Solo los leads del formulario web. El canal sale del seguimiento de HubSpot; los productos, de lo que marcaron al escribir.</p>
     </div>
-    <div id="productos"></div>
+    <div class="duo">
+      <div class="panel-b">
+        <h3>Canal de entrada</h3>
+        <p class="nota" id="nota-canales"></p>
+        <div id="canales"></div>
+      </div>
+      <div class="panel-b">
+        <h3>Productos de interés</h3>
+        <p class="nota" id="nota-productos"></p>
+        <div id="productos"></div>
+      </div>
+    </div>
   </section>
 
   <section id="s-embudo">
@@ -336,6 +347,19 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <div style="overflow-x:auto">
         <table class="tabla-comp" id="comparativa"></table>
       </div>
+    </div>
+  </section>
+
+  <section id="s-ab" class="oculto">
+    <div class="sec-cab">
+      <h2>Prueba A/B de landing</h2>
+      <p class="sec-nota">Reparto 50/50 por cookie entre <code>/mobiliario-urbano/</code> (con precios) y <code>/mobiliario-urbano-b/</code> (sin precios). El panel no puede medir visita→formulario —HubSpot solo ve a quien rellena—, así que compara formularios enviados y, de esos, cuántos llegaron a reunión.</p>
+    </div>
+    <div class="panel-b">
+      <div style="overflow-x:auto">
+        <table class="tabla-comp" id="tabla-ab"></table>
+      </div>
+      <p class="nota" id="nota-ab" style="margin-top:12px"></p>
     </div>
   </section>
 
@@ -450,6 +474,19 @@ var PROPS_DEAL = ["dealname","dealstage","amount","amount_in_home_currency",
 
 var MOTIVOS = {sin_presupuesto:"Sin presupuesto", ahora_no:"Ahora no",
   eligio_otro:"Eligió otro", sin_respuesta:"Sin respuesta", otro:"Otro"};
+
+/* Fuentes de tráfico de HubSpot. Las redes sociales no vienen con nombre en
+   `hs_analytics_source` —todas caen en «Organic Social»—, el nombre está en el
+   detalle `hs_analytics_source_data_1`: instagram, linkedin, facebook... */
+var FUENTES = {
+  SOCIAL_MEDIA:"Redes sociales", PAID_SOCIAL:"Redes sociales (pago)",
+  DIRECT_TRAFFIC:"Web directo", ORGANIC_SEARCH:"Búsqueda orgánica",
+  PAID_SEARCH:"Búsqueda de pago", EMAIL_MARKETING:"Email",
+  REFERRALS:"Referencia", OTHER_CAMPAIGNS:"Otras campañas",
+  OFFLINE:"Fuera de línea", AI_REFERRALS:"Referencia de IA"
+};
+var REDES = {instagram:"Instagram", linkedin:"LinkedIn", facebook:"Facebook",
+  youtube:"YouTube", twitter:"X / Twitter", tiktok:"TikTok"};
 
 /* Valores de `productos_interes`, la casilla múltiple del formulario web.
    Un valor que no esté aquí se muestra tal cual: si alguien añade una opción
@@ -644,7 +681,7 @@ function arranca(){
      con contacto, y eso solo lo hace el SQL, no search_crm_objects. */
   vigila("origen", "query_crm_data", {
     sql:"SELECT hs_object_id, CONTACT.productos_interes, CONTACT.campana_apollo, "+
-        "CONTACT.inbound__outbound FROM DEAL WHERE pipeline = '"+PIPELINE+"'",
+        "CONTACT.inbound__outbound, CONTACT.landing_variant FROM DEAL WHERE pipeline = '"+PIPELINE+"'",
     verbosityLevel:"LOW"
   }, function(p){
     var filas = [];
@@ -653,9 +690,10 @@ function arranca(){
     var acumulado = {};
     filas.forEach(function(f){
       var id = f.hs_object_id; if(!id) return;
-      var a = acumulado[id] || (acumulado[id] = {formulario:false, apollo:false, etiqueta:null});
+      var a = acumulado[id] || (acumulado[id] = {formulario:false, apollo:false, etiqueta:null, variante:null});
       if(f.productos_interes) a.formulario = true;
       if(f.campana_apollo === CAMPANA) a.apollo = true;
+      if(f.landing_variant) a.variante = f.landing_variant;
       var io = f.inbound__outbound;
       if(io){
         if(io.indexOf("INBOUND") === 0) a.formulario = true;
@@ -673,7 +711,8 @@ function arranca(){
       vigila("cin"+pagina, "search_crm_objects", {
         objectType:"CONTACT",
         properties:["email","createdate","productos_interes","unidades_estimadas",
-                    "plazo_proyecto","tipo_entidad","municipio","canal_origen","apollo_estado"],
+                    "plazo_proyecto","tipo_entidad","municipio","canal_origen","apollo_estado",
+                    "landing_variant","hs_analytics_source","hs_analytics_source_data_1"],
         limit:PAGINA,
         offset:pagina * PAGINA,
         filterGroups:[{filters:[{propertyName:"productos_interes", operator:"HAS_PROPERTY"}]}],
@@ -774,6 +813,49 @@ function origenDe(id){
   if(a.formulario) return "inbound";   /* último toque: el formulario manda */
   if(a.apollo) return "outbound";
   return "desconocido";
+}
+
+/* ---------- Prueba A/B de landing (con precios / sin precios) ----------
+   `landing_variant` la escribe el propio formulario web (campo oculto,
+   fijado por el script de reparto 50/50 que vive en la propia landing, no
+   en este panel). Se mide en dos sitios: el envío de formulario sale de
+   los contactos inbound (D.cInbound), y si ese lead llegó a reunión sale
+   del cruce negocio↔reunión que ya usa el resto del panel. */
+var VARIANTES = [
+  {id:"A_con_precios", nom:"A · Con precios"},
+  {id:"B_sin_precios", nom:"B · Sin precios"}
+];
+
+function formulariosPorVariante(){
+  var out = {};
+  VARIANTES.forEach(function(v){ out[v.id] = 0; });
+  var sinEtiquetar = 0;
+  Object.keys(D.cInbound).forEach(function(k){
+    var c = D.cInbound[k];
+    if(!enPeriodo(fecha(c.createdate))) return;
+    var v = c.landing_variant;
+    if(v && out[v] !== undefined) out[v]++;
+    else sinEtiquetar++;
+  });
+  return {porVariante:out, sinEtiquetar:sinEtiquetar};
+}
+
+/* De los negocios inbound cuyo contacto trae landing_variant, cuántos
+   llegaron a tener reunión (mismo criterio que el resto del panel: la
+   reunión del calendario de Amaia, no la etapa). */
+function reunionPorVariante(){
+  var out = {};
+  VARIANTES.forEach(function(v){ out[v.id] = {total:0, conReunion:0}; });
+  Object.keys(D.negocios).forEach(function(id){
+    var n = D.negocios[id];
+    if(!enPeriodo(fecha(n.createdate))) return;
+    var a = D.origen[id];
+    var v = a && a.variante;
+    if(!v || !out[v]) return;
+    out[v].total++;
+    if(D.reunionDe[id] !== undefined) out[v].conReunion++;
+  });
+  return out;
 }
 
 function enPeriodo(ms){
@@ -893,6 +975,38 @@ function porProducto(){
      a «qué producto funciona más» se lea sin contar cifras. */
   filas.forEach(function(f, i){ f.color = (i === 0 ? "--stage-6" : "--stage-2"); });
   return {filas:filas, leads:leads};
+}
+
+/* Por dónde entró cada lead. Sale del seguimiento propio de HubSpot, que lee
+   el referente aunque el enlace no lleve UTM; `canal_origen` solo acierta si
+   el visitante llega con la UTM puesta y envía el formulario en esa misma
+   página, así que aquí no se usa. */
+function porCanal(){
+  var cuenta = {}, leads = 0, sinDato = 0;
+  Object.keys(D.cInbound).forEach(function(k){
+    var c = D.cInbound[k];
+    if(!enPeriodo(fecha(c.createdate))) return;
+    leads++;
+    var fuente = c.hs_analytics_source;
+    if(!fuente){ sinDato++; return; }
+    var detalle = (c.hs_analytics_source_data_1 || "").toLowerCase();
+    var et;
+    if(fuente === "SOCIAL_MEDIA" || fuente === "PAID_SOCIAL"){
+      /* Aquí es donde se separa Instagram de LinkedIn. */
+      et = (REDES[detalle] || FUENTES[fuente] || fuente)
+         + (fuente === "PAID_SOCIAL" ? " (pago)" : "");
+    } else if(fuente === "REFERRALS" && detalle){
+      et = "Referencia · " + detalle;
+    } else {
+      et = FUENTES[fuente] || fuente;
+    }
+    cuenta[et] = (cuenta[et] || 0) + 1;
+  });
+  var filas = Object.keys(cuenta).map(function(et){
+    return {et:et, v:cuenta[et]};
+  }).sort(function(a, b){ return b.v - a.v; });
+  filas.forEach(function(f, i){ f.color = (i === 0 ? "--stage-6" : "--stage-2"); });
+  return {filas:filas, leads:leads, sinDato:sinDato};
 }
 
 /* Reuniones del calendario de Amaia atadas a este pipeline. Cuenta cada
@@ -1106,11 +1220,22 @@ function pinta(){
   /* --- Productos de interés, solo en inbound --- */
   var esInbound = segmento === "inbound";
   $("s-productos").classList.toggle("oculto", !esInbound);
+  $("s-ab").classList.toggle("oculto", !esInbound);
+  if(esInbound) pintaAB();
   if(esInbound){
+    var ca = porCanal();
+    $("nota-canales").textContent = ca.leads
+      ? "Fuente original de tráfico de cada lead, según el seguimiento de HubSpot."
+        + (ca.sinDato ? " " + fmtN.format(ca.sinDato) + " sin dato de origen." : "")
+      : "Cuando entre el primer formulario, aquí se verá por dónde llegó.";
+    $("canales").innerHTML = ca.filas.length
+      ? barras(ca.filas, function(v){ return fmtN.format(v)+(v===1?" lead":" leads"); })
+      : '<p class="vacio">Ningún formulario completado todavía.</p>';
+
     var pr = porProducto();
     $("nota-productos").textContent = pr.leads
-      ? "De " + fmtN.format(pr.leads) + " formulario(s) completado(s) en /mobiliario-urbano/. "
-        + "Se puede marcar más de un producto, así que los números suman más que el total de leads."
+      ? "De " + fmtN.format(pr.leads) + " formulario(s) completado(s). Se puede marcar "
+        + "más de un producto, así que los números suman más que el total de leads."
       : "Cuando entre el primer formulario, aquí se verá qué producto piden más.";
     $("productos").innerHTML = pr.filas.length
       ? barras(pr.filas, function(v){ return fmtN.format(v)+(v===1?" lead":" leads"); })
@@ -1199,6 +1324,36 @@ function pintaComparativa(){
       return '<tr'+(clave?' class="clave"':'')+'><td>'+esc(f[0])+'</td><td>'+
         esc(f[1])+'</td><td>'+esc(f[2])+'</td></tr>';
     }).join("")+'</tbody>';
+}
+
+function pintaAB(){
+  var f = formulariosPorVariante(), r = reunionPorVariante();
+  var hayDatos = VARIANTES.some(function(v){ return f.porVariante[v.id] > 0; });
+  if(!hayDatos){
+    $("tabla-ab").innerHTML = "";
+    $("nota-ab").innerHTML = '<span class="vacio">Todavía no ha entrado ningún formulario con <code>landing_variant</code> informado. En cuanto el campo oculto empiece a mandar el valor, esta tabla se rellena sola.</span>';
+    return;
+  }
+  var filas = VARIANTES.map(function(v){
+    var envios = f.porVariante[v.id] || 0;
+    var stat = r[v.id] || {total:0, conReunion:0};
+    var tasa = pct(stat.conReunion, envios);
+    return {nom:v.nom, envios:envios, conReunion:stat.conReunion, tasa:tasa};
+  });
+  $("tabla-ab").innerHTML =
+    '<thead><tr><th>Variante</th><th>Formularios enviados</th>'+
+    '<th>Con reunión agendada</th><th>Formulario → reunión</th></tr></thead><tbody>'+
+    filas.map(function(x){
+      return '<tr><td>'+esc(x.nom)+'</td><td>'+fmtN.format(x.envios)+'</td>'+
+        '<td>'+fmtN.format(x.conReunion)+'</td><td>'+txtPct(x.tasa)+'</td></tr>';
+    }).join("")+'</tbody>';
+  var nota = "Formulario → reunión" + " es sobre los envíos de cada variante, no sobre visitas a la landing " +
+    "(HubSpot no ve a quien entra y no rellena).";
+  if(f.sinEtiquetar > 0){
+    nota += " " + fmtN.format(f.sinEtiquetar) + " formulario(s) del periodo no traen "+
+      "<code>landing_variant</code> — leads de antes de activar la prueba, o el campo oculto no se está rellenando.";
+  }
+  $("nota-ab").innerHTML = nota;
 }
 
 /* ============================================================
@@ -1390,7 +1545,8 @@ Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), fun
       o.setAttribute("aria-selected", String(o === b));
     });
     var semanal = vista === "semana";
-    ["s-reuniones","s-productos","s-embudo","s-diagnostico","s-resultados","s-comparativa"].forEach(function(id){
+    ["s-reuniones","s-productos","s-embudo","s-diagnostico","s-resultados",
+     "s-comparativa","s-ab"].forEach(function(id){
       $(id).classList.toggle("oculto", semanal);
     });
     $("s-semana").classList.toggle("oculto", !semanal);
@@ -1423,3 +1579,4 @@ if(window.claude && typeof window.claude.use === "function"){
 }
 })();
 </script>
+

@@ -49,6 +49,7 @@ protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
 
 | Métrica | Definición exacta |
 |---|---|
+| Canal de entrada (solo inbound) | Por dónde llegó cada lead, de `hs_analytics_source` + `hs_analytics_source_data_1`. **No se usa `canal_origen`** — ver abajo |
 | Productos de interés (solo inbound) | Leads que marcaron cada opción de `productos_interes`. Es una casilla múltiple, así que un lead cuenta en todos los que pidió y la suma pasa del total de leads a propósito: lo que compara la barra es producto contra producto. El más pedido va en Formentera para que la respuesta se lea sin contar cifras. Una opción nueva del formulario aparece con su valor interno en vez de desaparecer del recuento |
 | Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018` |
 | Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
@@ -121,6 +122,42 @@ reuniones cerradas, y el dinero es la consecuencia.
 | Pipeline abierto | Suma de `amount_in_home_currency` de los negocios que no están en «Ganado» ni «Descartado» |
 | Ponderado | Suma de `hs_projected_amount_in_home_currency`, que HubSpot calcula como importe × probabilidad de la etapa. Si falta, se calcula con la probabilidad de la tabla de etapas |
 | Ingresos ganados | Suma de importes de los negocios en «Ganado» con `closedate` dentro del periodo |
+
+## Instagram, LinkedIn o web: de dónde sale ese dato
+
+Hay **dos vías** en el portal que dicen por dónde entró un lead, y no dicen lo
+mismo. El panel usa la primera:
+
+**1. `hs_analytics_source` + `hs_analytics_source_data_1` — la que se usa.**
+Es el seguimiento propio de HubSpot, que lee el referente del navegador. La
+fuente sola no distingue redes —Instagram y LinkedIn caen las dos en
+«Organic Social»—; el nombre está en el detalle. Verificado contra el portal
+el 11/09/2026: `instagram` 144 contactos, `linkedin` 56, `facebook` 10, más
+`PAID_SOCIAL` con su propio reparto. Funciona **aunque el enlace no lleve
+UTM**, porque no depende de la URL.
+
+**2. `canal_origen` — la que NO se usa.** Es el campo oculto del formulario,
+y su función en la página hace bien su trabajo:
+
+```js
+var src = (p.get("utm_source") || "").toLowerCase();
+if (src === "instagram") return "instagram";
+if (src === "linkedin")  return "linkedin";
+if (src === "email")     return "email_ayuntamientos";
+return "web_directo";
+```
+
+El problema es *cuándo* lo lee: en el momento de enviar, de la URL que haya
+entonces. Si el visitante llega con la UTM, navega a otra página y vuelve, o
+si el enlace de la publicación no lleva UTM, cae en `web_directo`. Por eso los
+tres leads que hay hoy dicen `web_directo` aunque dos vinieran de sitios
+distintos.
+
+Sigue siendo útil como **intención declarada de campaña** —dice desde qué
+enlace etiquetado se envió—, pero no como reparto de canales. Si se quisiera
+fiable, habría que guardar el `utm_source` en `sessionStorage` la primera vez
+que se ve y leerlo de ahí al enviar; es un cambio en la página web, no en el
+panel.
 
 ## Las tres decisiones que había que tomar
 
