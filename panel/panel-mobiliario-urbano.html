@@ -196,6 +196,22 @@ section{margin-top:44px}
 .tabla-comp tbody td{font-weight:900;letter-spacing:-.01em}
 .tabla-comp tbody td:first-child{font-weight:400}
 .tabla-comp tbody tr:last-child td{border-bottom:0}
+/* La tabla de leads se lee de izquierda a derecha, no son cifras alineadas
+   a la derecha como en la comparativa. */
+.tabla-leads th,.tabla-leads td{text-align:left;white-space:nowrap}
+.tabla-leads tbody td{font-weight:400}
+.tabla-leads tbody td.lead{font-weight:500}
+.tabla-leads td a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.tabla-leads td a:hover{border-bottom-color:var(--accent)}
+.tabla-leads td a:focus-visible{outline:2px solid var(--accent-mark);outline-offset:2px}
+.tabla-leads .canal{font-weight:500;color:var(--ink)}
+.tabla-leads .sin-fuente{color:var(--ink-faint);font-weight:400}
+.tabla-leads .pedido,.tabla-leads .pagina{color:var(--ink-soft);
+  max-width:30ch;overflow:hidden;text-overflow:ellipsis}
+/* Con muchos leads la tabla crece sin fin: se desplaza dentro de su caja y la
+   cabecera se queda fija para no perder de vista qué columna es cuál. */
+.tabla-scroll{overflow:auto;max-height:460px}
+.tabla-scroll thead th{position:sticky;top:0;background:var(--ground);z-index:1}
 .tabla-comp tbody tr.clave td{background:var(--surface);color:var(--accent)}
 .tabla-comp tbody tr.clave td:first-child{color:var(--accent);font-weight:500}
 .chip{display:inline-flex;align-items:center;gap:6px}
@@ -383,6 +399,16 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     <h3 class="sub-tit">Resultados económicos</h3>
     <p class="sub-nota" id="nota-resultados-semana"></p>
     <div class="tiles" id="tiles-semana"></div>
+  </section>
+
+  <section id="s-leads" class="oculto">
+    <div class="sec-cab">
+      <h2>Lead a lead</h2>
+      <p class="sec-nota" id="nota-leads"></p>
+    </div>
+    <div class="panel-b">
+      <div class="tabla-scroll"><table class="tabla-comp tabla-leads" id="tabla-leads"></table></div>
+    </div>
   </section>
 
   <section id="s-resultados">
@@ -575,6 +601,7 @@ function valorTSV(c){
    ============================================================ */
 var D = {
   negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reuniones:{}, reunionDe:{},
+  plantillaUrl:null,
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
@@ -712,7 +739,8 @@ function arranca(){
         objectType:"CONTACT",
         properties:["email","createdate","productos_interes","unidades_estimadas",
                     "plazo_proyecto","tipo_entidad","municipio","canal_origen","apollo_estado",
-                    "landing_variant","hs_analytics_source","hs_analytics_source_data_1"],
+                    "landing_variant","hs_analytics_source","hs_analytics_source_data_1",
+                    "firstname","lastname","hs_analytics_first_url"],
         limit:PAGINA,
         offset:pagina * PAGINA,
         filterGroups:[{filters:[{propertyName:"productos_interes", operator:"HAS_PROPERTY"}]}],
@@ -720,6 +748,8 @@ function arranca(){
       }, function(p){
         if(!p || !p.results) return;
         if(pagina === 0) D.totales.cInbound = p.total;
+        /* Para poder abrir la ficha del contacto desde la tabla. */
+        if(p.urlTemplate) D.plantillaUrl = p.urlTemplate;
         guardaPagina(D.cInbound, p.results.map(aplana), "__id");
       }, {refetchInterval:REFRESCO});
     })(i);
@@ -981,25 +1011,30 @@ function porProducto(){
    el referente aunque el enlace no lleve UTM; `canal_origen` solo acierta si
    el visitante llega con la UTM puesta y envía el formulario en esa misma
    página, así que aquí no se usa. */
+/* De dónde vino un lead, en una etiqueta legible. `null` si HubSpot no lo
+   sabe —quien rechaza las cookies entra sin fuente—, y entonces se cuenta
+   aparte en vez de repartirlo a ojo. */
+function etiquetaCanal(c){
+  var fuente = c.hs_analytics_source;
+  if(!fuente) return null;
+  var detalle = (c.hs_analytics_source_data_1 || "").toLowerCase();
+  if(fuente === "SOCIAL_MEDIA" || fuente === "PAID_SOCIAL"){
+    /* Aquí es donde se separa Instagram de LinkedIn. */
+    return (REDES[detalle] || FUENTES[fuente] || fuente)
+      + (fuente === "PAID_SOCIAL" ? " (pago)" : "");
+  }
+  if(fuente === "REFERRALS" && detalle) return "Referencia · " + detalle;
+  return FUENTES[fuente] || fuente;
+}
+
 function porCanal(){
   var cuenta = {}, leads = 0, sinDato = 0;
   Object.keys(D.cInbound).forEach(function(k){
     var c = D.cInbound[k];
     if(!enPeriodo(fecha(c.createdate))) return;
     leads++;
-    var fuente = c.hs_analytics_source;
-    if(!fuente){ sinDato++; return; }
-    var detalle = (c.hs_analytics_source_data_1 || "").toLowerCase();
-    var et;
-    if(fuente === "SOCIAL_MEDIA" || fuente === "PAID_SOCIAL"){
-      /* Aquí es donde se separa Instagram de LinkedIn. */
-      et = (REDES[detalle] || FUENTES[fuente] || fuente)
-         + (fuente === "PAID_SOCIAL" ? " (pago)" : "");
-    } else if(fuente === "REFERRALS" && detalle){
-      et = "Referencia · " + detalle;
-    } else {
-      et = FUENTES[fuente] || fuente;
-    }
+    var et = etiquetaCanal(c);
+    if(!et){ sinDato++; return; }
     cuenta[et] = (cuenta[et] || 0) + 1;
   });
   var filas = Object.keys(cuenta).map(function(et){
@@ -1007,6 +1042,19 @@ function porCanal(){
   }).sort(function(a, b){ return b.v - a.v; });
   filas.forEach(function(f, i){ f.color = (i === 0 ? "--stage-6" : "--stage-2"); });
   return {filas:filas, leads:leads, sinDato:sinDato};
+}
+
+/* La lista de quien rellenó el formulario, uno por uno, con su origen. El
+   gráfico de canales contesta «qué canal trae más»; esto contesta «este lead
+   concreto, de dónde salió». */
+function leadsInbound(){
+  return Object.keys(D.cInbound).map(function(k){
+    return D.cInbound[k];
+  }).filter(function(c){
+    return enPeriodo(fecha(c.createdate));
+  }).sort(function(a, b){
+    return (fecha(b.createdate) || 0) - (fecha(a.createdate) || 0);
+  });
 }
 
 /* Reuniones del calendario de Amaia atadas a este pipeline. Cuenta cada
@@ -1242,6 +1290,10 @@ function pinta(){
       : '<p class="vacio">Ningún formulario completado todavía.</p>';
   }
 
+  /* --- Lead a lead, solo en inbound --- */
+  $("s-leads").classList.toggle("oculto", !esInbound);
+  if(esInbound) pintaLeadsInbound();
+
   /* --- Embudo --- */
   var maxEtapa = Math.max.apply(null, ETAPAS.map(function(e){ return m.porEtapa[e.id]; })) || 1;
   $("embudo").className = "embudo" + (m.total ? "" : " sin-datos");
@@ -1323,6 +1375,50 @@ function pintaComparativa(){
       var clave = f[0] === "Conversión a reunión";
       return '<tr'+(clave?' class="clave"':'')+'><td>'+esc(f[0])+'</td><td>'+
         esc(f[1])+'</td><td>'+esc(f[2])+'</td></tr>';
+    }).join("")+'</tbody>';
+}
+
+function pintaLeadsInbound(){
+  var leads = leadsInbound();
+  var fDia = new Intl.DateTimeFormat("es-ES",{day:"2-digit",month:"short",year:"numeric"});
+  var sinFuente = leads.filter(function(c){ return !etiquetaCanal(c); }).length;
+
+  $("nota-leads").textContent = leads.length
+    ? "Cada persona que envió el formulario y de dónde llegó, lo más reciente arriba. "
+      + "El origen lo anota HubSpot con su propio seguimiento, no hace falta que el enlace lleve etiqueta."
+      + (sinFuente ? " " + fmtN.format(sinFuente) + " sin fuente: entraron rechazando las cookies de seguimiento."
+                   : "")
+    : "Cuando entre el primer formulario, aquí aparecerá quién fue y por dónde llegó.";
+
+  if(!leads.length){
+    $("tabla-leads").innerHTML =
+      '<tbody><tr><td><p class="vacio">Ningún formulario completado todavía.</p></td></tr></tbody>';
+    return;
+  }
+
+  $("tabla-leads").innerHTML =
+    '<thead><tr><th>Lead</th><th>Entró</th><th>De dónde vino</th>'+
+    '<th>Qué pidió</th><th>Primera página</th></tr></thead><tbody>'+
+    leads.map(function(c){
+      var nombre = [c.firstname, c.lastname].filter(Boolean).join(" ") || c.email || "Sin nombre";
+      var canal = etiquetaCanal(c);
+      var t = fecha(c.createdate);
+      var pedido = (c.productos_interes || "").split(";")
+        .map(function(v){ v = v.trim(); return v ? (PRODUCTOS[v] || v) : null; })
+        .filter(Boolean).join(", ");
+      /* El enlace abre la ficha en HubSpot. La plantilla la da el propio
+         conector; si no llegó, se queda en texto. */
+      var celdaLead = D.plantillaUrl
+        ? '<a href="'+esc(D.plantillaUrl.replace("{id}", c.__id))+
+          '" target="_blank" rel="noopener">'+esc(nombre)+'</a>'
+        : esc(nombre);
+      var pagina = (c.hs_analytics_first_url || "")
+        .replace(/^https?:\/\//, "").replace(/\/$/, "");
+      return '<tr><td class="lead">'+celdaLead+'</td>'+
+        '<td>'+(t === null ? "—" : esc(fDia.format(new Date(t))))+'</td>'+
+        '<td class="'+(canal ? "canal" : "sin-fuente")+'">'+esc(canal || "Sin fuente")+'</td>'+
+        '<td class="pedido" title="'+esc(pedido)+'">'+esc(pedido || "—")+'</td>'+
+        '<td class="pagina" title="'+esc(pagina)+'">'+esc(pagina || "—")+'</td></tr>';
     }).join("")+'</tbody>';
 }
 
@@ -1546,7 +1642,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), fun
     });
     var semanal = vista === "semana";
     ["s-reuniones","s-productos","s-embudo","s-diagnostico","s-resultados",
-     "s-comparativa","s-ab"].forEach(function(id){
+     "s-comparativa","s-ab","s-leads"].forEach(function(id){
       $(id).classList.toggle("oculto", semanal);
     });
     $("s-semana").classList.toggle("oculto", !semanal);

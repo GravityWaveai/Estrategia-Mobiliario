@@ -50,6 +50,7 @@ protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
 | Métrica | Definición exacta |
 |---|---|
 | Canal de entrada (solo inbound) | Por dónde llegó cada lead, de `hs_analytics_source` + `hs_analytics_source_data_1`. **No se usa `canal_origen`** — ver abajo |
+| Lead a lead (solo inbound) | La misma fuente, pero sin agregar: una fila por persona que envió el formulario, con su origen, qué pidió y la primera página que vio. El nombre enlaza a su ficha de HubSpot. Va encima de los resultados económicos. Quien rechaza las cookies de seguimiento entra sin fuente y sale como «Sin fuente», contado aparte en la nota en vez de repartido a ojo |
 | Productos de interés (solo inbound) | Leads que marcaron cada opción de `productos_interes`. Es una casilla múltiple, así que un lead cuenta en todos los que pidió y la suma pasa del total de leads a propósito: lo que compara la barra es producto contra producto. El más pedido va en Formentera para que la respuesta se lea sin contar cifras. Una opción nueva del formulario aparece con su valor interno en vez de desaparecer del recuento |
 | Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018` |
 | Tiempo medio por etapa | De entrar en una etapa a entrar en la siguiente por la que pasó el negocio |
