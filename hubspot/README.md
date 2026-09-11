@@ -23,13 +23,16 @@ Documento operativo de referencia: artifact **«Embudo Mobiliario Urbano»**
 | 5 propiedades de contacto | ✓ Creadas en el portal, idénticas a la spec |
 | 5 propiedades de negocio | ✓ Creadas |
 | Pipeline «Mobiliario Urbano» | ✓ Creado (id `4080461018`) |
-| Formulario de HubSpot | ✗ **No existe**: la página tiene `HS_FORM_GUID = ""` y cae al fallback de mailto — ningún lead se sincroniza aún |
+| Formulario de HubSpot | ✓ Creado y en producción (GUID `92972140-bc00-48e1-bc59-55d5398e304f`, verificado en la página el 10/09/2026) |
+| Medición GA4 de la conversión | ✗ La landing no dispara ningún evento al enviarse el formulario — ver `../analytics/README.md` |
 | Propiedad `unidades_estimadas` | ✗ La página la envía pero no existía en la spec ni en el portal (añadida a la spec; la crea `provision-form.sh`) |
 | Opción `parque_infantil` en `productos_interes` | ✗ La página la ofrece pero el enumerado no la tenía (añadida a la spec; la añade `provision-form.sh`) |
 | `municipio` | La página no la pide como campo propio (va en el mensaje libre) |
 
-Para cerrar la integración: ejecutar `provision-form.sh` (abajo) y pegar el
-GUID resultante en la página.
+El formulario ya está creado y la página lleva su GUID, así que
+`provision-form.sh` solo hace falta si hay que recrearlo. Lo que queda
+abierto es la medición: la conversión no se registra en GA4. Ver
+`../analytics/README.md`.
 
 ## Formulario de la web
 
