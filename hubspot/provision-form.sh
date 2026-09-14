@@ -5,12 +5,15 @@
 # Forms API v3 con HS_PORTAL_ID + HS_FORM_GUID. Este script deja HubSpot
 # listo para recibir esos envíos:
 #
-#   1. Asegura la propiedad de contacto `unidades_estimadas`
-#      (la página la envía y no estaba en el aprovisionamiento inicial)
+#   1. Asegura las propiedades de contacto `unidades_estimadas` y
+#      `landing_variant` (la página las envía y no estaban en el
+#      aprovisionamiento inicial)
 #   2. Asegura la opción `parque_infantil` en `productos_interes`
 #      (la página la ofrece como checkbox; sin la opción, el envío se rechaza)
 #   3. Crea (si no existe, por nombre) el formulario
 #      spec/form-mobiliario-urbano.json y muestra su GUID
+#   4. Asegura el campo oculto `landing_variant` en el formulario
+#      (prueba A/B: sin él, la Forms API rechaza el envío que lo incluye)
 #
 # Al terminar imprime la línea exacta a pegar en la página:
 #   var HS_FORM_GUID = "xxxxxxxx-....";
@@ -50,21 +53,26 @@ split_response() { # respuesta → RESP_BODY, RESP_CODE
   RESP_BODY="${1%$'\n'*}"
 }
 
-echo "== 1. Propiedad contacts.unidades_estimadas =="
-PROP=$(jq -c '.inputs[] | select(.name == "unidades_estimadas")' "$CONTACT_SPEC")
-[[ -n "$PROP" ]] || { echo "  ✗ unidades_estimadas no está en $CONTACT_SPEC" >&2; exit 1; }
-split_response "$(hs GET "/crm/v3/properties/contacts/unidades_estimadas")"
-if [[ "$RESP_CODE" == "200" ]]; then
-  echo "  ✓ Ya existe"
-else
-  split_response "$(hs POST "/crm/v3/properties/contacts" "$PROP")"
+echo "== 1. Propiedades de contacto que envía la página =="
+ensure_prop() { # ensure_prop NOMBRE
+  local nombre="$1" prop
+  prop=$(jq -c --arg n "$nombre" '.inputs[] | select(.name == $n)' "$CONTACT_SPEC")
+  [[ -n "$prop" ]] || { echo "  ✗ $nombre no está en $CONTACT_SPEC" >&2; exit 1; }
+  split_response "$(hs GET "/crm/v3/properties/contacts/$nombre")"
+  if [[ "$RESP_CODE" == "200" ]]; then
+    echo "  ✓ $nombre ya existe"
+    return
+  fi
+  split_response "$(hs POST "/crm/v3/properties/contacts" "$prop")"
   if [[ "$RESP_CODE" == "201" ]]; then
-    echo "  + Creada"
+    echo "  + $nombre creada"
   else
-    echo "  ✗ Error creando la propiedad ($RESP_CODE): $RESP_BODY" >&2
+    echo "  ✗ Error creando $nombre ($RESP_CODE): $RESP_BODY" >&2
     exit 1
   fi
-fi
+}
+ensure_prop unidades_estimadas
+ensure_prop landing_variant
 
 echo
 echo "== 2. Opciones de contacts.productos_interes =="
@@ -119,6 +127,36 @@ else
     echo "  ✗ Error creando el formulario ($RESP_CODE): $RESP_BODY" >&2
     echo "    (Alternativa: crearlo a mano en Marketing → Forms con los campos" >&2
     echo "     de $FORM_SPEC y copiar el GUID de la URL del editor.)" >&2
+    exit 1
+  fi
+fi
+
+echo
+echo "== 4. Campo oculto landing_variant en el formulario =="
+# La Forms API rechaza con 400 cualquier campo que no esté en la definición del
+# formulario, así que sin este campo los envíos de la prueba A/B fallarían.
+# Se parchea la definición VIVA en lugar de reenviar la spec completa: el
+# formulario puede tener campos añadidos a mano desde HubSpot (p. ej. company)
+# que la spec no conoce, y reenviar la spec los borraría.
+split_response "$(hs GET "/marketing/v3/forms/$GUID")"
+[[ "$RESP_CODE" == "200" ]] || { echo "  ✗ No puedo leer el formulario ($RESP_CODE): $RESP_BODY" >&2; exit 1; }
+if jq -e '[.fieldGroups[].fields[].name] | index("landing_variant")' <<<"$RESP_BODY" >/dev/null; then
+  echo "  ✓ Ya presente"
+else
+  GROUP=$(jq -c '.fieldGroups[] | select(any(.fields[]; .name == "landing_variant"))' "$FORM_SPEC")
+  [[ -n "$GROUP" ]] || { echo "  ✗ landing_variant no está en $FORM_SPEC" >&2; exit 1; }
+  # Se inserta detrás de canal_origen (el otro campo oculto) para agrupar los
+  # campos que no ve el visitante; si no estuviera, va al final.
+  BODY=$(jq -c --argjson g "$GROUP" '
+    ((([.fieldGroups | to_entries[]
+        | select(any(.value.fields[]; .name == "canal_origen")) | .key] | first)
+      // ((.fieldGroups | length) - 1)) + 1) as $i
+    | {fieldGroups: (.fieldGroups[0:$i] + [$g] + .fieldGroups[$i:])}' <<<"$RESP_BODY")
+  split_response "$(hs PATCH "/marketing/v3/forms/$GUID" "$BODY")"
+  if [[ "$RESP_CODE" == "200" ]]; then
+    echo "  + Campo añadido (oculto)"
+  else
+    echo "  ✗ Error añadiendo el campo ($RESP_CODE): $RESP_BODY" >&2
     exit 1
   fi
 fi

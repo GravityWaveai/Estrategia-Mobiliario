@@ -298,6 +298,35 @@
       "fields": [
         {
           "objectTypeId": "0-1",
+          "name": "landing_variant",
+          "label": "Variante de landing",
+          "required": false,
+          "hidden": true,
+          "fieldType": "dropdown",
+          "options": [
+            {
+              "label": "A · Con precios",
+              "value": "A_con_precios",
+              "displayOrder": 0,
+              "description": ""
+            },
+            {
+              "label": "B · Sin precios",
+              "value": "B_sin_precios",
+              "displayOrder": 1,
+              "description": ""
+            }
+          ],
+          "sortType": "displayOrder"
+        }
+      ]
+    },
+    {
+      "groupType": "default_group",
+      "richTextType": "text",
+      "fields": [
+        {
+          "objectTypeId": "0-1",
           "name": "message",
           "label": "Mensaje",
           "required": false,

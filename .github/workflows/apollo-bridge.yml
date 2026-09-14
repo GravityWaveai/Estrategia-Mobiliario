@@ -38,6 +38,9 @@ jobs:
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
           BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
           OUTBOUND_ENABLED: ${{ vars.OUTBOUND_ENABLED || '1' }}
-          OUTBOUND_DAILY_CAP: ${{ vars.OUTBOUND_DAILY_CAP || '50' }}
+          # El buzón de Amaia tiene un tope de 30 correos/día y la secuencia
+          # tiene 5 pasos: en régimen cada inscripción diaria acaba generando
+          # 5 correos/día, así que 6 inscripciones/día ≈ 30 correos/día.
+          OUTBOUND_DAILY_CAP: '6'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
         run: python3 bridge/apollo_hubspot_bridge.py
