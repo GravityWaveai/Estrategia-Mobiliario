@@ -483,7 +483,7 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
-    candidatos, page = {}, 1
+    candidatos, sin_municipio, page = {}, [], 1
     while len(candidatos) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
@@ -494,12 +494,24 @@ def enroll_outbound(sender_id):
                 continue          # ya está en alguna secuencia
             if not c.get("email"):
                 continue          # sin correo no hay nada que enviar
+            # El asunto y el cuerpo llevan {{municipio}}. Apollo no envía un
+            # correo con una variable sin valor: inscribir a alguien sin
+            # municipio solo produce un "no enviado" que hay que limpiar a
+            # mano. Se deja fuera sin gastar cupo del día y se avisa; en
+            # cuanto alguien rellene el campo en Apollo entra solo.
+            if not ((c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO) or "").strip():
+                sin_municipio.append(f"{c['email']} ({c.get('organization_name') or 'sin organización'})")
+                continue
             candidatos[c["email"]] = c
             if len(candidatos) >= CAP:
                 break
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
         page += 1
+
+    if sin_municipio:
+        log(f"OUTBOUND: {len(sin_municipio)} contacto(s) de la lista SIN municipio en Apollo, "
+            f"NO se inscriben hasta que alguien lo rellene: " + "; ".join(sin_municipio))
 
     # No basta con que Apollo diga "sin secuencia activa": si ya se procesó
     # antes (respondió, se descartó, rebotó...) HubSpot lo sabe aunque Apollo
