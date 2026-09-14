@@ -12,7 +12,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado» |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia | Inscribe hasta 6 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta 6 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
