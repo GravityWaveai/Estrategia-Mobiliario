@@ -75,9 +75,9 @@ sesión de Claude que tiene los conectores y ejecuta el ciclo completo con
 los conectores de Apollo y HubSpot — sin necesidad de API key de Apollo ni
 token de HubSpot.
 
-Estado: **pausada** hasta el arranque de la campaña. Para activarla:
-decirle a Claude «activa el agente Apollo» o activarla en claude.ai →
-Routines. Para pararla, lo mismo a la inversa.
+Estado: **activa** desde el 02/09/2026 (primera pasada automática el
+07/09). Para pararla, decirle a Claude «pausa el agente Apollo» o
+desactivarla en claude.ai → Routines.
 
 Primera verificación real (02/09/2026): Santa Susanna (municipio sin email)
 → Joan Campolier, Alcalde, ajuntament@stasusanna.org (verificado), añadido
