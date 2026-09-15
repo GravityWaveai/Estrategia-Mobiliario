@@ -266,12 +266,24 @@ def apollo_create_contact(props):
     return contacto
 
 
-def apollo_enroll(sequence_id, contact_ids, sender_id):
-    return apollo("POST", f"/emailer_campaigns/{sequence_id}/add_contact_ids", {
+def apollo_enroll(sequence_id, contact_ids, sender_id, misma_empresa=False):
+    """Inscribe contactos en una secuencia. Devuelve la respuesta de Apollo,
+    que incluye `skipped_contact_ids` con los que NO ha inscrito y por qué.
+
+    `misma_empresa` levanta la regla por la que Apollo no mete a dos contactos
+    del mismo Account en la misma secuencia. Lo usa OUTBOUND: el Account que
+    Apollo adivina para los ayuntamientos no es fiable y cuelga municipios
+    distintos del mismo (Xeraco, Sueca y Torreblanca salían todos como
+    «Ayuntamiento de Hervás»), así que sin esto se saltaría ayuntamientos
+    legítimos por una coincidencia que no existe."""
+    body = {
         "emailer_campaign_id": sequence_id,
         "contact_ids": contact_ids,
         "send_email_from_email_account_id": sender_id,
-    })
+    }
+    if misma_empresa:
+        body["sequence_same_company_in_same_campaign"] = True
+    return apollo("POST", f"/emailer_campaigns/{sequence_id}/add_contact_ids", body)
 
 
 def apollo_stop(sequence_id, contact_ids):
@@ -561,8 +573,19 @@ def enroll_outbound(sender_id):
     if not pendientes:
         return
 
-    write(f"inscribir {len(pendientes)} en OUTBOUND",
-          lambda: apollo_enroll(SEQ_OUTBOUND, pendientes, sender_id))
+    res = write(f"inscribir {len(pendientes)} en OUTBOUND",
+                lambda: apollo_enroll(SEQ_OUTBOUND, pendientes, sender_id, misma_empresa=True))
+
+    # A quien Apollo haya saltado no le ha salido ningún correo. Si se marcara
+    # en HubSpot igual, el workflow le crearía un negocio en el pipeline por un
+    # correo que no existe, y nadie lo notaría: aparecería como contactado.
+    por_id = {c["id"]: email.lower() for email, c in candidatos.items()}
+    saltados_apollo = {por_id[i] for i in ((res or {}).get("skipped_contact_ids") or {})
+                       if i in por_id}
+    if saltados_apollo:
+        log(f"OUTBOUND: Apollo saltó {len(saltados_apollo)} contacto(s) al inscribir, "
+            f"no se marcan en HubSpot: " + "; ".join(sorted(saltados_apollo)))
+        municipio_de = {e: m for e, m in municipio_de.items() if e not in saltados_apollo}
 
     # Marcar campana_apollo en HubSpot: es lo que activa el workflow que crea
     # el negocio (dispara con la lista 2845, filtrada por esta propiedad). Sin
@@ -604,7 +627,8 @@ def enroll_outbound(sender_id):
     # el pipeline.
     creados = 0
     for email, c in candidatos.items():
-        if email.lower() in ya_procesados or email.lower() in encontrados:
+        if (email.lower() in ya_procesados or email.lower() in encontrados
+                or email.lower() in saltados_apollo):
             continue
         # A propósito NO se copia `organization_name` a `company`: el Account
         # que Apollo adivina para estos contactos no es fiable (el 15/09, de
