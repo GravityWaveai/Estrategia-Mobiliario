@@ -338,6 +338,30 @@ def hs_stamp(contact_id, props):
         hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": en_negocio})
 
 
+def hs_create_contact(props):
+    """Crea en HubSpot el contacto de un ayuntamiento OUTBOUND que Apollo
+    todavía no ha empujado. La lista OUTBOUND se sube a Apollo por CSV
+    (`source: csv_import`), así que esos contactos no tienen `hubspot_vid` y
+    la integración nativa Apollo->HubSpot no los trae sola: sin ficha en
+    HubSpot, `campana_apollo` nunca se marca y el workflow que crea el
+    negocio no se dispara aunque el correo salga bien. Si el email ya existe
+    (carrera con el pull nativo), HubSpot responde 409 y se usa ese contacto
+    en vez de duplicarlo."""
+    try:
+        return write(f"crear {props['email']} en HubSpot",
+                     lambda: hs("POST", "/crm/v3/objects/contacts", {"properties": props}))
+    except RuntimeError as e:
+        if "-> 409" not in str(e):
+            raise
+        existentes = hs_search_contacts(
+            [{"filters": [{"propertyName": "email", "operator": "EQ", "value": props["email"]}]}],
+            ["email"],
+        )
+        if not existentes:
+            raise
+        return existentes[0]
+
+
 # --------------------------------------------------------------------------
 # Tareas
 
@@ -543,9 +567,6 @@ def enroll_outbound(sender_id):
     # Marcar campana_apollo en HubSpot: es lo que activa el workflow que crea
     # el negocio (dispara con la lista 2845, filtrada por esta propiedad). Sin
     # este paso el correo sale pero nunca aparece un negocio en el pipeline.
-    # Solo se puede marcar a quien Apollo ya haya empujado a HubSpot; el resto
-    # queda para la siguiente pasada, cuando el pull automático (cada 15 min)
-    # los haya traído.
     #
     # También se copia "municipio": el nombre del negocio lo genera el
     # workflow con {{ enrolled_object.municipio }}, y la integración nativa
@@ -557,6 +578,7 @@ def enroll_outbound(sender_id):
         [{"filters": [{"propertyName": "email", "operator": "IN", "values": list(municipio_de)}]}],
         ["email", "campana_apollo", "municipio", "apollo_estado"],
     )
+    encontrados = {(h["properties"].get("email") or "").lower() for h in en_hubspot}
     marcados = 0
     for h in en_hubspot:
         props = {}
@@ -573,8 +595,34 @@ def enroll_outbound(sender_id):
         if props:
             hs_stamp(h["id"], props)
             marcados += 1
+
+    # Los que la integración nativa de Apollo no ha traído a HubSpot (típico
+    # de la lista OUTBOUND, subida por CSV directo a Apollo) el puente los
+    # crea él mismo, igual que ya hace enroll_inbound en sentido contrario:
+    # OUTBOUND no debe depender de un push nativo que para estos contactos
+    # nunca llega, o el correo sale pero el ayuntamiento no aparece nunca en
+    # el pipeline.
+    creados = 0
+    for email, c in candidatos.items():
+        if email.lower() in ya_procesados or email.lower() in encontrados:
+            continue
+        props = {
+            "email": email,
+            "campana_apollo": CAMPANA,
+            "municipio": municipio_de.get(email.lower()) or "",
+            "apollo_estado": "enviado",
+            FECHA_INSCRIPCION: _ahora(),
+        }
+        if c.get("organization_name"):
+            props["company"] = c["organization_name"]
+        nuevo = write(f"crear {email} en HubSpot (OUTBOUND, Apollo no lo ha empujado)",
+                      lambda p=props: hs_create_contact(p))
+        if nuevo:
+            SELLADOS.add(nuevo.get("id"))
+            creados += 1
+
     log(f"OUTBOUND: {marcados}/{len(pendientes)} ya estaban en HubSpot y quedan "
-        f"marcados; el resto se marca en cuanto Apollo los empuje")
+        f"marcados; {creados} creado(s) en HubSpot porque Apollo no los había empujado")
 
 
 def _apollo_sequences_of(email):

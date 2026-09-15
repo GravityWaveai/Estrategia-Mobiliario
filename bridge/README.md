@@ -12,7 +12,7 @@ es la única pieza que los une. Se lanza cada hora desde
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado», con `motivo_perdida = Sin respuesta` |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta 6 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta 6 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot — y **crea el contacto en HubSpot** a quien Apollo no haya empujado (la lista OUTBOUND se sube por CSV, así que el pull nativo no los trae solo) |
 | **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
@@ -169,9 +169,18 @@ la lista **2845**, filtrada por `campana_apollo = mobiliario_urbano AND
 NOT_IN_LIST 2841`. Sin que algo escriba esa propiedad, la lista nunca se
 puebla y el negocio no se crea nunca — el correo sale, pero no aparece nada en
 el pipeline. Por eso, tras inscribir en Apollo, el puente busca en HubSpot los
-contactos ya pushed desde Apollo y les marca `campana_apollo`. Al que Apollo
-aún no haya empujado a HubSpot (el pull tarda hasta 15 min) se le marca en la
-siguiente pasada — igual que ya hacía `enroll_inbound` con los suyos.
+contactos ya pushed desde Apollo y les marca `campana_apollo`.
+
+**Al que Apollo no ha empujado a HubSpot, el puente lo crea él mismo**
+(`hs_create_contact`), en vez de esperar al pull nativo. Se comprobó en
+producción (14–15/09) que para los contactos de la lista OUTBOUND — subida a
+Apollo por CSV directo, así que llegan sin `hubspot_vid` — el pull nativo
+Apollo→HubSpot nunca los trae: no es cuestión de tardar más de los 15 min que
+sí bastan en `enroll_inbound`, es que ese sentido de la integración no está
+pensado para contactos que no nacieron en HubSpot. Sin esta creación
+explícita, el correo salía perfecto pero el ayuntamiento no aparecía nunca en
+el pipeline — les pasó a 5 de los primeros 6 ayuntamientos reales, corregido
+a mano una vez y ya cubierto en código para que no se repita.
 
 La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
 veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
