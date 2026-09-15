@@ -38,9 +38,27 @@ jobs:
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
           BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
           OUTBOUND_ENABLED: ${{ vars.OUTBOUND_ENABLED || '1' }}
-          # El buzón de Amaia tiene un tope de 30 correos/día y la secuencia
-          # tiene 5 pasos: en régimen cada inscripción diaria acaba generando
-          # 5 correos/día, así que 6 inscripciones/día ≈ 30 correos/día.
-          OUTBOUND_DAILY_CAP: '6'
+          # MODO VACIADO. El buzón de Amaia manda 30 correos/día y cada
+          # ayuntamiento consume 5 (pasos en día 0, +5, +10, +16, +23), así que
+          # el techo SOSTENIDO son 6 inscripciones/día (6 × 5 = 30). Con 6 el
+          # buzón se quedaba a medias durante las primeras 3 semanas: el día 1
+          # solo salen 6 correos de los 30 que caben, porque los seguimientos
+          # aún no han arrancado.
+          #
+          # La lista es finita (~127 pendientes), así que a 30/día se agota en
+          # 5 días y a partir de ahí los seguimientos de esas 5 tandas rellenan
+          # el buzón a 30/día exactos, sin pasarse ni un correo:
+          #   día 0-4   30/día  correo 1 de cada tanda
+          #   día 5-9   30/día  correo 2 (ya no quedan inscripciones nuevas)
+          #   día 10-14 30/día  correo 3     día 16-20  correo 4
+          #   día 23-27 30/día  correo 5
+          # Toda la lista recibe el primer correo en 5 días en vez de 22.
+          #
+          # OJO: esto vale para VACIAR una lista cerrada. Si la lista pasa a
+          # recibir contactos nuevos de forma continua, 30 inscripciones/día
+          # piden 150 correos/día y el buzón no da: los seguimientos se
+          # acumularían en cola y el correo 2 llegaría tarde. En ese caso hay
+          # que volver a 6 o conectar más buzones a la secuencia.
+          OUTBOUND_DAILY_CAP: '30'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
         run: python3 bridge/apollo_hubspot_bridge.py

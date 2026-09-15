@@ -40,6 +40,42 @@ calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
 inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
 lleva su propio reloj desde el día en que entra.
 
+### El tope diario: 30 en modo vaciado, 6 en régimen
+
+Cada ayuntamiento consume **5 correos** (un paso × 5). Con el buzón de Amaia
+a 30 correos/día, el techo **sostenido** son 6 inscripciones/día: a partir de
+la cuarta semana cada día salen 6 correos nuevos + 24 de seguimiento = 30.
+
+Pero con 6 el buzón se quedaba a medias durante el arranque: el primer día
+solo salen 6 correos de los 30 que caben, porque los seguimientos aún no han
+empezado. Como la lista es **cerrada** (~127 pendientes a 15/09), el tope
+está en `30`: la lista se agota en 5 días y después los seguimientos de esas
+5 tandas llenan el buzón a 30/día exactos, sin desbordarlo ni un correo.
+
+| Días | Qué sale | Total/día |
+|---|---|---|
+| 0–4 | correo 1 de cada tanda (30, 30, 30, 30, 7) | 30 |
+| 5–9 | correo 2 (ya no hay inscripciones nuevas) | 30 |
+| 10–14 | correo 3 | 30 |
+| 16–20 | correo 4 | 30 |
+| 23–27 | correo 5 | 30 |
+
+Resultado: toda la lista recibe el primer correo en **5 días** en vez de 22,
+y termina la cadencia hacia el día 27 en vez del 45.
+
+**Cuándo hay que volver a bajarlo a 6**: si la lista pasa a recibir contactos
+nuevos de forma continua (una importación semanal, un scraping recurrente).
+30 inscripciones/día sostenidas piden 150 correos/día y el buzón da 30: los
+seguimientos se acumularían en cola y el correo 2 llegaría tarde. Con feed
+continuo, o se vuelve a 6 o se conectan más buzones a la secuencia.
+
+**El otro tope, el de Apollo**: la secuencia tiene su propio
+`max_emails_per_day`, independiente del límite del buzón. Estaba en 25 —por
+debajo del buzón— así que habría estrangulado los envíos a 25/día dejando 5
+en cola cada día. Se subió a 30 el 15/09 para que los tres límites (buzón,
+secuencia y puente) digan lo mismo. Si algún día se cambia el tope del buzón,
+hay que mover los tres.
+
 **Por qué la respuesta la detecta HubSpot y no Apollo**: `hs_sales_email_last_replied`
 es una propiedad nativa que HubSpot rellena al registrar la respuesta a un correo
 de ventas — y eso es exactamente lo que Apollo le empuja al CRM. Apollo sí sabe
@@ -317,7 +353,7 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
-| — | `OUTBOUND_DAILY_CAP` | fijado a `6` en el workflow (30 correos/día del buzón ÷ 5 pasos). Se cambia editando `apollo-bridge.yml`, no con una variable |
+| — | `OUTBOUND_DAILY_CAP` | fijado a `30` en el workflow — **modo vaciado**, ver abajo. Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 
 ## Primera ejecución
