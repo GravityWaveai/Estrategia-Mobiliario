@@ -575,13 +575,47 @@ function valorTSV(c){
    ============================================================ */
 var D = {
   negocios:{}, origen:{}, cInbound:{}, cOutbound:{}, reunionDe:{}, plantillaUrl:null,
+  /* Cada consulta paginada guarda su página aparte. Antes todo caía en un
+     único objeto que solo crecía: un negocio o un contacto borrado en HubSpot
+     seguía contando hasta recargar la página, porque nadie lo quitaba nunca.
+     Guardando las páginas por separado y recomponiendo en cada refresco, lo
+     que ya no viene deja de estar. */
+  paginas:{negocios:{}, cInbound:{}, cOutbound:{}},
+  /* El origen tiene dos fuentes: el cruce SQL, que manda, y lo deducido por
+     asociación para los negocios que el índice todavía no conoce. */
+  origenSql:{}, origenAsoc:{},
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
 var segmento = "todo", periodoDias = 0, vista = "embudo";
 
-function guardaPagina(destino, filas, clave){
-  filas.forEach(function(f){ destino[f[clave]] = f; });
+function indexa(filas, clave){
+  var out = {};
+  filas.forEach(function(f){ out[f[clave]] = f; });
+  return out;
+}
+
+/* Une las páginas de una consulta en un solo mapa. */
+function une(paginas){
+  var out = {};
+  Object.keys(paginas).forEach(function(k){
+    var pag = paginas[k];
+    Object.keys(pag).forEach(function(id){ out[id] = pag[id]; });
+  });
+  return out;
+}
+
+/* El origen de cada negocio, con el cruce por encima de la deducción. Lo
+   deducido se conserva solo mientras siga haciendo falta: en cuanto el cruce
+   conoce ese negocio, o el negocio desaparece, se tira. */
+function recomponeOrigen(){
+  var out = {};
+  Object.keys(D.origenAsoc).forEach(function(id){
+    if(D.negocios[id] && !D.origenSql[id]) out[id] = D.origenAsoc[id];
+    else delete D.origenAsoc[id];
+  });
+  Object.keys(D.origenSql).forEach(function(id){ out[id] = D.origenSql[id]; });
+  D.origen = out;
 }
 
 /* ============================================================
@@ -614,6 +648,8 @@ function falla(clave, err){
     /* Denegación de acceso: los datos que hubiera dejan de ser fiables. */
     if(c === "needs_reauth" || c === "server_not_connected" || c === "selection_required"){
       D.negocios = {}; D.origen = {}; D.cInbound = {}; D.cOutbound = {}; D.reunionDe = {};
+      D.paginas = {negocios:{}, cInbound:{}, cOutbound:{}};
+      D.origenSql = {}; D.origenAsoc = {};
     }
     avisoConector(c, err.server || SERVIDOR);
   }
@@ -669,10 +705,9 @@ function arranca(){
       }, function(p){
         if(!p || !p.results) return;
         if(pagina === 0) D.totales.negocios = p.total;
-        p.results.forEach(function(r){
-          D.negocios[r.id] = r.properties || {};
-          D.negocios[r.id].__id = r.id;
-        });
+        D.paginas.negocios[pagina] = indexa(p.results.map(aplana), "__id");
+        D.negocios = une(D.paginas.negocios);
+        recomponeOrigen();
       }, {refetchInterval:REFRESCO});
     })(i);
   }
@@ -701,10 +736,8 @@ function arranca(){
         a.etiqueta = io;
       }
     });
-    /* Se fusiona en vez de sustituir. El cruce manda sobre cada negocio que
-       conoce, pero no borra los que todavía no ha indexado y que la
-       clasificación de respaldo (más abajo) ya ha resuelto por asociación. */
-    Object.keys(acumulado).forEach(function(id){ D.origen[id] = acumulado[id]; });
+    D.origenSql = acumulado;
+    recomponeOrigen();
   }, {refetchInterval:REFRESCO});
 
   /* Formularios completados. productos_interes solo lo rellena el formulario
@@ -726,7 +759,8 @@ function arranca(){
         if(pagina === 0) D.totales.cInbound = p.total;
         /* Para poder abrir la ficha del contacto desde la tabla. */
         if(p.urlTemplate) D.plantillaUrl = p.urlTemplate;
-        guardaPagina(D.cInbound, p.results.map(aplana), "__id");
+        D.paginas.cInbound[pagina] = indexa(p.results.map(aplana), "__id");
+        D.cInbound = une(D.paginas.cInbound);
       }, {refetchInterval:REFRESCO});
     })(i);
   }
@@ -745,7 +779,8 @@ function arranca(){
       }, function(p){
         if(!p || !p.results) return;
         if(pagina === 0) D.totales.cOutbound = p.total;
-        guardaPagina(D.cOutbound, p.results.map(aplana), "__id");
+        D.paginas.cOutbound[pagina] = indexa(p.results.map(aplana), "__id");
+        D.cOutbound = une(D.paginas.cOutbound);
       }, {refetchInterval:REFRESCO});
     })(i);
   }
@@ -1153,7 +1188,7 @@ function marcaPorAsociacion(ids, campo){
     var p = res && res.payload, n = 0;
     if(!p || !p.results) return 0;
     p.results.forEach(function(d){
-      var a = D.origen[d.id] || (D.origen[d.id] =
+      var a = D.origenAsoc[d.id] || (D.origenAsoc[d.id] =
         {formulario:false, apollo:false, etiqueta:null, variante:null});
       if(!a[campo]){ a[campo] = true; n++; }
     });
@@ -1183,6 +1218,7 @@ function reclasifica(){
   ]).then(function(n){
     reclasificando = false;
     delete D.fallos["reclasifica"];
+    recomponeOrigen();
     /* Un negocio sin ningún contacto asociado no se va a resolver por aquí
        nunca. Si un intento no clasifica nada, se espacian los siguientes en
        vez de preguntar cada veinte segundos para siempre. */
