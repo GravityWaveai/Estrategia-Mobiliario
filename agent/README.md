@@ -45,7 +45,16 @@ Baleares y Canarias; 156 con email institucional, 67 sin email localizado.
    **«OUTBOUND - MOBILIARIO URBANO»**
    (https://app.apollo.io/#/lists/6a983205f242c800107386c8), la que
    alimenta las secuencias de outbound. Apollo deduplica por email.
-6. Da de alta cada contacto en HubSpot (upsert por email) con
+6. **Inscribe automáticamente** a cada contacto nuevo válido en la
+   secuencia **«OUTBOUND · Mobiliario Urbano — Ayuntamientos»**
+   (`6a9844f7d0bf520010f72cc1`, remitente amaia@thegravitywave.com).
+   Autorizado por Julen el 15/09/2026: no se pide confirmación. Solo entra
+   quien ha pasado la regla de calidad — la plantilla personaliza con
+   `{{municipio}}`, así que sin municipio y provincia verificados no hay
+   inscripción. El paso 1 sale en la primera ventana de envío disponible
+   (lunes a viernes, 10:00–19:00, festivos excluidos), así que un contacto
+   encontrado el lunes por la mañana recibe su primer correo ese mismo día.
+7. Da de alta cada contacto en HubSpot (upsert por email) con
    `tipo_entidad=ayuntamiento`, `municipio`, la provincia verificada en la
    propiedad estándar `state` («Estado/Región»; cuando exista la propiedad
    personalizada `provincia` de la spec, también en ella) y
