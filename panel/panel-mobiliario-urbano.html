@@ -701,7 +701,10 @@ function arranca(){
         a.etiqueta = io;
       }
     });
-    D.origen = acumulado;
+    /* Se fusiona en vez de sustituir. El cruce manda sobre cada negocio que
+       conoce, pero no borra los que todavía no ha indexado y que la
+       clasificación de respaldo (más abajo) ya ha resuelto por asociación. */
+    Object.keys(acumulado).forEach(function(id){ D.origen[id] = acumulado[id]; });
   }, {refetchInterval:REFRESCO});
 
   /* Formularios completados. productos_interes solo lo rellena el formulario
@@ -1103,6 +1106,94 @@ function barras(items, formato){
   }).join("")+'</div>';
 }
 
+/* ============================================================
+   Clasificación de respaldo, sin esperar al índice
+
+   `query_crm_data` no lee el CRM: lee un índice analítico que va unos
+   minutos por detrás. Cuando el puente crea una tanda de ayuntamientos y el
+   workflow abre sus negocios, el cruce negocio↔contacto todavía no los
+   conoce, así que esos negocios se quedan sin origen y desaparecen de las
+   pestañas INBOUND y OUTBOUND —siguen contando en «Combinado», que es lo que
+   hace que las cifras no cuadren entre sí—. Medido el 15/09/2026: ocho
+   negocios en el pipeline, el cruce devolvía dos.
+
+   Las asociaciones sí se leen al instante con search_crm_objects, de modo
+   que los negocios que el cruce aún no clasifica se resuelven por ahí. En
+   cuanto el índice alcanza, el cruce vuelve a mandar.
+   ============================================================ */
+var TOPE_IDS = 100;     /* ids por filtro de asociación que admite HubSpot */
+var TOPE_GRUPOS = 5;    /* grupos de filtros por consulta */
+var ESPERA_RECLAS = 20000;   /* entre intentos que sirvieron de algo */
+var ESPERA_SECA = 180000;    /* cuando el intento anterior no resolvió nada */
+var reclasificando = false, ultimaReclas = 0, ultimaFirma = "", esperaReclas = ESPERA_RECLAS;
+
+function sinClasificar(){
+  return Object.keys(D.negocios).filter(function(id){ return !D.origen[id]; });
+}
+
+/* Marca `campo` en los negocios asociados a esos contactos. Resuelve con
+   cuántos negocios ha clasificado, para no repintar de balde. */
+function marcaPorAsociacion(ids, campo){
+  if(!ids.length) return Promise.resolve(0);
+  var grupos = [];
+  for(var i = 0; i < ids.length && grupos.length < TOPE_GRUPOS; i += TOPE_IDS){
+    grupos.push({
+      filters:[{propertyName:"pipeline", operator:"EQ", value:PIPELINE}],
+      associatedWith:[{objectType:"contacts", operator:"IN",
+        objectIdValues:ids.slice(i, i + TOPE_IDS).map(Number)}]
+    });
+  }
+  return mcp.callTool(SERVIDOR, "search_crm_objects", {
+    objectType:"DEAL",
+    properties:["dealname"],
+    limit:PAGINA,
+    filterGroups:grupos,
+    chatInsights:insight("Panel de conversión de mobiliario urbano: origen de los negocios recién creados")
+  }, {cache:{staleTime:ESPERA_RECLAS}}).then(function(res){
+    var p = res && res.payload, n = 0;
+    if(!p || !p.results) return 0;
+    p.results.forEach(function(d){
+      var a = D.origen[d.id] || (D.origen[d.id] =
+        {formulario:false, apollo:false, etiqueta:null, variante:null});
+      if(!a[campo]){ a[campo] = true; n++; }
+    });
+    return n;
+  });
+}
+
+function reclasifica(){
+  if(!mcp || reclasificando) return;
+  if(!sinClasificar().length) return;
+  var idsOut = Object.keys(D.cOutbound), idsIn = Object.keys(D.cInbound);
+  if(!idsOut.length && !idsIn.length) return;   /* aún no hay contactos */
+  /* Las dos listas de contactos llegan en consultas distintas, y la segunda
+     puede tardar. Si se guardase solo el reloj, un intento hecho cuando solo
+     había contactos inbound dejaría los outbound sin clasificar durante todo
+     el tiempo de espera —justo la pestaña que falla—. La firma incluye lo que
+     se sabe en este momento, así que cuando llega la otra lista se reintenta
+     enseguida; el reloj solo frena los reintentos idénticos. */
+  var firma = sinClasificar().length + "|" + idsOut.length + "|" + idsIn.length;
+  if(firma === ultimaFirma && Date.now() - ultimaReclas < esperaReclas) return;
+  reclasificando = true;
+  ultimaFirma = firma;
+  ultimaReclas = Date.now();                    /* corta la reentrada por pinta() */
+  Promise.all([
+    marcaPorAsociacion(idsOut, "apollo"),
+    marcaPorAsociacion(idsIn,  "formulario")
+  ]).then(function(n){
+    reclasificando = false;
+    delete D.fallos["reclasifica"];
+    /* Un negocio sin ningún contacto asociado no se va a resolver por aquí
+       nunca. Si un intento no clasifica nada, se espacian los siguientes en
+       vez de preguntar cada veinte segundos para siempre. */
+    esperaReclas = (n[0] + n[1] > 0) ? ESPERA_RECLAS : ESPERA_SECA;
+    if(n[0] + n[1] > 0) pinta();
+  }, function(err){
+    reclasificando = false;
+    falla("reclasifica", err || {code:"upstream_error", message:"sin detalle"});
+  });
+}
+
 function pinta(){
   reconstruyeEtapas();
   if(vista === "semana"){ pintaSemana(); return; }
@@ -1194,6 +1285,7 @@ function pinta(){
 
   /* --- Estado --- */
   estadoConexion();
+  reclasifica();
 }
 
 function pintaComparativa(){
@@ -1346,6 +1438,7 @@ function pintaSemana(){
   $("n-outbound").textContent = fmtN.format(negociosDe("outbound").length);
   $("n-todo").textContent     = fmtN.format(negociosDe("todo").length);
   estadoConexion();
+  reclasifica();
 }
 
 function estadoConexion(){
