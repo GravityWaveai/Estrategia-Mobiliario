@@ -212,6 +212,20 @@ La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
 veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
 (acción 4), y eso lo saca automáticamente de la 2845.
 
+**Solo se marca a quien Apollo haya inscrito de verdad.** La respuesta de
+`add_contact_ids` trae `skipped_contact_ids`, y a esos no les ha salido
+ningún correo: si se marcaran igual, el workflow les crearía un negocio en el
+pipeline por un correo que no existe y figurarían como contactados. Se
+descartan antes de tocar HubSpot y se listan en el log.
+
+Y se inscribe con `sequence_same_company_in_same_campaign`: Apollo, por
+defecto, no mete a dos contactos del mismo Account en una secuencia, y el
+Account que adivina para estos ayuntamientos no es fiable — el 15/09 colgaba
+Xeraco, Sueca y Torreblanca del mismo («Ayuntamiento de Hervás»), y Salou y
+El Vendrell de otro. Sin el flag, Apollo iría saltando municipios legítimos
+por una coincidencia que no existe, y con 30 inscripciones/día eso pasa a
+diario.
+
 **Por qué `enroll_outbound()` también comprueba `apollo_estado` en HubSpot**:
 no basta con que Apollo diga que el contacto no está en ninguna secuencia —
 si ya se procesó antes (respondió, se descartó, rebotó...) y Apollo limpió
