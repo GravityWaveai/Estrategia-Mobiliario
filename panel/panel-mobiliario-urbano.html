@@ -1,4 +1,4 @@
-<title>Embudo Mobiliario Urbano</title>
+<title>Panel Status Estrategia Mobiliario Urbano</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;900&display=swap">
@@ -320,7 +320,7 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
   <section id="s-productos" class="oculto">
     <div class="sec-cab">
       <h2>De dónde vienen y qué piden</h2>
-      <p class="sec-nota">Solo los leads del formulario web. El canal sale del seguimiento de HubSpot; los productos, de lo que marcaron al escribir.</p>
+      <p class="sec-nota">Solo los leads del formulario web. El canal sale de la etiqueta del enlace y, si no la lleva, del seguimiento de HubSpot; los productos, de lo que marcaron al escribir.</p>
     </div>
     <div class="duo">
       <div class="panel-b">
@@ -398,7 +398,7 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
   <section id="s-resultados">
     <div class="sec-cab">
       <h2>Resultados económicos</h2>
-      <p class="sec-nota">Lo que pasa después de la reunión: cierre y dinero. El ponderado usa la probabilidad de la etapa en la que está cada negocio.</p>
+      <p class="sec-nota">Lo que pasa después de la reunión: cierre y dinero.</p>
     </div>
     <div class="tiles" id="tiles-resultados"></div>
   </section>
@@ -934,14 +934,28 @@ function porProducto(){
   return {filas:filas, leads:leads};
 }
 
-/* Por dónde entró cada lead. Sale del seguimiento propio de HubSpot, que lee
-   el referente aunque el enlace no lleve UTM; `canal_origen` solo acierta si
-   el visitante llega con la UTM puesta y envía el formulario en esa misma
-   página, así que aquí no se usa. */
-/* De dónde vino un lead, en una etiqueta legible. `null` si HubSpot no lo
-   sabe —quien rechaza las cookies entra sin fuente—, y entonces se cuenta
-   aparte en vez de repartirlo a ojo. */
+/* Por dónde entró cada lead, en una etiqueta legible. Se miran dos fuentes,
+   en este orden:
+
+   1. `canal_origen`, lo que el formulario guardó al enviarse. Va primero
+      porque llega donde el seguimiento de HubSpot no llega: LinkedIn envuelve
+      los enlaces salientes de sus publicaciones y no manda referente, así que
+      un clic desde LinkedIn aterriza en HubSpot como «tráfico directo». La
+      UTM, en cambio, viaja dentro de la propia URL y no depende de nadie.
+      Solo gana cuando dice algo: `web_directo` y `otro` son su forma de
+      encogerse de hombros y se dejan pasar al punto 2.
+
+   2. El seguimiento de HubSpot, que lee el referente aunque el enlace no
+      lleve UTM. Es lo único que distingue búsqueda orgánica de referencia.
+
+   `null` si ninguna de las dos sabe nada —quien rechaza las cookies entra sin
+   fuente—, y entonces se cuenta aparte en vez de repartirlo a ojo. */
+var CANAL_FORM = {instagram:"Instagram", linkedin:"LinkedIn",
+  email_ayuntamientos:"Email a ayuntamientos"};
+
 function etiquetaCanal(c){
+  var propio = CANAL_FORM[c.canal_origen];
+  if(propio) return propio;
   var fuente = c.hs_analytics_source;
   if(!fuente) return null;
   var detalle = (c.hs_analytics_source_data_1 || "").toLowerCase();
@@ -1117,7 +1131,7 @@ function pinta(){
   if(esInbound){
     var ca = porCanal();
     $("nota-canales").textContent = ca.leads
-      ? "Fuente original de tráfico de cada lead, según el seguimiento de HubSpot."
+      ? "Por dónde entró cada lead: la etiqueta del enlace si la trae, y si no el seguimiento de HubSpot."
         + (ca.sinDato ? " " + fmtN.format(ca.sinDato) + " sin dato de origen." : "")
       : "Cuando entre el primer formulario, aquí se verá por dónde llegó.";
     $("canales").innerHTML = ca.filas.length
@@ -1212,7 +1226,8 @@ function pintaLeadsInbound(){
 
   $("nota-leads").textContent = leads.length
     ? "Cada persona que envió el formulario y de dónde llegó, lo más reciente arriba. "
-      + "El origen lo anota HubSpot con su propio seguimiento, no hace falta que el enlace lleve etiqueta."
+      + "Manda la etiqueta del enlace; si no la lleva, se recurre al seguimiento de HubSpot, que no "
+      + "ve nada cuando el clic viene de la aplicación de LinkedIn: esos caen en «Web directo»."
       + (sinFuente ? " " + fmtN.format(sinFuente) + " sin fuente: entraron rechazando las cookies de seguimiento."
                    : "")
     : "Cuando entre el primer formulario, aquí aparecerá quién fue y por dónde llegó.";

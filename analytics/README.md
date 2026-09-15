@@ -136,6 +136,54 @@ función lo sigue produciendo, pero como **red de seguridad**: si algún día
 alguien etiqueta un correo, el valor cae donde debe en vez de contarse como
 `web_directo`. Hoy es un camino que no se recorre.
 
+### Por qué hay que etiquetar el enlace SIEMPRE: el caso TestLK
+
+El 15/09/2026 se probó entrar desde una publicación de LinkedIn al enlace que
+lleva y rellenar el formulario. El lead (`TestLK Test`, contacto
+`868664536298`) entró en HubSpot como tráfico web, no como LinkedIn. Lo que
+HubSpot guardó:
+
+| Propiedad | Valor |
+|---|---|
+| `hs_analytics_first_url` | `https://www.thegravitywave.com/mobiliario-urbano-b/` |
+| `hs_analytics_source` | `DIRECT_TRAFFIC` |
+| `hs_analytics_source_data_1` | `www.thegravitywave.com/mobiliario-urbano-b` |
+| `canal_origen` | `web_directo` |
+
+Fallaron las dos vías a la vez, y por dos motivos distintos:
+
+1. **La URL llegó pelada, sin `?utm_source=`.** El enlace de la publicación
+   no estaba etiquetado. (Las `utm_source=share&utm_medium=member_desktop`
+   que se ven al copiar la dirección de la publicación son de LinkedIn para
+   su propia web: no viajan al enlace de salida.)
+2. **LinkedIn no mandó referente.** Envuelve los enlaces salientes en
+   `lnkd.in` y los marca `noreferrer`; desde su aplicación móvil nunca hay
+   referente. Sin referente, el seguimiento de HubSpot solo puede anotar
+   «tráfico directo» — que es exactamente lo que significa `DIRECT_TRAFFIC`
+   con el `source_data_1` apuntando a la propia landing.
+
+**Regla:** en LinkedIn e Instagram, nunca se publica la URL pelada. Se publica
+la etiquetada de la tabla de arriba. Es lo único que no depende de qué
+navegador, qué aplicación ni qué política de referente tenga quien pincha,
+porque la etiqueta viaja dentro de la propia dirección.
+
+Lo que se ha hecho en código para que duela menos cuando se olvide:
+
+- `generate-lead.js` guarda el origen **al entrar** y lo lee al enviar, y si
+  no hay UTM mira el referente (`linkedin.com`, `lnkd.in`, `instagram.com`)
+  antes de rendirse. Recupera los clics desde el escritorio; los de la
+  aplicación móvil no hay forma de recuperarlos.
+- Ese bloque tiene que ir **antes** del script del sorteo A/B. La redirección
+  entre variantes es un `location.replace()`, que sustituye
+  `document.referrer` por la otra landing y borra el rastro.
+- El panel mira `canal_origen` antes que la atribución de HubSpot, porque la
+  UTM sobrevive donde el referente no. Solo cuando `canal_origen` dice
+  `web_directo` u `otro` pasa a preguntarle a HubSpot, que sí distingue
+  búsqueda orgánica de referencia.
+
+El lead `TestLK Test` **no se puede arreglar hacia atrás**: nadie guardó de
+dónde venía. Se corrige a mano en HubSpot o se queda como está.
+
 ### El precio de no etiquetar el outbound
 
 Un ayuntamiento que recibe el correo frío, pincha el enlace y rellena el

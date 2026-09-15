@@ -47,14 +47,19 @@ window.dataLayer.push({
 
 
 /* ------------------------------------------------------------------ *
- * 2. Captura de campaña — va ARRIBA, junto a las demás funciones
+ * 2. Captura del origen — va ARRIBA DEL TODO
+ *
+ * IMPORTANTE: este bloque tiene que ir ANTES del script del sorteo A/B.
+ * Ese script hace `location.replace()` entre las dos landings, y tras la
+ * redirección `document.referrer` ya no es LinkedIn: es la otra landing.
+ * Si se captura después, se pierde el único rastro que quedaba.
  *
  * El problema que resuelve: `canalOrigen()` leía `location.search` en el
  * momento de enviar. Quien llega desde Instagram, mira el catálogo, vuelve
  * al formulario y envía, ya no tiene la UTM en la URL y contaba como
  * `web_directo`. Lo mismo si el enlace de la publicación no la lleva.
  *
- * Ahora la campaña se guarda en cuanto se ve y se lee de ahí al enviar.
+ * Ahora el origen se guarda en cuanto se ve y se lee de ahí al enviar.
  *
  * `sessionStorage` y no `localStorage` a propósito: una visita de mañana
  * desde otro sitio es otra captación y debe contar como tal. Y no añade
@@ -62,42 +67,73 @@ window.dataLayer.push({
  * manda a HubSpot en `canal_origen`, guardada unos minutos en el propio
  * navegador de quien navega.
  *
- * Manda SIEMPRE la primera campaña de la sesión. Si se prefiere que una
+ * Manda SIEMPRE el primer origen de la sesión. Si se prefiere que una
  * visita posterior desde otra campaña reescriba la atribución, hay que
  * quitar la condición `if (!sessionStorage.getItem(clave))` de guarda().
  * ------------------------------------------------------------------ */
 
-var GW_UTM_SRC = "gw_utm_source", GW_UTM_CAMP = "gw_utm_campaign";
+var GW_UTM_SRC = "gw_utm_source",
+    GW_UTM_CAMP = "gw_utm_campaign",
+    GW_REF = "gw_referente";
 
 /* Todo acceso a sessionStorage va envuelto: en modo privado, con cookies
    bloqueadas o dentro de un iframe, leer o escribir LANZA. Y esto corre en
    la ruta del formulario, así que una excepción aquí costaría un lead. */
-function guardaCampana(clave, valor) {
+function guardaOrigen(clave, valor) {
   if (!valor) return;
   try {
     if (!sessionStorage.getItem(clave)) sessionStorage.setItem(clave, valor);
   } catch (e) { /* sin persistencia: se sigue leyendo de la URL */ }
 }
-function recuperaCampana(clave) {
+function recuperaOrigen(clave) {
   try { return sessionStorage.getItem(clave) || ""; } catch (e) { return ""; }
+}
+
+/* De qué red viene un referente. LinkedIn manda unas veces linkedin.com y
+   otras lnkd.in, su acortador de enlaces salientes. */
+var REDES_REFERENTE = [
+  ["linkedin",  ["linkedin.com", "lnkd.in", "licdn.com"]],
+  ["instagram", ["instagram.com", "ig.me"]]
+];
+
+function canalDeReferente(url) {
+  if (!url) return "";
+  var host;
+  try { host = new URL(url).hostname.toLowerCase(); } catch (e) { return ""; }
+  /* Navegación dentro de la propia web: no es una captación nueva. */
+  if (host === location.hostname.toLowerCase()) return "";
+  for (var i = 0; i < REDES_REFERENTE.length; i++) {
+    var dominios = REDES_REFERENTE[i][1];
+    for (var j = 0; j < dominios.length; j++) {
+      var d = dominios[j];
+      /* Sufijo exacto: vale "linkedin.com" y "www.linkedin.com", nunca
+         "linkedin.com.loquesea.net". */
+      if (host === d || host.slice(-(d.length + 1)) === "." + d) {
+        return REDES_REFERENTE[i][0];
+      }
+    }
+  }
+  return "";
 }
 
 /* Se ejecuta en cada carga, cuanto antes. La redirección A/B conserva la
    query (`location.replace(URL_B + location.search + location.hash)`), así
-   que da igual por cuál de las dos landings entre. */
-(function capturaCampana() {
+   que la UTM sobrevive por sí sola; el referente no, de ahí que se guarde
+   aquí antes de que el sorteo tenga ocasión de redirigir. */
+(function capturaOrigen() {
   var p = new URLSearchParams(location.search);
-  guardaCampana(GW_UTM_SRC,  (p.get("utm_source")   || "").toLowerCase());
-  guardaCampana(GW_UTM_CAMP, (p.get("utm_campaign") || "").toLowerCase());
+  guardaOrigen(GW_UTM_SRC,  (p.get("utm_source")   || "").toLowerCase());
+  guardaOrigen(GW_UTM_CAMP, (p.get("utm_campaign") || "").toLowerCase());
+  guardaOrigen(GW_REF,      canalDeReferente(document.referrer));
 })();
 
 
 /* ------------------------------------------------------------------ *
  * 3. canalOrigen() — sustituye entera a la que hay en la página
  *
- * Dos arreglos sobre la versión desplegada:
+ * Tres arreglos sobre la versión desplegada:
  *
- *  a) Lee la campaña guardada, no la URL del momento (ver arriba). La URL
+ *  a) Lee el origen guardado, no la URL del momento (ver arriba). La URL
  *     queda de red de seguridad para cuando sessionStorage no esté
  *     disponible: entonces se comporta como hasta ahora, ni mejor ni peor.
  *
@@ -106,6 +142,12 @@ function recuperaCampana(clave) {
  *     que vino por web y vuelve desde un correo quedaría reetiquetado como
  *     ayuntamiento y la atribución diría una cosa por otra.
  *
+ *  c) Si no hay UTM, mira el referente antes de rendirse. Recupera los clics
+ *     desde LinkedIn o Instagram en enlaces sin etiquetar, siempre que el
+ *     navegador haya mandado el referente. NO es sustituto de etiquetar los
+ *     enlaces: LinkedIn no manda referente desde su aplicación móvil, que es
+ *     por donde llega la mayoría. Es una red debajo de la red.
+ *
  * De los cinco valores del enumerado `canal_origen` en HubSpot
  * (hubspot/spec/contact-properties.json) produce cuatro:
  * email_ayuntamientos, instagram, linkedin, web_directo y otro.
@@ -113,10 +155,12 @@ function recuperaCampana(clave) {
 
 function canalOrigen() {
   var p = new URLSearchParams(location.search);
-  var src  = recuperaCampana(GW_UTM_SRC)  || (p.get("utm_source")   || "").toLowerCase();
-  var camp = recuperaCampana(GW_UTM_CAMP) || (p.get("utm_campaign") || "").toLowerCase();
+  var src  = recuperaOrigen(GW_UTM_SRC)  || (p.get("utm_source")   || "").toLowerCase();
+  var camp = recuperaOrigen(GW_UTM_CAMP) || (p.get("utm_campaign") || "").toLowerCase();
   if (src === "instagram") return "instagram";
   if (src === "linkedin") return "linkedin";
   if (src === "email") return camp.indexOf("ayuntamientos") !== -1 ? "email_ayuntamientos" : "otro";
+  var ref = recuperaOrigen(GW_REF) || canalDeReferente(document.referrer);
+  if (ref) return ref;
   return "web_directo";
 }
