@@ -603,6 +603,14 @@ def enroll_outbound(sender_id):
     for email, c in candidatos.items():
         if email.lower() in ya_procesados or email.lower() in encontrados:
             continue
+        # A propósito NO se copia `organization_name` a `company`: el Account
+        # que Apollo adivina para estos contactos no es fiable (el 15/09, de
+        # 24 ayuntamientos, 8 venían mal — Xeraco, Sueca y Torreblanca como
+        # «Ayuntamiento de Hervás»; Salou y El Vendrell como «Inst»; Elche como
+        # «Europa»). Es la misma razón por la que los correos citan
+        # {{municipio}} y no {{company_name}}. Un nombre inventado en el CRM es
+        # peor que el campo vacío: `municipio` sí está verificado a mano y es
+        # lo que nombra el negocio.
         props = {
             "email": email,
             "campana_apollo": CAMPANA,
@@ -610,8 +618,6 @@ def enroll_outbound(sender_id):
             "apollo_estado": "enviado",
             FECHA_INSCRIPCION: _ahora(),
         }
-        if c.get("organization_name"):
-            props["company"] = c["organization_name"]
         nuevo = write(f"crear {email} en HubSpot (OUTBOUND, Apollo no lo ha empujado)",
                       lambda p=props: hs_create_contact(p))
         if nuevo:
