@@ -40,7 +40,32 @@ calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
 inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
 lleva su propio reloj desde el día en que entra.
 
-### El tope diario: 30 en modo vaciado, 6 en régimen
+### El tope diario está en 6 (16/09)
+
+Estuvo un día en 30 para vaciar la lista y se volvió a bajar por
+**entregabilidad**, no por la cuenta de correos: el buzón se conectó el 07/09
+y saltar de 6 a 30 correos diarios de golpe es mucho para un buzón de nueve
+días. El dato que lo decidió: **rebotes duros al 3,7%** (2 de 54), por encima
+del aviso del 3% de Apollo y pegado al 4% con el que **pausa la secuencia por
+su cuenta** en cuanto se pasen los 200 envíos (`auto_pause_config`). Con la
+lista sin verificar, subir volumen sube ese porcentaje.
+
+**Antes de volver a subirlo hay dos cosas que mirar**, y no son opcionales:
+
+1. **Limpiar la lista.** Los rebotes duros vienen de direcciones malas del
+   CSV. 2 de 54 proyecta ~5 malas en los 137. Verificarlas antes de inscribir
+   baja el porcentaje de golpe.
+2. **Esperar a que terminen las tandas de 30.** Las dos del 15 y 16/09 siguen
+   generando seguimientos, y sus días de paso (+5, +10, +16, +23) ya llenan el
+   buzón: el 20/09 son 30 correos solo de la tanda A. Sumar inscripciones
+   nuevas esos días desborda el tope de 30/día y **retrasa los seguimientos de
+   quien ya está en cadencia**, que es peor que ir despacio. Esas dos tandas
+   acaban hacia el 8/10.
+
+Lo de abajo es la cuenta del modo vaciado, que sigue siendo válida el día que
+se retome con el buzón curtido y la lista limpia.
+
+### La cuenta del modo vaciado (30/día)
 
 Cada ayuntamiento consume **5 correos** (un paso × 5). Con el buzón de Amaia
 a 30 correos/día, el techo **sostenido** son 6 inscripciones/día: a partir de
