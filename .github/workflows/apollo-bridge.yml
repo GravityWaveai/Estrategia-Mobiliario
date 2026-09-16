@@ -38,6 +38,20 @@ jobs:
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
           BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
           OUTBOUND_ENABLED: ${{ vars.OUTBOUND_ENABLED || '1' }}
+          # A 6 desde el 16/09 por entregabilidad: el buzón se conectó el 07/09
+          # y pasar de 6 a 30 correos/día de golpe es un salto brusco para un
+          # buzón tan joven. Además los rebotes duros iban al 3,7% (2 de 54),
+          # por encima del aviso del 3% de Apollo y a un pelo del 4% con el que
+          # pausa la secuencia sola en cuanto se superen 200 envíos.
+          #
+          # OJO al volver a subirlo: las dos tandas de 30 del 15 y 16/09 siguen
+          # generando seguimientos, y sus días de paso (+5, +10, +16, +23) ya
+          # ocupan el buzón entero. Sumarles inscripciones nuevas desborda el
+          # tope de 30/día y los seguimientos se retrasan. Lo sano es no volver
+          # a subir hasta que esas dos tandas terminen su cadencia (~8/10).
+          #
+          # Lo que sigue documenta la cuenta del modo vaciado, por si algún día
+          # se vuelve a él con el buzón ya curtido y la lista limpia:
           # MODO VACIADO. El buzón de Amaia manda 30 correos/día y cada
           # ayuntamiento consume 5 (pasos en día 0, +5, +10, +16, +23), así que
           # el techo SOSTENIDO son 6 inscripciones/día (6 × 5 = 30). Con 6 el
@@ -59,6 +73,6 @@ jobs:
           # piden 150 correos/día y el buzón no da: los seguimientos se
           # acumularían en cola y el correo 2 llegaría tarde. En ese caso hay
           # que volver a 6 o conectar más buzones a la secuencia.
-          OUTBOUND_DAILY_CAP: '30'
+          OUTBOUND_DAILY_CAP: '6'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
         run: python3 bridge/apollo_hubspot_bridge.py
