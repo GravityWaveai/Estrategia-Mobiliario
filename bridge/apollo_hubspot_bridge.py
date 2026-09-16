@@ -247,7 +247,7 @@ def apollo_lista_outbound():
     global _INDICE_OUTBOUND
     if _INDICE_OUTBOUND is not None:
         return _INDICE_OUTBOUND
-    _INDICE_OUTBOUND, page = {}, 1
+    indice, page = {}, 1
     while True:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
@@ -257,16 +257,22 @@ def apollo_lista_outbound():
             email = (c.get("email") or "").lower()
             if not email:
                 continue
-            previo = _INDICE_OUTBOUND.get(email)
             # Mismo criterio que apollo_find_by_email ante un duplicado: gana
             # el que está en una de nuestras secuencias.
-            if previo and not ({SEQ_INBOUND, SEQ_OUTBOUND} & set(c.get("emailer_campaign_ids") or [])):
+            if email in indice and not ({SEQ_INBOUND, SEQ_OUTBOUND}
+                                        & set(c.get("emailer_campaign_ids") or [])):
                 continue
-            _INDICE_OUTBOUND[email] = c
+            indice[email] = c
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
         page += 1
-    log(f"  lista OUTBOUND de Apollo: {len(_INDICE_OUTBOUND)} contacto(s) indexados")
+    # El global se asigna SOLO si la lectura terminó entera. Si Apollo corta a
+    # mitad (un 429, por ejemplo), se queda en None y la fase siguiente vuelve
+    # a intentarlo y vuelve a fallar en voz alta. Cacheando un índice a medias
+    # —o vacío— las fases posteriores creerían que la lista no tiene a nadie y
+    # pasarían "en verde" sin hacer nada: un fallo mudo, que es peor.
+    _INDICE_OUTBOUND = indice
+    log(f"  lista OUTBOUND de Apollo: {len(indice)} contacto(s) indexados")
     return _INDICE_OUTBOUND
 
 
