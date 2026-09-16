@@ -212,6 +212,28 @@ La exclusión `NOT_IN_LIST 2841` es lo que impide que el negocio se cree dos
 veces: en cuanto el workflow se dispara, mete al contacto en la lista 2841
 (acción 4), y eso lo saca automáticamente de la 2845.
 
+**El puente ya no se fía de que el workflow cree el negocio.** El 16/09 la
+tanda entera del día se quedó sin negocio: 30 ayuntamientos creados a las
+09:34, los 30 metidos en la lista de exclusión 2841 y **cero negocios** en el
+pipeline — recibiendo correos sin rastro en el CRM. Las tandas del día
+anterior, más pequeñas, sí los tuvieron. El diseño lo hace irreparable por sí
+solo: la primera acción del workflow mete al contacto en la 2841, que es justo
+lo que lo saca de la 2845 que lo dispara, así que si el resto no llega a
+ejecutarse nadie lo reintenta nunca. El historial del workflow no se puede
+leer por API, así que en vez de depender de él el puente **comprueba el
+resultado**: `repair_negocios_sin_crear()` corre al final de cada pasada y, a
+los contactos de la campaña con `municipio` que lleven más de
+`GRACIA_NEGOCIO_MIN` (30) minutos inscritos y sigan sin negocio en este
+pipeline, se lo crea él (`hs_create_deal`, misma etapa y mismo nombre que le
+pondría el workflow).
+
+La espera de 30 minutos es lo que evita duplicados: se le da al workflow su
+oportunidad primero y solo se actúa si no lo hizo. Antes de crear nada se
+confirma con `hs_deal_ids`, que filtra por pipeline — `num_associated_deals`
+solo se usa como criba barata para no gastar una llamada por contacto.
+Los de INBOUND los sigue creando su workflow, porque el nombre de su negocio
+se construye con el nombre de la persona y no con el municipio.
+
 **Solo se marca a quien Apollo haya inscrito de verdad.** La respuesta de
 `add_contact_ids` trae `skipped_contact_ids`, y a esos no les ha salido
 ningún correo: si se marcaran igual, el workflow les crearía un negocio en el
