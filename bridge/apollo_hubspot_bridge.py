@@ -234,7 +234,51 @@ def apollo_contacts(page=1, **filters):
     return apollo("POST", "/contacts/search", {"page": page, "per_page": 100, **filters})
 
 
+# Lista OUTBOUND de Apollo, traída una sola vez por pasada e indexada por
+# email. Apollo limita /contacts/search a 600 llamadas al DÍA, y el puente
+# buscaba contacto a contacto: una llamada por ayuntamiento en cadencia y por
+# fase, cada hora. Con 6 inscripciones diarias salía a ~150 llamadas/día y
+# cabía; al subir a 30 pasó a ~1.400 y el 16/09 reventó el tope — las fases
+# PARADA, SIN RESPUESTA y REBOTES empezaron a fallar con 429 cada hora. El
+# índice deja el coste en 2 llamadas por pasada, crezca lo que crezca la
+# lista. Es de una sola pasada, así que no hay riesgo de leer datos viejos.
+_INDICE_OUTBOUND = None
+
+
+def apollo_lista_outbound():
+    """Todos los contactos de la lista OUTBOUND, indexados por email."""
+    global _INDICE_OUTBOUND
+    if _INDICE_OUTBOUND is not None:
+        return _INDICE_OUTBOUND
+    _INDICE_OUTBOUND, page = {}, 1
+    while True:
+        res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
+        lote = res.get("contacts", [])
+        if not lote:
+            break
+        for c in lote:
+            email = (c.get("email") or "").lower()
+            if not email:
+                continue
+            previo = _INDICE_OUTBOUND.get(email)
+            # Mismo criterio que apollo_find_by_email ante un duplicado: gana
+            # el que está en una de nuestras secuencias.
+            if previo and not ({SEQ_INBOUND, SEQ_OUTBOUND} & set(c.get("emailer_campaign_ids") or [])):
+                continue
+            _INDICE_OUTBOUND[email] = c
+        if page >= res.get("pagination", {}).get("total_pages", 1):
+            break
+        page += 1
+    log(f"  lista OUTBOUND de Apollo: {len(_INDICE_OUTBOUND)} contacto(s) indexados")
+    return _INDICE_OUTBOUND
+
+
 def apollo_find_by_email(email):
+    # Los ayuntamientos de OUTBOUND salen del índice; solo se busca en Apollo
+    # a quien no esté en la lista (los leads de INBOUND, que son pocos).
+    del_indice = apollo_lista_outbound().get(email.lower())
+    if del_indice:
+        return del_indice
     res = apollo_contacts(q_keywords=email)
     iguales = [c for c in res.get("contacts", [])
                if (c.get("email") or "").lower() == email.lower()]
@@ -734,32 +778,24 @@ def sync_replies():
 
 def sync_bounces():
     """Lo único que HubSpot no puede saber: el correo que nunca llegó."""
-    marcados, page = 0, 1
-    while True:
-        res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
-        lote = res.get("contacts", [])
-        if not lote:
-            break
-        for c in lote:
-            estado = next(
-                (ESTADO_SOLO_APOLLO[s["status"]]
-                 for s in (c.get("contact_campaign_statuses") or [])
-                 if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
-                 and s.get("status") in ESTADO_SOLO_APOLLO),
-                None)
-            if not estado or not c.get("email"):
-                continue
-            for h in hs_search_contacts(
-                    [{"filters": [
-                        {"propertyName": "email", "operator": "EQ", "value": c["email"]},
-                        {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
-                    ]}],
-                    ["email", "apollo_estado"]):
-                hs_stamp(h["id"], {"apollo_estado": estado})
-                marcados += 1
-        if page >= res.get("pagination", {}).get("total_pages", 1):
-            break
-        page += 1
+    marcados = 0
+    for c in apollo_lista_outbound().values():
+        estado = next(
+            (ESTADO_SOLO_APOLLO[s["status"]]
+             for s in (c.get("contact_campaign_statuses") or [])
+             if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
+             and s.get("status") in ESTADO_SOLO_APOLLO),
+            None)
+        if not estado:
+            continue
+        for h in hs_search_contacts(
+                [{"filters": [
+                    {"propertyName": "email", "operator": "EQ", "value": c["email"]},
+                    {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
+                ]}],
+                ["email", "apollo_estado"]):
+            hs_stamp(h["id"], {"apollo_estado": estado})
+            marcados += 1
     log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
 
 
