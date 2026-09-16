@@ -800,10 +800,20 @@ def stop_when_engaged():
         if h["id"] in SELLADOS:
             continue
         props = h["properties"]
-        if props["apollo_estado"] in EN_CURSO + ["finalizado", "respondido"]:  # llegó por la reunión
-            # Una reunión de antes de la campaña no es una señal de esta.
-            if not _tras_inscripcion(props.get("engagements_last_meeting_booked"), props):
-                continue
+        # Lo que decide es que HAYA una reunión, no el estado del contacto.
+        # Esto se decidía antes por `apollo_estado`, y "respondido" entraba en
+        # la rama de la reunión: a quien solo había contestado se le marcaba
+        # `reunion_agendada`, hs_stamp lo copiaba al negocio y el workflow de
+        # HubSpot lo movía a «Reunión Agendada» sin que nadie hubiera agendado
+        # nada (le pasó a Salou el 16/09 y a Benissa el 08/09). El
+        # `_tras_inscripcion` de abajo no lo frenaba: sin fecha de reunión
+        # devuelve True, porque está pensado para no descartar señales por
+        # falta de dato. Una respuesta ya la trata sync_replies, y su negocio
+        # se queda en «Muestra interés», que es donde le toca.
+        reunion = props.get("engagements_last_meeting_booked")
+        # Una reunión de antes de la campaña no es una señal de esta.
+        hay_reunion = bool(reunion) and _tras_inscripcion(reunion, props)
+        if hay_reunion and props["apollo_estado"] != "reunion_agendada":
             era_finalizado = props["apollo_estado"] == "finalizado"
             hs_stamp(h["id"], {"apollo_estado": "reunion_agendada"})
             if era_finalizado:
@@ -814,7 +824,9 @@ def stop_when_engaged():
                               lambda d=deal_id: hs("PATCH", f"/crm/v3/objects/deals/{d}",
                                                     {"properties": {"dealstage": ETAPA_MUESTRA_INTERES}}))
             _sacar_de_apollo(props["email"], "reunión agendada")
-        else:                                       # ya estaba marcado
+        else:
+            # Ya estaba marcado, o solo ha respondido: aquí basta con
+            # asegurarse de que no le sale ningún correo más.
             _sacar_de_apollo(props["email"], f"estado {props['apollo_estado']}")
     log(f"PARADA · contacto: {len(por_contacto)} revisado(s)")
 
