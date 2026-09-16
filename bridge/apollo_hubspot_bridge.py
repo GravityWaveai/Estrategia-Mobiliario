@@ -64,6 +64,10 @@ ETAPA_DESCARTADO = "5948376270"
 # «Descartado», así que el descarte automático tiene que ponerlo él mismo.
 MOTIVO_SIN_RESPUESTA = "sin_respuesta"
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
+# Minutos que se le dan al workflow de HubSpot para crear el negocio antes de
+# que el puente lo cree él. Sin esta espera los dos crearían el mismo negocio
+# y saldrían duplicados.
+GRACIA_NEGOCIO_MIN = 30
 
 # Campos personalizados de Apollo (contacto) donde se vuelca lo que el lead
 # contó en el formulario web, para que los correos de INBOUND lo citen de
@@ -348,6 +352,20 @@ def hs_stamp(contact_id, props):
         return
     for deal_id in hs_deal_ids(contact_id):
         hs("PATCH", f"/crm/v3/objects/deals/{deal_id}", {"properties": en_negocio})
+
+
+def hs_create_deal(contact_id, municipio):
+    """Crea el negocio de la campaña en la primera etapa y lo asocia al
+    contacto, con el mismo nombre que le pone el workflow de HubSpot."""
+    nombre = f"Mobiliario urbano — {municipio}" if municipio else "Mobiliario urbano"
+    return hs("POST", "/crm/v3/objects/deals", {
+        "properties": {"dealname": nombre, "pipeline": PIPELINE, "dealstage": ETAPA_LEAD},
+        # 3 = deal -> contact en las asociaciones que HubSpot trae de serie.
+        "associations": [{
+            "to": {"id": contact_id},
+            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 3}],
+        }],
+    })
 
 
 def hs_create_contact(props):
@@ -911,6 +929,56 @@ def stop_on_any_inbound():
     log(f"ENTRANTES: {len(activos)} en cadencia, {len(parar)} parado(s)")
 
 
+def repair_negocios_sin_crear():
+    """Crea el negocio que el workflow de HubSpot no haya creado.
+
+    El negocio lo dispara un workflow al marcar `campana_apollo`, y su
+    primera acción mete al contacto en la lista de exclusión 2841 — que es
+    justo lo que lo saca de la lista de disparo 2845. Si el resto del workflow
+    no llega a ejecutarse, nadie lo reintenta nunca: el contacto ya está
+    excluido para siempre y se queda recibiendo correos sin negocio en el
+    pipeline, en silencio.
+
+    Pasó el 16/09 con la tanda entera del día: 30 ayuntamientos creados a las
+    09:34, los 30 en la lista 2841 y cero negocios. Las tandas del día
+    anterior, más pequeñas, sí los tuvieron — huele a carrera entre la
+    exclusión y la creación, pero el historial del workflow no se puede leer
+    por API, así que en vez de depender de él el puente comprueba el
+    resultado: pasada la gracia, cualquier contacto de la campaña sin negocio
+    recibe el suyo.
+
+    Solo mira a los de OUTBOUND (los que llevan `municipio`), porque el
+    nombre del negocio se construye con él; los de INBOUND los sigue creando
+    su propio workflow.
+    """
+    limite = (datetime.now(timezone.utc)
+              - timedelta(minutes=GRACIA_NEGOCIO_MIN)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    candidatos = hs_search_contacts(
+        [{"filters": [
+            {"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+            {"propertyName": "apollo_estado", "operator": "HAS_PROPERTY"},
+            {"propertyName": "municipio", "operator": "HAS_PROPERTY"},
+            {"propertyName": FECHA_INSCRIPCION, "operator": "LTE", "value": limite},
+        ]}],
+        ["email", "municipio", "num_associated_deals"],
+    )
+    # `num_associated_deals` cuenta negocios de cualquier pipeline, así que
+    # sirve de criba barata —evita una llamada por contacto— pero no de
+    # prueba: antes de crear nada se confirma con hs_deal_ids, que sí filtra
+    # por el pipeline de Mobiliario Urbano.
+    sin_contar = [h for h in candidatos
+                  if (h["properties"].get("num_associated_deals") or "0") == "0"]
+    creados = 0
+    for h in sin_contar:
+        if hs_deal_ids(h["id"]):
+            continue
+        write(f"crear el negocio que falta de {h['properties'].get('email')}",
+              lambda i=h["id"], m=h["properties"].get("municipio"): hs_create_deal(i, m))
+        creados += 1
+    log(f"NEGOCIOS: {creados} negocio(s) creados que el workflow no había creado "
+        f"({len(candidatos)} contacto(s) de la campaña revisados)")
+
+
 def mark_sin_respuesta():
     """Si la secuencia de Apollo termina sin que haya habido respuesta, el
     negocio se descarta solo: nadie tiene que ir a cerrarlo a mano.
@@ -989,6 +1057,9 @@ def main():
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
     ok &= _fase("REBOTES", sync_bounces)
+    # Va al final: así repara también lo que se acabe de inscribir en esta
+    # misma pasada, en cuanto se le pase la gracia.
+    ok &= _fase("NEGOCIOS", repair_negocios_sin_crear)
     log("Listo." if ok else "Listo, con fallos — revisa los ### de arriba.")
     if not ok:
         sys.exit(1)
