@@ -86,6 +86,25 @@ por su cuenta con `hs_latest_sales_email_reply_date`, sin pasar por el puente.
 **Por qué los rebotes sí vienen de Apollo**: un correo que nunca llegó no genera
 ninguna actividad en HubSpot, así que no hay nada nativo que mirar.
 
+### El tope de la API de Apollo: 600 búsquedas al día
+
+Apollo limita `/contacts/search` a **600 llamadas al día**, y ese tope es lo
+que decide cómo el puente lee de Apollo. Buscaba contacto a contacto
+(`apollo_find_by_email`): una llamada por ayuntamiento en cadencia, en cada
+fase y en cada pasada horaria. Con 6 inscripciones diarias eran ~150
+llamadas/día y cabía de sobra; **al subir el tope a 30 pasó a ~1.400 y lo
+reventó** — el 16/09, de las 14:33 en adelante, PARADA, SIN RESPUESTA y
+REBOTES fallaron con 429 en todas las pasadas.
+
+Ahora `apollo_lista_outbound()` trae la lista entera **una sola vez por
+pasada** y la indexa por email; `apollo_find_by_email` tira del índice y solo
+baja a buscar en Apollo a quien no esté en la lista (los leads de INBOUND, que
+son pocos). Coste: **2 llamadas por pasada** ≈ 48/día, crezca lo que crezca la
+lista. El índice vive solo durante la pasada, así que no hay datos viejos.
+
+Si algún día hay que volver a leer de Apollo por contacto, la cuenta a hacer
+es: `llamadas por pasada × 24 < 600`.
+
 ## Las tres señales de parada
 
 La cadencia se corta en cuanto hay contacto real, venga por donde venga. Las
