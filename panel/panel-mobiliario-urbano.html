@@ -247,6 +247,28 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
   .etapa .barra{grid-column:1/-1;order:3}
   .segmentos button{margin-right:20px;font-size:13px}
 }
+
+/* ---- GA4 ---- */
+.ga4-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ga4-inp{font:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:2px;background:var(--ground);color:var(--ink);min-width:150px}
+.ga4-inp:focus-visible{outline:2px solid var(--accent-mark);outline-offset:2px}
+.ga4-btn{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:2px;background:var(--surface);color:var(--ink);cursor:pointer}
+.ga4-btn:hover{border-color:var(--accent-mark)}
+.ga4-malla{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.ga4-embudo{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.ga4-paso{background:var(--ground);padding:14px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ga4-paso .n{font-weight:900;font-size:26px;letter-spacing:-.02em;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ga4-paso .n.nulo{color:var(--ink-faint)}
+.ga4-paso .k{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink)}
+.ga4-paso .f{font-size:11px;color:var(--ink-faint)}
+.ga4-paso.hs{border-top:2px solid var(--serie-in)}
+.ga4-paso.ga{border-top:2px solid var(--accent-mark)}
+#s-ga4.apagado .panel-b,#s-ga4.apagado .ga4-malla{opacity:.4}
+.tile .sub .mejor{color:var(--accent);font-weight:500}
+.tile .sub .peor{color:var(--stage-lost);font-weight:500}
+.ga4-camp{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;text-align:left}
+.ga4-camp:hover{text-decoration:underline}
+.fila.activa .et{color:var(--accent);font-weight:500}
 </style>
 
 <header>
@@ -259,8 +281,8 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <div class="head-tools">
         <label class="oculto" for="periodo">Periodo</label>
         <select class="periodo" id="periodo">
-          <option value="0" selected>Desde el inicio</option>
-          <option value="90">Últimos 90 días</option>
+          <option value="0">Desde el inicio</option>
+          <option value="90" selected>Últimos 90 días</option>
           <option value="30">Últimos 30 días</option>
           <option value="7">Últimos 7 días</option>
         </select>
@@ -317,6 +339,23 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     <div class="tiles" id="tiles-reuniones"></div>
   </section>
 
+
+  <section id="s-embudo">
+    <div class="sec-cab">
+      <h2>Negocios por etapa</h2>
+      <p class="sec-nota">Una columna por etapa, en el orden del pipeline. El porcentaje es sobre el total de negocios del segmento.</p>
+    </div>
+    <div class="kanban" id="embudo"></div>
+  </section>
+
+  <section id="s-diagnostico">
+    <div class="panel-b panel-medio">
+      <h3>Motivos de pérdida</h3>
+      <p class="nota">De los negocios movidos a «Descartado». El motivo es obligatorio al cerrar en perdido.</p>
+      <div id="motivos"></div>
+    </div>
+  </section>
+
   <section id="s-productos" class="oculto">
     <div class="sec-cab">
       <h2>De dónde vienen y qué piden</h2>
@@ -336,19 +375,33 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
     </div>
   </section>
 
-  <section id="s-embudo">
+  <section id="s-ga4">
     <div class="sec-cab">
-      <h2>Negocios por etapa</h2>
-      <p class="sec-nota">Una columna por etapa, en el orden del pipeline. El porcentaje es sobre el total de negocios del segmento.</p>
+      <div class="ga4-tools">
+        <label class="oculto" for="ga4-campana">Filtrar el desglose por campaña (opcional)</label>
+        <input id="ga4-campana" class="ga4-inp" value="" placeholder="Campaña (opcional, solo desglose)" spellcheck="false">
+        <button id="ga4-quitar" class="ga4-btn" type="button">Quitar campaña</button>
+        <button id="ga4-refrescar" class="ga4-btn" type="button">Actualizar</button>
+        <span class="estado"><span class="punto" id="ga4-punto"></span><span id="ga4-estado">GA4: esperando…</span></span>
+      </div>
     </div>
-    <div class="kanban" id="embudo"></div>
-  </section>
-
-  <section id="s-diagnostico">
-    <div class="panel-b panel-medio">
-      <h3>Motivos de pérdida</h3>
-      <p class="nota">De los negocios movidos a «Descartado». El motivo es obligatorio al cerrar en perdido.</p>
-      <div id="motivos"></div>
+    <div class="aviso oculto" id="ga4-aviso"><div><h3 id="ga4-aviso-t"></h3><p id="ga4-aviso-p"></p></div></div>
+    <div class="panel-b">
+      <h3>Prueba A/B · por variante</h3>
+      <div style="overflow-x:auto"><table class="tabla-comp" id="ga4-variantes"></table></div>
+      <p class="nota" id="ga4-variantes-nota" style="margin-top:12px"></p>
+    </div>
+    <p class="nota" id="ga4-filtro-nota" style="margin:16px 0 0"></p>
+    <div class="ga4-malla">
+      <div class="panel-b"><h3>Fuentes y medios</h3><div id="ga4-fuentes"></div></div>
+      <div class="panel-b"><h3>Campañas</h3><p class="nota">Qué campañas trajeron sesiones a las dos landings, sin filtrar. Pulsa una para filtrar fuentes, país y dispositivo.</p><div id="ga4-campanas"></div></div>
+      <div class="panel-b"><h3>País</h3><div id="ga4-pais"></div></div>
+      <div class="panel-b"><h3>Dispositivo</h3><div id="ga4-dispositivo"></div></div>
+    </div>
+    <div class="panel-b">
+      <h3>Embudo combinado</h3>
+      <p class="nota">Sesiones y formularios salen de GA4 (A+B). Contactos: leads inbound de HubSpot cuya primera URL contiene «mobiliario-urbano» o que traen <code>landing_variant</code>. Negocios, reuniones, ganados e ingresos: solo inbound; los outbound no entran. Se ponen en fila para leer la caída, no porque sean la misma gente: GA4 cuenta sesiones anónimas y HubSpot contactos con nombre.</p>
+      <div class="ga4-embudo" id="ga4-embudo"></div>
     </div>
   </section>
 
@@ -587,7 +640,7 @@ var D = {
   totales:{negocios:null, cInbound:null, cOutbound:null},
   fallos:{}, sello:null, arrancado:false
 };
-var segmento = "todo", periodoDias = 0, vista = "embudo";
+var segmento = "todo", periodoDias = 90, vista = "embudo";
 
 function indexa(filas, clave){
   var out = {};
@@ -1538,7 +1591,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".segmentos button"), fun
     });
     var semanal = vista === "semana";
     ["s-reuniones","s-productos","s-embudo","s-diagnostico","s-resultados",
-     "s-comparativa","s-ab","s-leads"].forEach(function(id){
+     "s-comparativa","s-ab","s-leads","s-ga4"].forEach(function(id){
       $(id).classList.toggle("oculto", semanal);
     });
     $("s-semana").classList.toggle("oculto", !semanal);
@@ -1557,7 +1610,704 @@ $("cerrar-apagado").addEventListener("click", function(){
   try { sessionStorage.setItem("mu-aviso-oculto", "1"); } catch(e){}
 });
 
+/* ============================================================
+   GA4 — tráfico de las dos landings de la campaña y embudo combinado
+
+   Lee Google Analytics 4 a través del conector «Supermetrics Marketing
+   Analytics» de claude.ai (fuente GAWA, propiedad 374842401), con las
+   credenciales de quien abre el panel. HubSpot no se entera: los dos
+   conectores llevan estado, suscripciones y fallos aparte, y nunca se
+   suman contactos con sesiones.
+
+   ÁMBITO: solo las dos landings de la prueba A/B. Nada del resto de la web.
+   Observado el 16/09/2026 en la propiedad:
+   · landingPage llega SIN barra final ("/mobiliario-urbano"). Un filtro
+     "landingPage =@ /mobiliario-urbano/" no casa con nada y daría un cero
+     falso, así que cada variante se consulta con igualdad exacta (==).
+   · pagePath llega CON barra final ("/mobiliario-urbano/") y "=@" cuela
+     rutas ajenas (un 404 con la URL en la query), así que las vistas y el
+     evento se separan por variante en cliente, por ruta exacta.
+   · Los desgloses piden landingPage como dimensión con un filtro amplio y en
+     cliente solo se quedan las filas de A y B exactas.
+
+   Contrato (data_query y get_async_query_results devuelven el mismo sobre):
+     {success, data:{success, status:"completed",
+       data:[[cabeceras visibles], [fila], …], schedule_id,
+       requested_field_ids:[…], cache_used}, notes?, metadata}
+   · Las columnas se leen por requested_field_ids, nunca por las cabeceras.
+   · Métricas numéricas; engagementRate llega como fracción (0–1).
+   · Sin filas: data:[] o data:[["No data found"]].
+   · En cola: data:{success, schedule_id, message} sin status.
+   · Fallo de Supermetrics: {success:false, data:null, error:"…"}.
+   · Filtros: "campo == valor", "campo =@ texto", unidos con " AND ".
+
+   Cuatro estados distintos, nunca confundidos:
+     cero real          -> "0"            GA4 respondió: sin filas o métrica a 0
+     no disponible      -> "—"            falta la métrica, no llegó o no se entendió
+     error de conexión  -> "sin conexión" con aviso del motivo y qué hacer
+     sin medir          -> "sin medir"    el evento del formulario nunca ha llegado a GA4
+   ============================================================ */
+var GA4_SERVIDOR    = "Supermetrics Marketing Analytics";
+var GA4_DS          = "GAWA";
+var GA4_PROPIEDAD   = "374842401";
+var GA4_EVENTO_FORM = "generate_lead_mobiliario_urbano";
+var GA4_VARIANTES   = [
+  {id:"A", ruta:"/mobiliario-urbano",   nombre:"A · /mobiliario-urbano/",   filtro:"landingPage == /mobiliario-urbano"},
+  {id:"B", ruta:"/mobiliario-urbano-b", nombre:"B · /mobiliario-urbano-b/", filtro:"landingPage == /mobiliario-urbano-b"}
+];
+var GA4_F_AMBITO    = "landingPage =@ /mobiliario-urbano";  /* amplio: en cliente solo quedan A y B exactas */
+var GA4_F_PAGINAS   = "pagePath =@ /mobiliario-urbano";     /* vistas aunque no fueran entrada */
+var GA4_F_EVENTO    = "eventName == " + GA4_EVENTO_FORM;
+var GA4_REFRESCO        = 300000;   /* totales, vistas y formularios: 5 min */
+var GA4_REFRESCO_LISTAS = 900000;   /* desgloses: 15 min, para no quemar cuota */
+var GA4_INICIO      = "2015-08-14"; /* mínimo que admite GA4 = toda la vida de la propiedad */
+var GA4_ZONA        = "Europe/Madrid";
+var GA4_ASYNC_MAX   = 5;
+/* Denegaciones: lo que hubiera deja de valer. */
+var GA4_DENEGACION  = ["needs_reauth","server_not_connected","selection_required","server_not_found",
+  "not_in_manifest","blocked_by_policy","approval_required","not_granted","capability_disabled",
+  "capability_removed","sm_reauth"];
+/* Transitorios: se conserva el último dato bueno y watchTool vuelve a intentarlo. */
+var GA4_TRANSITORIO = ["server_unavailable","upstream_error","rate_limited","cancelled"];
+var G = {
+  campana: "",      /* filtro OPCIONAL de campaña, solo sobre fuentes/país/dispositivo */
+  datos: {},       /* clave -> {filas, ids} | null (no se entendió) */
+  motivos: {},     /* clave -> por qué es «no disponible» */
+  crudo: {},       /* clave -> payload tal cual, para depurar en consola */
+  fallos: {},      /* clave -> McpError o {code:"sm_…"} */
+  pendientes: {},  /* clave -> schedule_id en recogida */
+  sellos: {},      /* clave -> cuándo se produjo el dato */
+  estado: "init",  /* init | activo | sin-conector | apagado */
+  suscripciones: [],
+  gen: 0
+};
+window.__ga4 = G;  /* inspección en consola; no se usa para pintar */
+
+/* ---------- fechas en la zona de la propiedad ---------- */
+var fmtDia = new Intl.DateTimeFormat("en-CA", {timeZone:GA4_ZONA, year:"numeric", month:"2-digit", day:"2-digit"});
+function ga4Hoy(){ return fmtDia.format(new Date()); }
+function ga4Resta(iso, dias){
+  var p = iso.split("-"), d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  d.setUTCDate(d.getUTCDate() - dias);
+  return d.toISOString().slice(0, 10);
+}
+function ga4Rango(rango){
+  var hoy = ga4Hoy(), d = periodoDias;
+  if(rango === "vida" || !d) return [GA4_INICIO, hoy];
+  if(rango === "anterior") return [ga4Resta(hoy, 2*d - 1), ga4Resta(hoy, d)];
+  return [ga4Resta(hoy, d - 1), hoy];
+}
+
+/* ---------- entradas de data_query ---------- */
+function ga4FiltroCampana(){
+  return G.campana ? "sessionCampaignName == " + G.campana.replace(/\s+/g, " ").trim() : "";
+}
+function ga4Y(){ return Array.prototype.slice.call(arguments).filter(Boolean).join(" AND "); }
+function ga4Entrada(campos, filtro, rango, max){
+  var r = ga4Rango(rango);
+  var e = {ds_id:GA4_DS, ds_accounts:GA4_PROPIEDAD, fields:campos.join(","),
+    date_range_type:"custom", start_date:r[0], end_date:r[1], timezone:GA4_ZONA, max_rows:max || 100};
+  if(filtro) e.filters = filtro;
+  return e;
+}
+
+/* ---------- lectura del sobre de Supermetrics ---------- */
+function ga4Num(v){
+  if(v === null || v === undefined || v === "") return null;
+  if(typeof v === "number") return isFinite(v) ? v : null;
+  var s = String(v).trim();
+  return /^-?\d+(\.\d+)?(e[-+]?\d+)?$/i.test(s) ? parseFloat(s) : null;
+}
+/* -> {tipo:"ok", filas, ids} | {tipo:"pendiente", schedule_id}
+      | {tipo:"error", mensaje, reauth} | {tipo:"forma"} */
+function ga4Tabla(payload, metricas){
+  var p = payload;
+  if(typeof p === "string"){ try { p = JSON.parse(p); } catch(e){ return {tipo:"forma"}; } }
+  if(!p || typeof p !== "object") return {tipo:"forma"};
+  var d = p.data;
+  if(p.success === false || (d && typeof d === "object" && d.success === false)){
+    var msg = String(p.error || (d && (d.error || d.message)) || "");
+    return {tipo:"error", mensaje:msg, reauth:/token|authenticat|log ?in|connect at|reconnect|re-?auth/i.test(msg)};
+  }
+  if(!d || typeof d !== "object") return {tipo:"forma"};
+  var st = String(d.status || "").toLowerCase();
+  if(/fail|error|cancel/.test(st)){
+    return {tipo:"error", mensaje:String(d.error || d.message || ("Consulta en estado " + st)), reauth:false};
+  }
+  var ids = d.requested_field_ids, t = d.data;
+  var completa = (st === "completed") || (!st && Array.isArray(t) && Array.isArray(ids));
+  if(!completa) return d.schedule_id ? {tipo:"pendiente", schedule_id:String(d.schedule_id)} : {tipo:"forma"};
+  if(!Array.isArray(ids) || !Array.isArray(t)) return {tipo:"forma"};
+  if(t.length === 0 || (t.length === 1 && Array.isArray(t[0]) && t[0].length === 1 && ids.length !== 1 &&
+     /^no data found$/i.test(String(t[0][0]).trim()))){
+    return {tipo:"ok", filas:[], ids:ids};      /* GA4 respondió sin filas: cero real */
+  }
+  if(!Array.isArray(t[0]) || t[0].length !== ids.length) return {tipo:"forma"};
+  var filas = [];
+  for(var i = 1; i < t.length; i++){
+    var r = t[i];
+    if(!Array.isArray(r) || r.length !== ids.length) return {tipo:"forma"};
+    var o = {};
+    for(var j = 0; j < ids.length; j++){
+      o[ids[j]] = (metricas.indexOf(ids[j]) >= 0) ? ga4Num(r[j]) : (r[j] == null ? null : String(r[j]));
+    }
+    filas.push(o);
+  }
+  return {tipo:"ok", filas:filas, ids:ids};
+}
+
+/* ---------- suscripciones ---------- */
+function ga4Vigila(clave, campos, metricas, filtro, rango, max, opciones){
+  var gen = G.gen, entrada = ga4Entrada(campos, filtro, rango, max);
+  var quitar = mcp.watchTool(GA4_SERVIDOR, "data_query", entrada, function(ev){
+    if(gen !== G.gen) return;
+    if(ev.type === "error"){ ga4Falla(clave, ev.error); ga4Pinta(); return; }
+    ga4Recibe(clave, metricas, ev.result || {}, gen, 0);
+  }, opciones);
+  G.suscripciones.push(quitar);
+}
+
+function ga4Recibe(clave, metricas, r, gen, intento){
+  if(gen !== G.gen) return;
+  G.crudo[clave] = r.payload;
+  var t = ga4Tabla(r.payload, metricas);
+
+  if(t.tipo === "pendiente"){
+    if(intento >= GA4_ASYNC_MAX){
+      delete G.pendientes[clave];
+      G.datos[clave] = null;
+      G.motivos[clave] = "Supermetrics no terminó la consulta a tiempo";
+      ga4Pinta(); return;
+    }
+    if(intento === 0 && G.pendientes[clave] === t.schedule_id) return;  /* ya se está recogiendo */
+    G.pendientes[clave] = t.schedule_id;
+    ga4Pinta();
+    setTimeout(function(){
+      if(gen !== G.gen) return;
+      mcp.callTool(GA4_SERVIDOR, "get_async_query_results", {schedule_id:t.schedule_id}, {cache:false})
+        .then(function(r2){ ga4Recibe(clave, metricas, r2 || {}, gen, intento + 1); })
+        .catch(function(err){ if(gen !== G.gen) return; ga4Falla(clave, err); ga4Pinta(); });
+    }, intento === 0 ? 0 : 1500);
+    return;
+  }
+  delete G.pendientes[clave];
+
+  if(t.tipo === "error"){
+    ga4Falla(clave, {code:t.reauth ? "sm_reauth" : "sm_error", server:GA4_SERVIDOR, message:t.mensaje});
+    ga4Pinta(); return;
+  }
+  delete G.fallos[clave];
+  G.sellos[clave] = (r.cache && r.cache.storedAt) ? r.cache.storedAt : Date.now();
+  if(t.tipo === "forma"){
+    G.datos[clave] = null;
+    G.motivos[clave] = "respuesta de Supermetrics no reconocida";
+  } else {
+    G.datos[clave] = {filas:t.filas, ids:t.ids};
+    delete G.motivos[clave];
+  }
+  ga4Pinta();
+}
+
+function ga4Falla(clave, err){
+  var e = err || {code:"upstream_error", message:""};
+  if(e.code === "tool_error" && e.result){
+    var res = e.result;
+    var carga = (res.payload !== undefined) ? res.payload
+      : (res.structuredContent !== undefined ? res.structuredContent
+      : (res.content && res.content[0] && res.content[0].text));
+    var t = ga4Tabla(carga, []);
+    if(t.tipo === "error") e = {code:t.reauth ? "sm_reauth" : "sm_error", server:GA4_SERVIDOR, message:t.mensaje || e.message};
+  }
+  G.fallos[clave] = e;
+  delete G.pendientes[clave];
+  if(GA4_DENEGACION.indexOf(e.code) >= 0){ G.datos = {}; G.motivos = {}; G.sellos = {}; }
+  else if(GA4_TRANSITORIO.indexOf(e.code) < 0){ delete G.datos[clave]; delete G.sellos[clave]; }
+}
+
+
+function ga4Suscribe(){
+  ga4Desuscribe();
+  G.gen++;
+  G.datos = {}; G.motivos = {}; G.crudo = {}; G.fallos = {}; G.pendientes = {}; G.sellos = {};
+  var cortas = {cache:{staleTime:60000, gcTime:GA4_REFRESCO*2}, refetchInterval:GA4_REFRESCO};
+  var largas = {cache:{staleTime:300000, gcTime:GA4_REFRESCO_LISTAS*2}, refetchInterval:GA4_REFRESCO_LISTAS};
+  var TOT = ["sessions","totalUsers","engagedSessions","engagementRate"];
+  var rangos = periodoDias ? ["actual","anterior"] : ["actual"];
+
+  rangos.forEach(function(rg){
+    /* Totales: una consulta por variante con igualdad exacta. TOTAL = A + B. */
+    GA4_VARIANTES.forEach(function(v){
+      ga4Vigila("tot:"+v.id+":"+rg, TOT, TOT, v.filtro, rg, 10, cortas);
+    });
+    ga4Vigila("vistas:"+rg, ["pagePath","screenPageViews"], ["screenPageViews"], GA4_F_PAGINAS, rg, 50, cortas);
+    ga4Vigila("form:"+rg, ["pagePath","eventName","eventCount"], ["eventCount"],
+      ga4Y(GA4_F_EVENTO, GA4_F_PAGINAS), rg, 50, cortas);
+  });
+
+  /* Desgloses del ámbito. El filtro de campaña es opcional y solo recorta
+     fuentes, país y dispositivo; la lista de campañas nunca se filtra. */
+  var fc = ga4FiltroCampana();
+  ga4Vigila("fuentes", ["landingPage","sessionSource","sessionMedium","sessions"], ["sessions"],
+    ga4Y(GA4_F_AMBITO, fc), "actual", 500, largas);
+  ga4Vigila("campanas", ["landingPage","sessionCampaignName","sessions"], ["sessions"],
+    GA4_F_AMBITO, "actual", 500, largas);
+  ga4Vigila("pais", ["landingPage","country","sessions"], ["sessions"],
+    ga4Y(GA4_F_AMBITO, fc), "actual", 500, largas);
+  ga4Vigila("dispositivo", ["landingPage","deviceCategory","sessions"], ["sessions"],
+    ga4Y(GA4_F_AMBITO, fc), "actual", 500, largas);
+
+  /* Sonda: ¿ha llegado alguna vez el evento del formulario a GA4?
+     Si no, lo que falta es la medición, no las conversiones. */
+  ga4Vigila("sonda", ["eventName","eventCount"], ["eventCount"], GA4_F_EVENTO, "vida", 10,
+    {cache:{staleTime:300000, gcTime:3600000}, refetchInterval:900000});
+}
+
+function ga4Desuscribe(){
+  G.suscripciones.forEach(function(q){ try { q(); } catch(e){} });
+  G.suscripciones = [];
+}
+
+function ga4Arranca(){
+  if(!mcp) return;
+  mcp.listTools().then(function(l){
+    var s = ((l && l.servers) || []).filter(function(x){ return x.server === GA4_SERVIDOR; })[0];
+    if(!s || !s.tools || !s.tools.length){ ga4Desuscribe(); G.estado = "sin-conector"; ga4Pinta(); return; }
+    G.estado = "activo";
+    ga4Suscribe();
+    if(s.authStatus === "needs_reauth") ga4Falla("lista", {code:"needs_reauth", server:GA4_SERVIDOR, message:""});
+    ga4Pinta();
+  }).catch(function(){
+    /* Sin lista no se sabe nada: se consulta igual y mandan los códigos de cada llamada. */
+    G.estado = "activo";
+    ga4Suscribe();
+    ga4Pinta();
+  });
+}
+
+/* ---------- lectura de los datos ya parseados ---------- */
+function ga4Lee(clave){
+  var f = G.fallos[clave], d = G.datos[clave];
+  if(d && (!f || GA4_TRANSITORIO.indexOf(f.code) >= 0)) return {estado:"ok", d:d, viejo:!!f};
+  if(f) return {estado:"error", code:f.code};
+  if(d === null) return {estado:"nd", motivo:G.motivos[clave] || "respuesta no reconocida"};
+  return {estado:"cargando"};
+}
+
+function ga4Medicion(){
+  var L = ga4Lee("sonda");
+  if(L.estado !== "ok") return L.estado;
+  if(L.d.ids.indexOf("eventCount") < 0) return "nd";
+  return L.d.filas.some(function(x){ return x.eventName === GA4_EVENTO_FORM && x.eventCount > 0; }) ? "medido" : "sin-medir";
+}
+function ga4Apagado(){ return G.estado === "sin-conector" || G.estado === "apagado"; }
+
+function ga4Delta(act, ant, esTasa){
+  if(!periodoDias || ant === null || ant === undefined || act === null || act === undefined) return "";
+  if(ant === 0 && act === 0) return "<b>igual</b> que el periodo anterior";
+  if(ant === 0) return "<span class=\"mejor\">nuevo</span> · antes 0";
+  var d = esTasa ? (act - ant) : ((act - ant) / ant);
+  var txt = esTasa ? ((d >= 0 ? "+" : "") + (d*100).toFixed(1) + " pt") : ((d >= 0 ? "+" : "") + Math.round(d*100) + "%");
+  return "<span class=\""+(d >= 0 ? "mejor" : "peor")+"\">"+txt+"</span> vs periodo anterior";
+}
+
+/* ---------- pintado ---------- */
+var GA4_TXT_SIN_MEDIR = "sin medir";
+function ga4Celda(L){   /* estados que no son dato */
+  if(L.estado === "error") return {v:"sin conexión", c:"nulo", sub:"<b>error de conexión</b> · " + esc(L.code || "")};
+  if(L.estado === "nd") return {v:"—", c:"nulo", sub:"<b>no disponible</b>" + (L.motivo ? " · " + esc(L.motivo) : "")};
+  return {v:"—", c:"nulo", sub:ga4Apagado() ? "<b>no disponible</b> · sin conector de GA4" : "cargando…"};
+}
+function ga4Nota(T, delta){
+  var s = [];
+  if(delta) s.push(delta);
+  if(T.vacia) s.push("<b>cero real</b>: GA4 no devuelve filas");
+  if(T.viejo) s.push("último dato bueno");
+  return s.join(" · ");
+}
+
+/* ---------- ámbito: rutas y variantes ---------- */
+function ga4Ruta(r){ return String(r || "").split(/[?#]/)[0].toLowerCase().replace(/\/+$/, "") || "/"; }
+function ga4Variante(r){
+  var n = ga4Ruta(r);
+  for(var i = 0; i < GA4_VARIANTES.length; i++) if(GA4_VARIANTES[i].ruta === n) return GA4_VARIANTES[i].id;
+  return null;
+}
+/* De varios estados que no son dato, el que más importa enseñar. */
+function ga4Peor(lista){
+  var orden = ["error","nd","cargando"];
+  for(var i = 0; i < orden.length; i++){
+    var x = lista.filter(function(l){ return l.estado === orden[i]; })[0];
+    if(x) return x;
+  }
+  return null;
+}
+
+/* Totales de una variante: una fila de GA4 o ninguna (= cero real). */
+function ga4TotVar(vid, rg){
+  var L = ga4Lee("tot:"+vid+":"+rg);
+  if(L.estado !== "ok") return L;
+  var d = L.d, f = d.filas[0] || null;
+  var o = {estado:"ok", viejo:L.viejo, vacia:!f};
+  ["sessions","totalUsers","engagedSessions"].forEach(function(id){
+    o[id] = (d.ids.indexOf(id) < 0) ? null : (f ? f[id] : 0);
+  });
+  /* Con cero sesiones no hay tasa: «no disponible», nunca 0 %. */
+  o.engagementRate = (d.ids.indexOf("engagementRate") >= 0 && f && f.engagementRate !== undefined) ? f.engagementRate : null;
+  return o;
+}
+/* TOTAL = A + B. Sesiones e interacción son sumables; la tasa se recalcula
+   como interacción / sesiones (misma definición que GA4). Los usuarios se
+   suman y se avisa: quien entró por las dos landings cuenta dos veces. */
+function ga4TotSuma(rg){
+  var partes = GA4_VARIANTES.map(function(v){ return ga4TotVar(v.id, rg); });
+  var mal = ga4Peor(partes);
+  if(mal) return mal;
+  var o = {estado:"ok",
+    viejo:partes.some(function(p){ return p.viejo; }),
+    vacia:partes.every(function(p){ return p.vacia; })};
+  ["sessions","totalUsers","engagedSessions"].forEach(function(id){
+    o[id] = partes.some(function(p){ return p[id] === null; }) ? null
+      : partes.reduce(function(s, p){ return s + p[id]; }, 0);
+  });
+  o.engagementRate = (o.sessions > 0 && o.engagedSessions !== null) ? o.engagedSessions / o.sessions : null;
+  return o;
+}
+function ga4Tot(vid, rg){ return vid === "T" ? ga4TotSuma(rg) : ga4TotVar(vid, rg); }
+
+/* Vistas o eventos repartidos por variante según la ruta exacta. */
+function ga4PorRuta(clave, metrica, filaValida){
+  var L = ga4Lee(clave);
+  if(L.estado !== "ok") return L;
+  var d = L.d;
+  if(d.ids.indexOf(metrica) < 0) return {estado:"nd", motivo:"GA4 no devolvió " + metrica};
+  var dim = d.ids.indexOf("pagePath") >= 0 ? "pagePath" : "landingPage";
+  var suma = {}, falta = {};
+  GA4_VARIANTES.forEach(function(v){ suma[v.id] = 0; falta[v.id] = false; });
+  d.filas.forEach(function(x){
+    var v = ga4Variante(x[dim]);
+    if(!v || (filaValida && !filaValida(x))) return;
+    if(x[metrica] === null) falta[v] = true; else suma[v] += x[metrica];
+  });
+  var o = {estado:"ok", viejo:L.viejo, vacia:!d.filas.length, v:{}};
+  var total = 0, totalNulo = false;
+  GA4_VARIANTES.forEach(function(v){
+    o.v[v.id] = falta[v.id] ? null : suma[v.id];
+    if(falta[v.id]) totalNulo = true; else total += suma[v.id];
+  });
+  o.v.T = totalNulo ? null : total;
+  return o;
+}
+function ga4Vistas(rg){ return ga4PorRuta("vistas:"+rg, "screenPageViews"); }
+function ga4Forms(rg){
+  return ga4PorRuta("form:"+rg, "eventCount", function(x){ return x.eventName === GA4_EVENTO_FORM; });
+}
+
+/* ---------- pintado ---------- */
+function ga4Valor(P, vid){   /* P de ga4PorRuta -> celda */
+  if(P.estado !== "ok") return ga4Celda(P);
+  var v = P.v[vid];
+  if(v === null) return {v:"—", c:"nulo", sub:"<b>no disponible</b> · valor sin dato"};
+  return {v:fmtN.format(Math.round(v)), c:"", sub:""};
+}
+function ga4Celdas(vid){
+  var rg = "actual", ant = periodoDias ? "anterior" : null;
+  var T = ga4Tot(vid, rg), B = ant ? ga4Tot(vid, ant) : null;
+  var V = ga4Vistas(rg), VB = ant ? ga4Vistas(ant) : null;
+  var F = ga4Forms(rg), FB = ant ? ga4Forms(ant) : null;
+  var M = ga4Medicion();
+  var out = {};
+
+  function cuenta(id, destaca){
+    if(T.estado !== "ok") return ga4Celda(T);
+    if(T[id] === null) return {v:"—", c:"nulo", sub:"<b>no disponible</b> · GA4 no devolvió " + esc(id)};
+    var prev = (B && B.estado === "ok") ? B[id] : null;
+    var nota = ga4Nota(T, ga4Delta(T[id], prev, false));
+    if(id === "totalUsers" && vid === "T") nota = (nota ? nota + " · " : "") + "suma A+B: quien entró por las dos cuenta dos veces";
+    return {v:fmtN.format(Math.round(T[id])), c:(destaca ? "destacado" : ""), sub:nota};
+  }
+  out.sesiones = cuenta("sessions", true);
+  out.usuarios = cuenta("totalUsers");
+  out.interaccion = cuenta("engagedSessions");
+
+  if(T.estado !== "ok") out.tasa = ga4Celda(T);
+  else if(T.sessions === 0) out.tasa = {v:"—", c:"nulo", sub:"<b>no disponible</b> · sin sesiones no hay tasa"};
+  else if(T.engagementRate === null) out.tasa = {v:"—", c:"nulo", sub:"<b>no disponible</b> · falta la interacción"};
+  else out.tasa = {v:(T.engagementRate*100).toFixed(1), c:"", u:"%", sub:ga4Nota(T,
+    ga4Delta(T.engagementRate, (B && B.estado === "ok") ? B.engagementRate : null, true))};
+
+  out.vistas = ga4Valor(V, vid);
+  if(V.estado === "ok" && V.v[vid] !== null){
+    out.vistas.sub = [ga4Delta(V.v[vid], (VB && VB.estado === "ok") ? VB.v[vid] : null, false),
+      (V.v[vid] === 0 ? "<b>cero real</b>: GA4 no devuelve vistas" : ""),
+      (V.viejo ? "último dato bueno" : "")].filter(Boolean).join(" · ");
+  }
+
+  var subSinMedir = "<b>sin medir</b>: «"+esc(GA4_EVENTO_FORM)+"» no ha llegado nunca a GA4 (puede tardar 24–48 h desde el primer envío)";
+  if(F.estado === "error") out.forms = ga4Celda(F);
+  else if(M === "sin-medir") out.forms = {v:GA4_TXT_SIN_MEDIR, c:"nulo", sub:subSinMedir};
+  else if(F.estado !== "ok") out.forms = ga4Celda(F);
+  else if(F.v[vid] === null) out.forms = {v:"—", c:"nulo", sub:"<b>no disponible</b> · recuento sin dato"};
+  else {
+    var sf = [];
+    var dF = ga4Delta(F.v[vid], (FB && FB.estado === "ok") ? FB.v[vid] : null, false);
+    if(dF) sf.push(dF);
+    if(F.v[vid] === 0) sf.push("<b>cero real</b> en el periodo");
+    if(M === "error" || M === "nd") sf.push("no se pudo comprobar si el evento existe");
+    else if(M === "cargando") sf.push("comprobando la medición…");
+    if(F.viejo) sf.push("último dato bueno");
+    out.forms = {v:fmtN.format(F.v[vid]), c:(F.v[vid] > 0 ? "destacado" : ""), sub:sf.join(" · ")};
+  }
+
+  if(M === "sin-medir") out.conv = {v:GA4_TXT_SIN_MEDIR, c:"nulo", sub:"sin evento de formulario no hay conversión"};
+  else if(T.estado !== "ok") out.conv = ga4Celda(T);
+  else if(F.estado !== "ok") out.conv = ga4Celda(F);
+  else if(M !== "medido") out.conv = {v:"—", c:"nulo", sub:"<b>no disponible</b> · falta confirmar la medición"};
+  else if(T.sessions === null || F.v[vid] === null) out.conv = {v:"—", c:"nulo", sub:"<b>no disponible</b> · faltan datos"};
+  else if(T.sessions === 0) out.conv = {v:"—", c:"nulo", sub:"<b>no disponible</b> · sin sesiones no hay tasa"};
+  else {
+    var cAct = F.v[vid] / T.sessions, cAnt = null;
+    if(B && B.estado === "ok" && B.sessions > 0 && FB && FB.estado === "ok" && FB.v[vid] !== null) cAnt = FB.v[vid] / B.sessions;
+    out.conv = {v:(cAct*100).toFixed(1), c:"", u:"%", sub:ga4Delta(cAct, cAnt, true)};
+  }
+  out.T = T; out.F = F; out.M = M;
+  return out;
+}
+
+function ga4Pinta(){
+  var sec = $("s-ga4");
+  if(!sec) return;
+  var punto = $("ga4-punto"), est = $("ga4-estado"), av = $("ga4-aviso");
+  sec.classList.toggle("apagado", ga4Apagado());
+
+  /* estado + aviso: una sola cabecera para toda la sección */
+  var denegado = null, transito = null, k;
+  for(k in G.fallos){
+    if(!G.fallos.hasOwnProperty(k)) continue;
+    if(GA4_TRANSITORIO.indexOf(G.fallos[k].code) < 0){ if(!denegado) denegado = G.fallos[k]; }
+    else if(!transito) transito = G.fallos[k];
+  }
+  var sellos = Object.keys(G.sellos).map(function(x){ return G.sellos[x]; });
+  var masViejo = sellos.length ? Math.min.apply(null, sellos) : null;
+  var pendiente = Object.keys(G.pendientes).length > 0;
+  punto.className = "punto";
+  if(G.estado === "sin-conector"){
+    est.textContent = "GA4: Supermetrics no conectado";
+    ga4Aviso("Supermetrics no está conectado en tu cuenta de claude.ai",
+      "Esta sección lee GA4 con tus propias credenciales a través del conector «"+GA4_SERVIDOR+"». Añádelo en claude.ai → Ajustes → Conectores (o elige cuenta si te lo pide) y pulsa «Actualizar». Mientras tanto no se muestra ningún número: nunca un cero que no sea real.");
+  } else if(G.estado === "apagado"){
+    est.textContent = "GA4: no disponible en esta vista";
+    av.classList.add("oculto");
+  } else if(denegado){
+    punto.className = "punto malo";
+    est.textContent = "GA4: error de conexión";
+    ga4AvisoPorCodigo(denegado);
+  } else if(transito){
+    punto.className = "punto malo";
+    est.textContent = "GA4: sin respuesta, se reintenta";
+    ga4AvisoPorCodigo(transito);
+  } else if(pendiente){
+    est.textContent = "GA4: consultando…";
+    av.classList.add("oculto");
+  } else if(masViejo){
+    punto.className = "punto vivo";
+    est.textContent = "GA4 · datos de las " + fmtH.format(new Date(masViejo));
+    av.classList.add("oculto");
+  } else {
+    est.textContent = "GA4: conectando…";
+    av.classList.add("oculto");
+  }
+
+  /* El TOTAL (A+B) ya lo enseña la última fila de la tabla por variante, así
+     que la tirada de tarjetas que había aquí repetía las mismas siete cifras.
+     Se sigue calculando porque el embudo de abajo la necesita. */
+  var C = ga4Celdas("T");
+
+  ga4PintaVariantes();
+  ga4PintaDesgloses();
+  ga4PintaEmbudo(C.T, C.F, C.M);
+}
+
+function ga4PintaVariantes(){
+  var filas = GA4_VARIANTES.map(function(v){ return {id:v.id, nombre:v.nombre}; })
+    .concat([{id:"T", nombre:"TOTAL (A+B)"}]);
+  function c(x){
+    return esc(x.v) + (x.u && !x.c ? " " + esc(x.u) : "");
+  }
+  var cuerpo = filas.map(function(f){
+    var C = ga4Celdas(f.id);
+    return '<tr'+(f.id === "T" ? ' class="clave"' : '')+'><td>'+esc(f.nombre)+'</td><td>'+c(C.sesiones)+'</td><td>'+c(C.usuarios)+
+      '</td><td>'+c(C.interaccion)+'</td><td>'+c(C.tasa)+'</td><td>'+c(C.vistas)+'</td><td>'+c(C.forms)+'</td><td>'+c(C.conv)+'</td></tr>';
+  }).join("");
+  $("ga4-variantes").innerHTML =
+    '<thead><tr><th>Variante</th><th>Sesiones</th><th>Usuarios</th><th>Con interacción</th><th>Tasa interacción</th>'+
+    '<th>Páginas vistas</th><th>Formularios</th><th>Conversión</th></tr></thead><tbody>'+cuerpo+'</tbody>';
+  $("ga4-variantes-nota").innerHTML =
+    "Sesiones, usuarios e interacción: sesiones que <b>empiezan</b> en cada landing (igualdad exacta en la página de entrada). " +
+    "Páginas vistas y formularios: todo lo que ocurre en cada landing, aunque la sesión empezara en otra página. " +
+    "En TOTAL, los usuarios son la suma de A y B. Sin filtro de campaña.";
+}
+
+/* Desglose de sesiones del ámbito por una dimensión, sumando A y B. */
+function ga4Desglose(clave, etiqueta, max, cont){
+  var L = ga4Lee(clave);
+  if(L.estado === "error") return {html:'<p class="vacio">Sin conexión con GA4 ('+esc(L.code)+').</p>'};
+  if(L.estado === "nd") return {html:'<p class="vacio">No disponible: '+esc(L.motivo)+'.</p>'};
+  if(L.estado === "cargando") return {html:'<p class="vacio">'+(ga4Apagado() ? "No disponible: sin conector de GA4." : "Cargando…")+'</p>'};
+  if(L.d.ids.indexOf("sessions") < 0 || L.d.ids.indexOf("landingPage") < 0) return {html:'<p class="vacio">No disponible: GA4 no devolvió sesiones por página de entrada.</p>'};
+  var grupos = {}, sin = 0;
+  L.d.filas.forEach(function(x){
+    if(!ga4Variante(x.landingPage)) return;
+    if(x.sessions === null){ sin++; return; }
+    var e = etiqueta(x);
+    grupos[e] = (grupos[e] || 0) + x.sessions;
+  });
+  var items = Object.keys(grupos).map(function(e){ return {et:e, v:grupos[e]}; })
+    .sort(function(a, b){ return b.v - a.v; });
+  if(!items.length && !sin) return {html:'<p class="vacio">0 sesiones: GA4 no devuelve filas de las dos landings en este periodo'+(cont ? ' con este filtro' : '')+'.</p>', items:[]};
+  var extra = (sin ? '<p class="nota">'+fmtN.format(sin)+' filas sin dato de sesiones (no disponible).</p>' : '') +
+    (L.viejo ? '<p class="nota">Último dato bueno: GA4 no responde ahora.</p>' : '');
+  return {items:items.slice(0, max), extra:extra};
+}
+function ga4PintaDesgloses(){
+  var conFiltro = !!G.campana;
+  [["fuentes", function(x){ return (x.sessionSource || "(no definido)") + " / " + (x.sessionMedium || "(none)"); }, "ga4-fuentes"],
+   ["pais", function(x){ return x.country || "(no definido)"; }, "ga4-pais"],
+   ["dispositivo", function(x){ return x.deviceCategory || "(no definido)"; }, "ga4-dispositivo"]
+  ].forEach(function(p){
+    var r = ga4Desglose(p[0], p[1], 8, conFiltro);
+    $(p[2]).innerHTML = (r.html !== undefined) ? r.html
+      : barras(r.items, function(v){ return fmtN.format(v); }) + r.extra;
+  });
+  $("ga4-filtro-nota").innerHTML = conFiltro
+    ? "Fuentes, país y dispositivo filtrados por la campaña <b>"+esc(G.campana)+"</b>. Totales y tabla A/B, sin filtrar."
+    : "Sin filtro de campaña.";
+
+  var rc = ga4Desglose("campanas", function(x){ return x.sessionCampaignName || "(sin campaña)"; }, 10, false);
+  if(rc.html !== undefined){ $("ga4-campanas").innerHTML = rc.html; return; }
+  var maxC = Math.max.apply(null, rc.items.map(function(y){ return y.v; }).concat([1]));
+  $("ga4-campanas").innerHTML = '<div class="filas">'+rc.items.map(function(x){
+    var act = (G.campana && x.et.toLowerCase() === G.campana.toLowerCase());
+    return '<div class="fila'+(act ? " activa" : "")+'"><button type="button" class="et ga4-camp" data-c="'+esc(x.et)+'" title="Filtrar fuentes, país y dispositivo por '+esc(x.et)+'">'+esc(x.et)+'</button>'+
+      '<span class="bh"><i style="width:'+Math.max(1.5, (x.v/maxC)*100)+'%"></i></span>'+
+      '<span class="vl">'+fmtN.format(x.v)+'</span></div>';
+  }).join("")+'</div>' + rc.extra;
+}
+
+/* Contactos HubSpot de las dos landings: primera URL con «mobiliario-urbano»,
+   o landing_variant rellenado por el formulario de esas landings (guarda
+   A_con_precios / B_sin_precios, no la ruta, así que también se acepta). */
+function ga4ContactosLanding(){
+  var ids = VARIANTES.map(function(v){ return v.id; });
+  return leadsInbound().filter(function(c){
+    var url = String(c.hs_analytics_first_url || ""), lv = String(c.landing_variant || "");
+    return /mobiliario-urbano/i.test(url) || /mobiliario-urbano/i.test(lv) || ids.indexOf(lv) >= 0;
+  });
+}
+function ga4PintaEmbudo(T, F, M){
+  var m = metricas("inbound"), contactos = ga4ContactosLanding().length;
+  function paso(cls, k, x, fuente){
+    var nulo = !!x.c && x.c !== "destacado";
+    return '<div class="ga4-paso '+cls+'"><span class="n'+(nulo ? " nulo" : "")+'">'+esc(x.v)+'</span>'+
+      '<span class="k">'+k+'</span><span class="f">'+fuente+'</span></div>';
+  }
+  function hs(v){ return D.arrancado ? {v:v, c:""} : {v:"—", c:"nulo"}; }
+  var ses = (T.estado === "ok") ? (T.sessions === null ? {v:"—", c:"nulo"} : {v:fmtN.format(T.sessions), c:""}) : {v:ga4Celda(T).v, c:"nulo"};
+  var frm;
+  if(F.estado === "error") frm = {v:"sin conexión", c:"nulo"};
+  else if(M === "sin-medir") frm = {v:GA4_TXT_SIN_MEDIR, c:"nulo"};
+  else if(F.estado === "ok" && F.v.T !== null) frm = {v:fmtN.format(F.v.T), c:""};
+  else frm = {v:"—", c:"nulo"};
+  $("ga4-embudo").innerHTML =
+    paso("ga", "Sesiones", ses, "GA4 · A+B") +
+    paso("ga", "Formularios", frm, "GA4 · evento A+B") +
+    paso("hs", "Contactos", hs(fmtN.format(contactos)), "HubSpot · de las landings") +
+    paso("hs", "Negocios", hs(fmtN.format(m.total)), "HubSpot · inbound") +
+    paso("hs", "Reuniones", hs(fmtN.format(m.conReunion)), "HubSpot · inbound") +
+    paso("hs", "Ganados", hs(fmtN.format(m.ganados)), "HubSpot · inbound") +
+    paso("hs", "Ingresos", hs(fmtE.format(m.ingresos)), "HubSpot · inbound");
+}
+
+function ga4Aviso(t, p){
+  $("ga4-aviso-t").textContent = t;
+  $("ga4-aviso-p").textContent = p;
+  $("ga4-aviso").classList.remove("oculto");
+}
+function ga4AvisoPorCodigo(err){
+  var c = err.code;
+  /* Los mensajes de Supermetrics pueden traer enlaces de sesión: no se enseñan. */
+  var msg = String(err.message || "").replace(/https?:\/\/\S+/g, "[enlace]").slice(0, 300);
+  var m = {
+    sm_reauth:["Supermetrics ha perdido el acceso a Google Analytics",
+      "La conexión de Google Analytics 4 dentro de Supermetrics ha caducado (el conector de claude.ai está bien). Reconéctala en hub.supermetrics.com → Data sources → Google Analytics 4 con info@thegravitywave.com y pulsa «Actualizar»."],
+    sm_error:["Supermetrics devolvió un error al leer GA4", msg || "Sin detalle."],
+    needs_reauth:["Hay que volver a conectar Supermetrics",
+      "La sesión del conector «"+GA4_SERVIDOR+"» ha caducado. Reconéctalo en claude.ai → Ajustes → Conectores y recarga esta página."],
+    server_not_connected:["Supermetrics no está conectado en tu cuenta",
+      "Añade «"+GA4_SERVIDOR+"» en claude.ai → Ajustes → Conectores y pulsa «Actualizar»."],
+    selection_required:["Tienes varias cuentas de Supermetrics",
+      "Elige con cuál ver el panel en el aviso de claude.ai y pulsa «Actualizar»."],
+    server_not_found:["El conector de Supermetrics ya no existe",
+      "Vuelve a añadirlo en claude.ai → Ajustes → Conectores."],
+    not_in_manifest:["GA4 no está autorizado para este panel",
+      "El panel no tiene permiso para llamar a Supermetrics, o se rechazó al preguntar. Recarga la página y acepta el acceso a «"+GA4_SERVIDOR+"»."],
+    blocked_by_policy:["Tu organización bloquea esta consulta",
+      "La política de claude.ai impide llamar a Supermetrics desde una página publicada. Habrá que revisarlo con quien administre la organización."],
+    approval_required:["La consulta necesita aprobación por llamada",
+      "Tu organización exige aprobar cada llamada, y eso aún no se puede hacer desde una página publicada."],
+    cancelled:["Consulta a GA4 cancelada", "Pulsa «Actualizar» para volver a intentarlo."],
+    tool_error:["Supermetrics devolvió un error", msg || "Sin detalle."],
+    server_unavailable:["Supermetrics no responde",
+      "Se reintenta solo y, mientras, se muestra el último dato bueno. Si persiste, prueba más tarde."],
+    rate_limited:["Demasiadas consultas seguidas", "Se reintenta en unos segundos."]
+  };
+  var x = m[c] || ["Error al leer GA4 ("+(c || "desconocido")+")", msg || "Sin más detalle."];
+  ga4Aviso(x[0], x[1]);
+}
+
+/* controles */
+
+function ga4Relanza(){ if(mcp && G.estado === "activo") ga4Suscribe(); ga4Pinta(); }
+$("ga4-campana").addEventListener("change", function(e){
+  G.campana = (e.target.value || "").trim();
+  ga4Relanza();
+});
+$("ga4-quitar").addEventListener("click", function(){
+  $("ga4-campana").value = "";
+  G.campana = "";
+  ga4Relanza();
+});
+$("ga4-refrescar").addEventListener("click", function(){
+  if(!mcp) return;
+  if(G.estado !== "activo"){ ga4Arranca(); return; }
+  mcp.invalidate(GA4_SERVIDOR).catch(function(){}).then(function(){ ga4Suscribe(); ga4Pinta(); });
+});
+$("ga4-campanas").addEventListener("click", function(e){
+  var b = e.target.closest && e.target.closest(".ga4-camp");
+  if(!b) return;
+  $("ga4-campana").value = b.getAttribute("data-c");
+  G.campana = b.getAttribute("data-c");
+  ga4Relanza();
+});
+$("periodo").addEventListener("change", ga4Relanza);
+
+/* El embudo combinado usa datos de HubSpot: se repinta cuando HubSpot
+   repinta, sin tocar su código (observa lo que pinta() reescribe). */
+(function(){
+  if(typeof MutationObserver !== "function") return;
+  var cola = false;
+  var obs = new MutationObserver(function(){
+    if(cola) return;
+    cola = true;
+    setTimeout(function(){ cola = false; ga4Pinta(); }, 50);
+  });
+  ["n-todo", "pie-txt"].forEach(function(id){
+    var el = $(id);
+    if(el) obs.observe(el, {childList:true, characterData:true, subtree:true});
+  });
+})();
+
 pinta();   /* la página se dibuja entera antes de que llegue ningún dato */
+ga4Pinta();
 
 if(window.claude && typeof window.claude.use === "function"){
   window.claude.use("mcp").then(function(ns){
@@ -1565,10 +2315,11 @@ if(window.claude && typeof window.claude.use === "function"){
     mcp = ns;
     D.arrancado = true;
     arranca();
-  }).catch(function(){ avisoConector("capability_disabled"); });
+    try { ga4Arranca(); } catch(e){ ga4Falla("arranque", {code:"upstream_error", message:String(e && e.message || e)}); ga4Pinta(); }
+  }).catch(function(){ avisoConector("capability_disabled"); G.estado = "apagado"; ga4Pinta(); });
 } else {
   avisoConector("capability_disabled");
+  G.estado = "apagado"; ga4Pinta();
 }
 })();
 </script>
-
