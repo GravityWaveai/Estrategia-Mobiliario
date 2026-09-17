@@ -255,14 +255,6 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
 .ga4-btn{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:2px;background:var(--surface);color:var(--ink);cursor:pointer}
 .ga4-btn:hover{border-color:var(--accent-mark)}
 .ga4-malla{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
-.ga4-embudo{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
-.ga4-paso{background:var(--ground);padding:14px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
-.ga4-paso .n{font-weight:900;font-size:26px;letter-spacing:-.02em;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ga4-paso .n.nulo{color:var(--ink-faint)}
-.ga4-paso .k{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink)}
-.ga4-paso .f{font-size:11px;color:var(--ink-faint)}
-.ga4-paso.hs{border-top:2px solid var(--serie-in)}
-.ga4-paso.ga{border-top:2px solid var(--accent-mark)}
 #s-ga4.apagado .panel-b,#s-ga4.apagado .ga4-malla{opacity:.4}
 .tile .sub .mejor{color:var(--accent);font-weight:500}
 .tile .sub .peor{color:var(--stage-lost);font-weight:500}
@@ -397,11 +389,6 @@ footer{margin:56px 0 0;border-top:1px solid var(--line);padding:20px 0 40px}
       <div class="panel-b"><h3>Campañas</h3><p class="nota">Qué campañas trajeron sesiones a las dos landings, sin filtrar. Pulsa una para filtrar fuentes, país y dispositivo.</p><div id="ga4-campanas"></div></div>
       <div class="panel-b"><h3>País</h3><div id="ga4-pais"></div></div>
       <div class="panel-b"><h3>Dispositivo</h3><div id="ga4-dispositivo"></div></div>
-    </div>
-    <div class="panel-b">
-      <h3>Embudo combinado</h3>
-      <p class="nota">Sesiones y formularios salen de GA4 (A+B). Contactos: leads inbound de HubSpot cuya primera URL contiene «mobiliario-urbano» o que traen <code>landing_variant</code>. Negocios, reuniones, ganados e ingresos: solo inbound; los outbound no entran. Se ponen en fila para leer la caída, no porque sean la misma gente: GA4 cuenta sesiones anónimas y HubSpot contactos con nombre.</p>
-      <div class="ga4-embudo" id="ga4-embudo"></div>
     </div>
   </section>
 
@@ -2117,14 +2104,8 @@ function ga4Pinta(){
     av.classList.add("oculto");
   }
 
-  /* El TOTAL (A+B) ya lo enseña la última fila de la tabla por variante, así
-     que la tirada de tarjetas que había aquí repetía las mismas siete cifras.
-     Se sigue calculando porque el embudo de abajo la necesita. */
-  var C = ga4Celdas("T");
-
   ga4PintaVariantes();
   ga4PintaDesgloses();
-  ga4PintaEmbudo(C.T, C.F, C.M);
 }
 
 function ga4PintaVariantes(){
@@ -2193,40 +2174,6 @@ function ga4PintaDesgloses(){
   }).join("")+'</div>' + rc.extra;
 }
 
-/* Contactos HubSpot de las dos landings: primera URL con «mobiliario-urbano»,
-   o landing_variant rellenado por el formulario de esas landings (guarda
-   A_con_precios / B_sin_precios, no la ruta, así que también se acepta). */
-function ga4ContactosLanding(){
-  var ids = VARIANTES.map(function(v){ return v.id; });
-  return leadsInbound().filter(function(c){
-    var url = String(c.hs_analytics_first_url || ""), lv = String(c.landing_variant || "");
-    return /mobiliario-urbano/i.test(url) || /mobiliario-urbano/i.test(lv) || ids.indexOf(lv) >= 0;
-  });
-}
-function ga4PintaEmbudo(T, F, M){
-  var m = metricas("inbound"), contactos = ga4ContactosLanding().length;
-  function paso(cls, k, x, fuente){
-    var nulo = !!x.c && x.c !== "destacado";
-    return '<div class="ga4-paso '+cls+'"><span class="n'+(nulo ? " nulo" : "")+'">'+esc(x.v)+'</span>'+
-      '<span class="k">'+k+'</span><span class="f">'+fuente+'</span></div>';
-  }
-  function hs(v){ return D.arrancado ? {v:v, c:""} : {v:"—", c:"nulo"}; }
-  var ses = (T.estado === "ok") ? (T.sessions === null ? {v:"—", c:"nulo"} : {v:fmtN.format(T.sessions), c:""}) : {v:ga4Celda(T).v, c:"nulo"};
-  var frm;
-  if(F.estado === "error") frm = {v:"sin conexión", c:"nulo"};
-  else if(M === "sin-medir") frm = {v:GA4_TXT_SIN_MEDIR, c:"nulo"};
-  else if(F.estado === "ok" && F.v.T !== null) frm = {v:fmtN.format(F.v.T), c:""};
-  else frm = {v:"—", c:"nulo"};
-  $("ga4-embudo").innerHTML =
-    paso("ga", "Sesiones", ses, "GA4 · A+B") +
-    paso("ga", "Formularios", frm, "GA4 · evento A+B") +
-    paso("hs", "Contactos", hs(fmtN.format(contactos)), "HubSpot · de las landings") +
-    paso("hs", "Negocios", hs(fmtN.format(m.total)), "HubSpot · inbound") +
-    paso("hs", "Reuniones", hs(fmtN.format(m.conReunion)), "HubSpot · inbound") +
-    paso("hs", "Ganados", hs(fmtN.format(m.ganados)), "HubSpot · inbound") +
-    paso("hs", "Ingresos", hs(fmtE.format(m.ingresos)), "HubSpot · inbound");
-}
-
 function ga4Aviso(t, p){
   $("ga4-aviso-t").textContent = t;
   $("ga4-aviso-p").textContent = p;
@@ -2289,22 +2236,6 @@ $("ga4-campanas").addEventListener("click", function(e){
   ga4Relanza();
 });
 $("periodo").addEventListener("change", ga4Relanza);
-
-/* El embudo combinado usa datos de HubSpot: se repinta cuando HubSpot
-   repinta, sin tocar su código (observa lo que pinta() reescribe). */
-(function(){
-  if(typeof MutationObserver !== "function") return;
-  var cola = false;
-  var obs = new MutationObserver(function(){
-    if(cola) return;
-    cola = true;
-    setTimeout(function(){ cola = false; ga4Pinta(); }, 50);
-  });
-  ["n-todo", "pie-txt"].forEach(function(id){
-    var el = $(id);
-    if(el) obs.observe(el, {childList:true, characterData:true, subtree:true});
-  });
-})();
 
 pinta();   /* la página se dibuja entera antes de que llegue ningún dato */
 ga4Pinta();
