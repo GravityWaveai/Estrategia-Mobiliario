@@ -761,18 +761,30 @@ function arranca(){
   }, function(p){
     var filas = [];
     if(p && p.results) p.results.forEach(function(b){ filas = filas.concat(parseTSV(b.content)); });
-    /* Un negocio puede traer varias filas, una por contacto asociado. */
+    /* Un negocio puede traer varias filas, una por contacto asociado.
+
+       Un lead cuenta como INBOUND solo si hay rastro del formulario de esta
+       campaña: `productos_interes`, que únicamente rellena ese formulario, o
+       `landing_variant`, que solo escriben esas dos landings. Nada más.
+
+       `inbound__outbound` NO decide, aunque lo parezca por el nombre. Es una
+       etiqueta de contacto, no de campaña, y llega desde fuera: el 17/09/2026
+       había dos ayuntamientos creados por la integración de Apollo
+       —hs_analytics_source OFFLINE, sin formulario y sin variante— marcados
+       «INBOUND - Lead Web». El panel los daba por leads web y enseñaba dos
+       inbound sin que hubiera entrado ni uno. Se conserva para mostrarla, y
+       su lado OUTBOUND sigue valiendo como refuerzo de la campaña de Apollo:
+       equivocarse hacia outbound no inventa leads. */
     var acumulado = {};
     filas.forEach(function(f){
       var id = f.hs_object_id; if(!id) return;
       var a = acumulado[id] || (acumulado[id] = {formulario:false, apollo:false, etiqueta:null, variante:null});
-      if(f.productos_interes) a.formulario = true;
+      if(f.productos_interes || f.landing_variant) a.formulario = true;
       if(f.campana_apollo === CAMPANA) a.apollo = true;
       if(f.landing_variant) a.variante = f.landing_variant;
       var io = f.inbound__outbound;
       if(io){
-        if(io.indexOf("INBOUND") === 0) a.formulario = true;
-        else if(io.indexOf("OUTBOUND") === 0) a.apollo = true;
+        if(io.indexOf("OUTBOUND") === 0) a.apollo = true;
         a.etiqueta = io;
       }
     });
