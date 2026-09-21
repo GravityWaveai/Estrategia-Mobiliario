@@ -124,9 +124,25 @@ panel.
 
 **1. Un contacto que está en Apollo y además rellena el formulario cuenta como
 INBOUND** (último toque). El negocio es inbound si alguno de sus contactos
-asociados tiene `productos_interes` relleno o su `inbound__outbound` empieza
-por `INBOUND`; si no, es outbound si tiene `campana_apollo` o su
-`inbound__outbound` empieza por `OUTBOUND`.
+asociados trae `productos_interes` o `landing_variant`; si no, es outbound si
+tiene `campana_apollo` o su `inbound__outbound` empieza por `OUTBOUND`.
+
+`inbound__outbound` **no sirve para declarar inbound**, aunque lo parezca por
+el nombre. Es una etiqueta de contacto de todo el portal —10.959 contactos la
+tienen, y su valor más repetido es justamente `INBOUND - Lead Web`—, no una
+etiqueta de esta campaña, y la escribe algo ajeno al puente.
+
+Se vio el 17/09/2026: Almenara y Calp, dos ayuntamientos creados por la
+integración de Apollo (`hs_analytics_source = OFFLINE`, `campana_apollo`
+puesta, `apollo_estado = enviado`, sin formulario y sin variante) llegaron
+marcados `INBOUND - Lead Web`. El panel enseñaba dos leads web sin que hubiera
+entrado ni uno. Se corrigieron a mano a `OUTBOUND - Cold Email` el 21/09/2026.
+
+Las únicas señales que prueban un formulario de esta campaña son
+`productos_interes`, que solo rellena ese formulario, y `landing_variant`, que
+solo escriben esas dos landings. El lado OUTBOUND de `inbound__outbound` sí se
+sigue mirando: equivocarse hacia outbound no inventa leads, solo repite lo que
+ya dice `campana_apollo`.
 
 **2. De reuniones solo se cuentan las agendadas, y solo en la pestaña
 semanal.** «Realizadas», «propuestas
