@@ -44,7 +44,7 @@ HUBSPOT_API = "https://api.hubapi.com"
 FIELDNAMES = [
     "municipio", "provincia", "comunidad_autonoma", "nombre", "apellidos",
     "cargo", "email", "tipo_email", "fuente", "origen", "fecha_alta",
-    "hubspot_sync",
+    "hubspot_sync", "estado_email",
 ]
 
 
@@ -80,6 +80,11 @@ def http_json(method, url, headers=None, body=None, retries=3):
                 continue
             return 0, {"error": str(e)}
     return 0, {"error": "reintentos agotados"}
+
+
+def email_utilizable(fila):
+    """Un email cuenta solo si existe y no ha rebotado ni está en lista negra."""
+    return "@" in fila.get("email", "") and not fila.get("estado_email", "").strip()
 
 
 def cargar_csv():
@@ -198,15 +203,17 @@ def exportar_xlsx(filas):
     ws = wb.active
     ws.title = "Ayuntamientos costeros"
     cab = ["Municipio", "Provincia", "Comunidad Autónoma", "Nombre", "Apellidos",
-           "Cargo", "Email", "Tipo de email", "Fuente (URL)", "Origen", "Fecha alta"]
+           "Cargo", "Email", "Tipo de email", "Fuente (URL)", "Origen", "Fecha alta",
+           "Estado del email"]
     ws.append(cab)
     for c in ws[1]:
         c.font = Font(name="Arial", bold=True)
     for f in filas:
         ws.append([f["municipio"], f["provincia"], f["comunidad_autonoma"],
                    f["nombre"], f["apellidos"], f["cargo"], f["email"],
-                   f["tipo_email"], f["fuente"], f["origen"], f["fecha_alta"]])
-    anchos = [24, 14, 20, 14, 18, 30, 34, 22, 40, 10, 12]
+                   f["tipo_email"], f["fuente"], f["origen"], f["fecha_alta"],
+                   f.get("estado_email", "")])
+    anchos = [24, 14, 20, 14, 18, 30, 34, 22, 40, 10, 12, 20]
     for i, a in enumerate(anchos, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = a
     for fila in ws.iter_rows(min_row=2):
@@ -214,7 +221,7 @@ def exportar_xlsx(filas):
             c.font = Font(name="Arial")
 
     municipios = {norm(f["municipio"]) for f in filas}
-    con_email = {norm(f["municipio"]) for f in filas if "@" in f["email"]}
+    con_email = {norm(f["municipio"]) for f in filas if email_utilizable(f)}
     res = wb.create_sheet("Resumen")
     datos = [
         ("Base de datos: Ayuntamientos costeros (Cataluña, C. Valenciana, Baleares, Canarias)", None),
@@ -222,7 +229,9 @@ def exportar_xlsx(filas):
         ("Total de municipios", len(municipios)),
         ("Municipios con email localizado", len(con_email)),
         ("Municipios sin email público localizado", len(municipios) - len(con_email)),
-        ("Contactos totales", sum(1 for f in filas if "@" in f["email"])),
+        ("Contactos totales", sum(1 for f in filas if email_utilizable(f))),
+        ("Emails rebotados o en lista negra",
+         sum(1 for f in filas if f.get("estado_email", "").strip())),
         ("Contactos nominales (Apollo)", sum(1 for f in filas if f["origen"] == "apollo")),
         (None, None),
         ("Última actualización del agente", datetime.date.today().isoformat()),
@@ -258,7 +267,7 @@ def elegir_lote(filas, tamano):
             estado = json.load(f)
     procesados = set(estado.get("procesados", []))
 
-    con_email = {norm(f["municipio"]) for f in filas if "@" in f["email"]}
+    con_email = {norm(f["municipio"]) for f in filas if email_utilizable(f)}
     pendientes = [m for m in municipios
                   if norm(m[0]) not in con_nominal and norm(m[0]) not in procesados]
     if not pendientes:  # vuelta completa: reiniciar la rotación
