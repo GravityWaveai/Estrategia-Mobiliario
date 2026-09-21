@@ -47,8 +47,8 @@ protagonista, y en el embudo la etapa «Reunión Agendada» va marcada
 
 | Métrica | Definición exacta |
 |---|---|
-| Canal de entrada (solo inbound) | Por dónde llegó cada lead, de `hs_analytics_source` + `hs_analytics_source_data_1`. **No se usa `canal_origen`** — ver abajo |
-| Lead a lead (solo inbound) | La misma fuente, pero sin agregar: una fila por persona que envió el formulario, con su origen, qué pidió y la primera página que vio. El nombre enlaza a su ficha de HubSpot. Va encima de los resultados económicos. Quien rechaza las cookies de seguimiento entra sin fuente y sale como «Sin fuente», contado aparte en la nota en vez de repartido a ojo |
+| Canal de entrada (solo inbound) | Por dónde llegó cada lead: manda `canal_origen` (la etiqueta del enlace) y, si no dice nada, `hs_analytics_source` + `hs_analytics_source_data_1` — ver abajo |
+| Lead a lead (solo inbound) | Las mismas dos fuentes, pero sin agregar: una fila por persona que envió el formulario, con su origen, qué pidió y la primera página que vio. El nombre enlaza a su ficha de HubSpot. Va encima de los resultados económicos. Quien rechaza las cookies de seguimiento entra sin fuente y sale como «Sin fuente», contado aparte en la nota en vez de repartido a ojo |
 | Productos de interés (solo inbound) | Leads que marcaron cada opción de `productos_interes`. Es una casilla múltiple, así que un lead cuenta en todos los que pidió y la suma pasa del total de leads a propósito: lo que compara la barra es producto contra producto. El más pedido va en Formentera para que la respuesta se lea sin contar cifras. Una opción nueva del formulario aparece con su valor interno en vez de desaparecer del recuento |
 | Negocios por etapa | `dealstage` de los negocios del pipeline `4080461018`, en columnas tipo kanban: una por etapa, en el orden del pipeline, con el porcentaje sobre el total del segmento |
 | Motivos de pérdida | `motivo_perdida` de los negocios en «Descartado» |
@@ -86,39 +86,41 @@ reuniones cerradas, y el dinero es la consecuencia.
 
 ## Instagram, LinkedIn o web: de dónde sale ese dato
 
-Hay **dos vías** en el portal que dicen por dónde entró un lead, y no dicen lo
-mismo. El panel usa la primera:
+Hay **dos vías** en el portal que dicen por dónde entró un lead. El panel mira
+las dos, en este orden:
 
-**1. `hs_analytics_source` + `hs_analytics_source_data_1` — la que se usa.**
-Es el seguimiento propio de HubSpot, que lee el referente del navegador. La
-fuente sola no distingue redes —Instagram y LinkedIn caen las dos en
-«Organic Social»—; el nombre está en el detalle. Verificado contra el portal
-el 11/09/2026: `instagram` 144 contactos, `linkedin` 56, `facebook` 10, más
-`PAID_SOCIAL` con su propio reparto. Funciona **aunque el enlace no lleve
-UTM**, porque no depende de la URL.
+**1. `canal_origen` — manda.** Es el campo oculto del formulario, que guarda la
+UTM del enlace. Va primero porque llega donde el seguimiento de HubSpot no
+llega: LinkedIn envuelve los enlaces salientes de sus publicaciones en
+`lnkd.in` con `noreferrer`, y desde su aplicación móvil nunca manda referente,
+así que un clic desde LinkedIn aterriza en HubSpot como «tráfico directo». La
+UTM, en cambio, viaja dentro de la propia dirección y no depende del navegador
+de quien pincha.
 
-**2. `canal_origen` — la que NO se usa.** Es el campo oculto del formulario,
-y su función en la página hace bien su trabajo:
+Solo gana cuando dice algo: `web_directo` y `otro` son su forma de encogerse de
+hombros y pasan al punto 2.
 
-```js
-var src = (p.get("utm_source") || "").toLowerCase();
-if (src === "instagram") return "instagram";
-if (src === "linkedin")  return "linkedin";
-if (src === "email")     return "email_ayuntamientos";
-return "web_directo";
-```
+**2. `hs_analytics_source` + `hs_analytics_source_data_1` — el respaldo.** Es el
+seguimiento propio de HubSpot, que lee el referente aunque el enlace no lleve
+UTM. Es lo único que distingue búsqueda orgánica de referencia. La fuente sola
+no distingue redes —Instagram y LinkedIn caen las dos en «Organic Social»—; el
+nombre está en el detalle. Verificado contra el portal el 11/09/2026:
+`instagram` 144 contactos, `linkedin` 56, `facebook` 10, más `PAID_SOCIAL` con
+su propio reparto.
 
-El problema es *cuándo* lo lee: en el momento de enviar, de la URL que haya
-entonces. Si el visitante llega con la UTM, navega a otra página y vuelve, o
-si el enlace de la publicación no lleva UTM, cae en `web_directo`. Por eso los
-tres leads que hay hoy dicen `web_directo` aunque dos vinieran de sitios
-distintos.
+Si ninguna de las dos sabe nada —quien rechaza las cookies entra sin fuente— el
+lead sale como «Sin fuente» y se cuenta aparte, no se reparte a ojo.
 
-Sigue siendo útil como **intención declarada de campaña** —dice desde qué
-enlace etiquetado se envió—, pero no como reparto de canales. Si se quisiera
-fiable, habría que guardar el `utm_source` en `sessionStorage` la primera vez
-que se ve y leerlo de ahí al enviar; es un cambio en la página web, no en el
-panel.
+**El orden cambió el 15/09/2026.** Antes mandaba HubSpot y `canal_origen` ni se
+miraba. Una prueba entrando desde una publicación de LinkedIn salió como «Web
+directo»: la URL llegó sin UTM y LinkedIn no mandó referente, así que fallaron
+las dos vías a la vez. El detalle entero, con lo que HubSpot guardó de ese
+contacto, está en `analytics/README.md`.
+
+Para que `canal_origen` sea fiable hacen falta dos cosas, las dos fuera del
+panel: publicar los enlaces **etiquetados** (`analytics/DEV-ORIGEN-LEADS.md`
+tiene los exactos) y desplegar el bloque de `analytics/generate-lead.js`, que
+guarda el origen al entrar en vez de leer la URL al enviar.
 
 ## Las tres decisiones que había que tomar
 
