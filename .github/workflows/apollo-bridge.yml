@@ -75,4 +75,14 @@ jobs:
           # que volver a 6 o conectar más buzones a la secuencia.
           OUTBOUND_DAILY_CAP: '6'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
+          # Buzón exacto desde el que sale el correo en frío. Cuando se mueva
+          # al dominio de outbound, se pone aquí (variable del repo) y el
+          # puente se niega a arrancar si ese buzón no está conectado en
+          # Apollo: así no vuelve a salir nada desde el dominio corporativo
+          # porque alguien cambie el "buzón por defecto" en Apollo.
+          OUTBOUND_SENDER_EMAIL: ${{ vars.OUTBOUND_SENDER_EMAIL || '' }}
+          # Tope de rebotes de la secuencia a partir del cual el puente deja
+          # de inscribir. 3 es el umbral de aviso de Apollo; Apollo solo
+          # pausa sola al 4 % y a partir de 200 envíos, tarde para nosotros.
+          OUTBOUND_MAX_BOUNCE_PCT: ${{ vars.OUTBOUND_MAX_BOUNCE_PCT || '3' }}
         run: python3 bridge/apollo_hubspot_bridge.py

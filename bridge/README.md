@@ -40,6 +40,62 @@ calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
 inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
 lleva su propio reloj desde el día en que entra.
 
+### Dos frenos nuevos antes de inscribir (21/09)
+
+`enroll_outbound` ya no inscribe a ciegas: antes pide la ficha de la
+secuencia a Apollo (`GET /emailer_campaigns/{id}`) y para si falla
+cualquiera de estas dos cosas.
+
+**1. La secuencia tiene que estar activa.** El 21/09 se pausó a mano a las
+06:09 UTC (`status_reason: manual_pause`) y el puente inscribió 6
+ayuntamientos a las 09:33 igualmente: quedaron `apollo_estado = enviado` en
+HubSpot y con negocio en «Información enviada» sin que saliera un solo
+correo. Cuando se reanude la secuencia sí les llegará (Apollo los tiene en
+`paused`), pero mientras tanto el pipeline miente. Ahora, con la secuencia
+pausada, OUTBOUND se salta y lo dice en el log.
+
+**2. Los rebotes no pueden pasar del tope.** Apollo pausa la secuencia sola
+al 4 %, pero solo a partir de 200 envíos (`auto_pause_config.min_volume`).
+Con 74 envíos nunca iba a saltar, y los rebotes pasaron del 3,7 % (2 de 54,
+el 16/09) al 13,5 % (10 de 74, el 18/09) mientras el puente seguía metiendo
+6 al día de una lista sin verificar. Con `OUTBOUND_MAX_BOUNCE_PCT` (por
+defecto 3, el umbral de aviso del propio Apollo) el puente para antes.
+
+La tasa es la **acumulada** de la secuencia: para reanudar con la lista ya
+limpia, lo sano es una secuencia nueva (en el dominio nuevo, ver
+`ENTREGABILIDAD.md`), no arrastrar un 13 % histórico que bloquearía siempre.
+Si hubiera que forzar la actual, se sube la variable a sabiendas.
+
+### REBOTES se lee de los mensajes, no de la lista (21/09)
+
+Hasta el 21/09 `sync_bounces` recorría la lista OUTBOUND buscando en
+`contact_campaign_statuses` un estado `bounced`/`hard_bounced`, y **nunca
+marcó a nadie**: 10 rebotados en Apollo, 0 `rebotado` en HubSpot. Dos motivos,
+los dos comprobados contra la lista real:
+
+- Apollo **no escribe el rebote en el contacto**. Los 132 de la lista solo
+  tienen `paused`, `finished` o nada; el estado `bounced` que el puente
+  buscaba no existe ahí.
+- Apollo **saca de la lista al que rebota**. Los 10 ids con rebote no están
+  en ninguna de las dos páginas de la lista. Recorriendo la lista, ni se veían.
+
+Ahora los rebotes salen de `POST /emailer_messages/search` con
+`emailer_message_stats: ["bounced", "spam_blocked"]`, que es donde Apollo
+sí los guarda (y de donde los pinta su propia interfaz). El email para
+buscarlos en HubSpot sale del índice de la lista si siguen en ella y, si ya
+no, de `GET /contacts/{id}` — una llamada por rebotado, que no cuenta para
+el tope de 600 de `/contacts/search`.
+
+Efecto colateral que arregla: sin este paso, esos 10 negocios seguían vivos
+en «Información enviada» y DESCARTE los habría cerrado como «Sin respuesta»,
+que es falso — nunca les llegó nada. Y para el reinicio de la campaña es
+crítico: hay que poder sacar de la lista a quien ya rebotó.
+
+> Por cierto: los 128 de la lista con `email_status` figuran como
+> `verified` en Apollo — presumiblemente también los 10 que rebotaron. La
+> «verificación» de Apollo no sustituye a un verificador de verdad antes de
+> inscribir.
+
 ### El tope diario está en 6 (16/09)
 
 Estuvo un día en 30 para vaciar la lista y se volvió a bajar por
@@ -435,6 +491,8 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
 | — | `OUTBOUND_DAILY_CAP` | fijado a `30` en el workflow — **modo vaciado**, ver abajo. Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
+| Variable | `OUTBOUND_SENDER_EMAIL` | buzón exacto de Apollo desde el que sale todo. **Si se define y no está conectado, el puente aborta la pasada entera.** Vacío = el buzón por defecto de Apollo. Es la garantía de que al mover el correo en frío a su propio dominio no vuelva a salir nada desde el corporativo |
+| Variable | `OUTBOUND_MAX_BOUNCE_PCT` | tope de rebotes (%) de la secuencia OUTBOUND a partir del cual el puente deja de inscribir. Por defecto `3`, el umbral de aviso de Apollo |
 
 ## Primera ejecución
 

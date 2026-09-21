@@ -35,6 +35,14 @@ Variables de entorno:
   OUTBOUND_ENROLL_HOUR   hora UTC en la que se inscribe OUTBOUND cada día
                          (por defecto 8; el resto de pasadas de esa hora
                          no hacen nada nuevo en OUTBOUND)
+  OUTBOUND_SENDER_EMAIL  buzón de Apollo desde el que salen las secuencias.
+                         Si se define y no está conectado en Apollo, el puente
+                         se niega a arrancar: nunca debe salir correo en frío
+                         desde el buzón equivocado (p. ej. el del dominio
+                         corporativo). Sin definir, el buzón por defecto.
+  OUTBOUND_MAX_BOUNCE_PCT tope de rebotes (%) de la secuencia OUTBOUND a
+                         partir del cual el puente deja de inscribir
+                         (por defecto 3, el umbral de aviso de Apollo)
 """
 
 import json
@@ -50,6 +58,8 @@ ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
 OUTBOUND_ENABLED = os.environ.get("OUTBOUND_ENABLED", "1") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
 HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
+SENDER_EMAIL = os.environ.get("OUTBOUND_SENDER_EMAIL", "").strip().lower()
+MAX_REBOTE_PCT = float(os.environ.get("OUTBOUND_MAX_BOUNCE_PCT", "3"))
 
 # Identificadores fijos del embudo
 SEQ_INBOUND = "6a9844b94208650014fc4754"
@@ -130,13 +140,10 @@ ETIQUETAS_TIPO_ENTIDAD = {
     "hotel_resort": "Hotel / Resort", "otro": "Otro",
 }
 
-# Estados de Apollo que HubSpot no puede deducir por su cuenta. La respuesta
-# NO está aquí a propósito: la detecta HubSpot (ver sync_replies).
-ESTADO_SOLO_APOLLO = {
-    "bounced": "rebotado",
-    "hard_bounced": "rebotado",
-    "spam_blocked": "rebotado",
-}
+# El rebote es el único estado que HubSpot no puede deducir por su cuenta, y
+# NO se lee del contacto de Apollo: ver sync_bounces. La respuesta tampoco
+# está aquí a propósito: la detecta HubSpot (ver sync_replies).
+ESTADO_REBOTE = "rebotado"
 
 # Estados desde los que todavía se puede pasar a «respondido»
 EN_CURSO = ["enviado", "abierto"]
@@ -221,13 +228,70 @@ def _tras_inscripcion(fecha, props):
 # Apollo
 
 def apollo_sender_account_id():
-    """Buzón por defecto del equipo, que es desde donde sale la secuencia."""
+    """Buzón desde el que salen las secuencias.
+
+    Con OUTBOUND_SENDER_EMAIL definido se exige ese buzón exacto y, si no
+    está conectado en Apollo, se aborta la pasada entera. Es la garantía de
+    que al mover el correo en frío a su propio dominio no vuelva a salir
+    nada desde el corporativo por un "buzón por defecto" que alguien haya
+    cambiado en Apollo sin avisar. Sin la variable, el buzón por defecto.
+    """
     accounts = apollo("GET", "/email_accounts").get("email_accounts", [])
     if not accounts:
         raise RuntimeError("Apollo no tiene ningún buzón conectado")
-    default = next((a for a in accounts if a.get("default")), accounts[0])
-    log(f"  buzón remitente: {default.get('email')}")
-    return default["id"]
+    if SENDER_EMAIL:
+        elegido = next((a for a in accounts
+                        if (a.get("email") or "").lower() == SENDER_EMAIL), None)
+        if not elegido:
+            raise RuntimeError(
+                f"OUTBOUND_SENDER_EMAIL={SENDER_EMAIL} no está conectado en Apollo "
+                f"(conectados: {', '.join(a.get('email', '?') for a in accounts)}). "
+                "No se inscribe a nadie hasta que lo esté.")
+        if not elegido.get("active", True):
+            raise RuntimeError(f"el buzón {SENDER_EMAIL} está conectado pero inactivo en Apollo")
+    else:
+        elegido = next((a for a in accounts if a.get("default")), accounts[0])
+    log(f"  buzón remitente: {elegido.get('email')}")
+    return elegido["id"]
+
+
+def apollo_secuencia(seq_id):
+    """La ficha de una secuencia: si está activa y sus tasas."""
+    return apollo("GET", f"/emailer_campaigns/{seq_id}").get("emailer_campaign") or {}
+
+
+def outbound_puede_inscribir():
+    """Dos frenos antes de inscribir, y los dos vienen de la propia secuencia.
+
+    1. Que esté activa. El 21/09 se pausó a mano a las 06:09 UTC y el puente
+       inscribió 6 ayuntamientos a las 09:33 igualmente: quedaron marcados
+       «enviado» en HubSpot y con negocio en el pipeline sin que saliera un
+       solo correo. Una secuencia pausada no envía, así que inscribir en ella
+       solo falsea el CRM.
+    2. Que los rebotes no pasen del tope. Apollo solo pausa sola al 4 % y
+       únicamente a partir de 200 envíos; con 74 envíos nunca habría saltado,
+       y los rebotes pasaron del 3,7 % al 13,5 % en tres días mientras el
+       puente seguía metiendo gente. Con la lista sin verificar, cada
+       inscripción nueva sube ese porcentaje: mejor parar y limpiar.
+
+    La tasa es la acumulada de la secuencia: para reanudar con la lista
+    limpia lo sano es una secuencia nueva (o subir OUTBOUND_MAX_BOUNCE_PCT
+    a sabiendas), no arrastrar un 13 % histórico.
+    """
+    seq = apollo_secuencia(SEQ_OUTBOUND)
+    if not seq.get("active", False):
+        log(f"OUTBOUND: la secuencia está PAUSADA en Apollo "
+            f"({seq.get('status_reason') or 'sin motivo'}); no se inscribe a nadie")
+        return False
+    enviados = (seq.get("unique_delivered") or 0) + (seq.get("unique_bounced") or 0)
+    rebote_pct = 100.0 * (seq.get("unique_bounced") or 0) / enviados if enviados else 0.0
+    if rebote_pct >= MAX_REBOTE_PCT:
+        log(f"### OUTBOUND: rebotes al {rebote_pct:.1f}% ({seq.get('unique_bounced')} de {enviados}), "
+            f"por encima del tope de {MAX_REBOTE_PCT:g}%. NO se inscribe a nadie hasta "
+            f"verificar la lista. Para forzarlo, OUTBOUND_MAX_BOUNCE_PCT.")
+        return False
+    log(f"  secuencia OUTBOUND activa, rebotes al {rebote_pct:.1f}% (tope {MAX_REBOTE_PCT:g}%)")
+    return True
 
 
 def apollo_contacts(page=1, **filters):
@@ -587,6 +651,8 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
+    if not outbound_puede_inscribir():
+        return
     candidatos, sin_municipio, page = {}, [], 1
     while len(candidatos) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
@@ -782,27 +848,70 @@ def sync_replies():
                       lambda s=seq, c=contacto: apollo_stop(s, [c["id"]]))
 
 
+def apollo_contactos_rebotados(seq_id):
+    """Ids de los contactos con rebote o bloqueo por spam en una secuencia."""
+    ids, page = set(), 1
+    while True:
+        res = apollo("POST", "/emailer_messages/search", {
+            "emailer_campaign_id": seq_id,
+            "emailer_message_stats": ["bounced", "spam_blocked"],
+            "page": page, "per_page": 100,
+        })
+        lote = res.get("emailer_messages", [])
+        if not lote:
+            break
+        ids |= {m["contact_id"] for m in lote if m.get("contact_id")}
+        if page >= res.get("pagination", {}).get("total_pages", 1):
+            break
+        page += 1
+    return ids
+
+
 def sync_bounces():
-    """Lo único que HubSpot no puede saber: el correo que nunca llegó."""
+    """Lo único que HubSpot no puede saber: el correo que nunca llegó.
+
+    El rebote se lee de los MENSAJES de la secuencia, no del contacto. Hasta
+    el 21/09 se buscaba en `contact_campaign_statuses` de la lista OUTBOUND
+    un estado `bounced`/`hard_bounced`, y nunca marcó a nadie: Apollo no
+    escribe ese estado en el contacto (los que rebotaron aparecen sin rastro
+    o como `paused`) y, además, los saca de la lista al rebotar, así que
+    recorriendo la lista ni siquiera se los veía. Resultado: 10 rebotados en
+    Apollo y 0 «rebotado» en HubSpot, con sus 10 negocios vivos en
+    «Información enviada» esperando a que DESCARTE los cerrase como «Sin
+    respuesta» — que es mentira.
+
+    El email hace falta para buscarlos en HubSpot: sale del índice de la
+    lista si siguen en ella, y si Apollo ya los ha sacado se pide la ficha
+    de cada uno (GET /contacts/{id}, que no cuenta para el tope de 600 de
+    /contacts/search). Son pocos y solo los que rebotaron.
+    """
+    ids = set()
+    for seq in (SEQ_INBOUND, SEQ_OUTBOUND):
+        ids |= apollo_contactos_rebotados(seq)
+    if not ids:
+        log("REBOTES: Apollo no tiene ningún rebote en las secuencias")
+        return
+    por_id = {c["id"]: email for email, c in apollo_lista_outbound().items()}
+    emails = set()
+    for cid in ids:
+        email = por_id.get(cid)
+        if not email:
+            ficha = apollo("GET", f"/contacts/{cid}").get("contact") or {}
+            email = (ficha.get("email") or "").lower()
+        if email:
+            emails.add(email)
+    log(f"REBOTES: {len(ids)} contacto(s) con rebote en Apollo, {len(emails)} con email")
     marcados = 0
-    for c in apollo_lista_outbound().values():
-        estado = next(
-            (ESTADO_SOLO_APOLLO[s["status"]]
-             for s in (c.get("contact_campaign_statuses") or [])
-             if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
-             and s.get("status") in ESTADO_SOLO_APOLLO),
-            None)
-        if not estado:
-            continue
+    for lote in _chunks(sorted(emails), 100):
         for h in hs_search_contacts(
                 [{"filters": [
-                    {"propertyName": "email", "operator": "EQ", "value": c["email"]},
+                    {"propertyName": "email", "operator": "IN", "values": lote},
                     {"propertyName": "apollo_estado", "operator": "IN", "values": EN_CURSO},
                 ]}],
                 ["email", "apollo_estado"]):
-            hs_stamp(h["id"], {"apollo_estado": estado})
+            hs_stamp(h["id"], {"apollo_estado": ESTADO_REBOTE})
             marcados += 1
-    log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
+    log(f"REBOTES: {marcados} contacto(s) marcados como rebotados en HubSpot")
 
 
 def hs_search_deals(filter_groups, properties):

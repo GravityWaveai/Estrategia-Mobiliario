@@ -23,6 +23,10 @@ comprobado; lo que es suposición va marcado como tal.
    **dominio aparte**. Ver [§4](#4-la-arquitectura-de-dominios).
 6. **Reenviar toda la lista desde cero, tal cual, sería el peor movimiento
    posible.** Ver [§5](#5-lo-que-no-hay-que-hacer).
+7. **Actualización de la tarde:** la secuencia está en pausa manual desde
+   las 06:09, el puente tenía dos bugs que afectaban al reinicio (ya
+   arreglados) y las tres decisiones pendientes están tomadas. Ver
+   [§8](#8-actualización-2109-tarde-lo-que-se-ha-hecho-y-lo-que-se-ha-decidido).
 
 ---
 
@@ -391,18 +395,109 @@ que no. Apollo lo puede añadir solo.
 
 ---
 
-## 8. Lo que hay que decidir
+## 8. Actualización 21/09 (tarde): lo que se ha hecho y lo que se ha decidido
 
-Tres cosas que no puedo decidir yo:
+### Lo que ha aparecido al bajar al detalle
 
-1. **¿Dominio aparte o subdominio?** La recomendación es dominio aparte, pero
-   implica comprar uno y elegir nombre.
-2. **¿Una campaña o dos?** Ayuntamientos y tiendas tienen perfiles de riesgo
-   muy distintos (las tiendas tienen direcciones @gmail, que es donde más
-   duele). Separarlas en dos dominios cuesta 10 € más al año y es lo prudente.
-3. **¿Qué hacemos con el llavero mientras tanto?** Se puede seguir a mano, en
-   volumen bajo (5/día), sin adjunto y sin @gmail, desde `info@`; o pararla
-   del todo hasta tener el dominio nuevo. Depende de cuánta prisa haya.
+**La secuencia está en pausa manual desde hoy a las 06:09 UTC**
+(`status_reason: manual_pause`). Bien: es lo que había que hacer. Pero el
+puente inscribió 6 ayuntamientos más a las 09:33 (Calonge, Calvià,
+Castelló, Nules, Altea, Xilxes): están en HubSpot como «enviado» y con
+negocio en «Información enviada» sin que les haya salido un correo. Cuando
+se reanude la secuencia sí les llegará —Apollo los tiene en `paused`—, pero
+si se decide **no** reanudar esta secuencia (que es lo recomendado, ver
+abajo), esos 6 hay que reasignarlos a mano.
+
+**HubSpot tiene 0 contactos «rebotado» y Apollo tiene 10.** El paso
+REBOTES del puente nunca ha funcionado: Apollo no escribe el rebote en el
+contacto y además saca de la lista al que rebota, así que el puente,
+recorriendo la lista, no los veía. Está arreglado (se leen de los mensajes
+de la secuencia, que es donde Apollo los guarda). En la próxima pasada real
+esos 10 quedarán marcados y sus negocios saldrán del pipeline con el motivo
+correcto en vez de acabar como «Sin respuesta».
+
+**Los 128 contactos de la lista con estado figuran como `verified` en
+Apollo.** Incluidos, presumiblemente, los 10 que rebotaron. Es decir: la
+«verificación» de Apollo no sirve para direcciones municipales raspadas de
+webs. Hay que pasar un verificador de verdad antes de inscribir a nadie.
+
+**Los pasos 2 y 3 de la secuencia tienen dos cosas más que quitar:**
+
+- Paso 2 lleva una **imagen de 560 px** (las letras de Benidorm) incrustada.
+  En un seguimiento en frío sigue siendo una señal de filtrado y contra
+  buzones que bloquean imágenes se ve un hueco. Mejor un enlace de texto a
+  la foto.
+- Paso 3 enlaza el catálogo con un **acortador** (`canva.link/…`). Los
+  acortadores son de las señales de spam más fuertes que hay, porque es lo
+  que usa el phishing. Sustituir por la URL completa del PDF en la web.
+
+**La campaña del llavero tiene 15 borradores más esperando**, creados en
+lote la madrugada del 16/09 (00:50–00:58) y que se van enviando a mano
+durante el día. Cuatro de ellos son a `@gmail.com` / `@hotmail.com`
+(`alteaoriginal1@`, `entrebarroypitas@`, `mrlmarelia@`, `dcarolibz@`). No
+se han tocado —no son de este trabajo—, pero **no deberían salir con
+adjunto ni a esas cuatro direcciones**.
+
+### Lo que se ha cambiado en el puente
+
+Todo en `bridge/apollo_hubspot_bridge.py`, con detalle en `bridge/README.md`:
+
+| Cambio | Por qué |
+|---|---|
+| REBOTES lee de los mensajes de la secuencia, no de la lista | Era la causa de los 0 «rebotado». Sin esto, el reinicio no podía saber a quién no escribir |
+| No se inscribe si la secuencia está pausada | Hoy ha metido 6 en una secuencia que no envía y les ha creado negocio |
+| Cortacircuito de rebotes (`OUTBOUND_MAX_BOUNCE_PCT`, 3 % por defecto) | Apollo solo se pausa sola al 4 % y a partir de 200 envíos; a 74 nunca habría saltado. Del 3,7 % al 13,5 % en tres días con el puente inscribiendo |
+| Buzón remitente por variable (`OUTBOUND_SENDER_EMAIL`) | Al mover el correo al dominio nuevo, que sea imposible que salga nada desde el corporativo porque alguien cambie el «buzón por defecto» en Apollo. Si no coincide, el puente ni arranca |
+
+Probado en seco contra respuestas con la forma exacta que devuelve Apollo
+hoy; **no se ha podido ejecutar contra la API real** (la clave no está en
+esta sesión). La primera pasada real con `BRIDGE_ENABLED=1` es la prueba:
+tiene que decir «REBOTES: 10 contacto(s) con rebote en Apollo» y marcar 10.
+
+Y en `dns/README.md`, los registros exactos que hay que publicar, en orden,
+para el dominio actual y para el nuevo.
+
+### Las tres decisiones, tomadas
+
+**1. Dominio aparte, no subdominio.** Por lo del §4: un subdominio arrastra
+al padre. Diez euros al año no son un motivo para no hacerlo bien.
+
+**2. Dos dominios, uno por campaña.** Las tiendas del llavero tienen
+direcciones @gmail personales, que es donde una denuncia duele más; los
+ayuntamientos no. Que una campaña no pueda quemar a la otra es
+exactamente el objetivo. Se puede empezar por el de ayuntamientos, que es
+el que tiene el puente listo, y montar el segundo la semana siguiente.
+
+**3. El llavero, de momento, no sale.** Hasta tener su dominio: ni el
+adjunto, ni las direcciones @gmail/@hotmail, ni desde `info@`. Los 15
+borradores se rehacen sin adjunto (foto por enlace) y los cuatro a cuentas
+personales se dejan para el final del calentamiento. Si hay prisa por
+seguir, a mano y a 5/día como mucho, y aun así **sin** adjunto.
+
+Y una cuarta que se desprende de las anteriores: **la secuencia actual no
+se reanuda.** Se crea una nueva en el dominio nuevo, con los pasos
+corregidos (firma de texto, sin acortador, sin imagen en el paso 2, sin el
+enlace de HubSpot en el paso 1) y con la lista verificada. La actual se
+deja pausada como archivo. Motivo práctico: su 13 % de rebotes acumulado es
+lo que el cortacircuito nuevo mira, y arrastrarlo obligaría a desactivar el
+freno justo cuando más falta hace.
+
+### Lo que queda en vuestra mano (por orden)
+
+| # | Qué | Dónde | Tiempo |
+|---|---|---|---|
+| 1 | Activar DKIM y limpiar el SPF | `dns/README.md` §1, pasos 1 y 2 | 15 min |
+| 2 | Alta en Postmaster Tools | `dns/README.md` §1, paso 4 | 5 min |
+| 3 | Parar el envío de los 15 borradores del llavero tal como están | Gmail de `info@` | 0 min |
+| 4 | Comprar el dominio y crear el buzón | `dns/README.md` §2 | 30 min + espera DNS |
+| 5 | Verificar los 137 con un verificador (NeverBounce, ZeroBounce, Bouncer) | CSV | 10 € |
+| 6 | Poner `OUTBOUND_SENDER_EMAIL` en las variables del repo cuando el buzón nuevo esté en Apollo | GitHub › Settings › Variables | 1 min |
+| 7 | Crear la secuencia nueva con los pasos corregidos | Apollo | 30 min |
+| 8 | Calentar el buzón 3 semanas | tabla del §4 | — |
+| 9 | Cambiar `SEQ_OUTBOUND` y `LIST_OUTBOUND` en el puente a la secuencia y lista nuevas | `bridge/apollo_hubspot_bridge.py` | 1 min |
+
+Del 1 al 3, hoy. Del 4 al 6, esta semana. El 7 y el 8 corren en paralelo. El
+9, el día que se reanude.
 
 ---
 
