@@ -15,9 +15,10 @@ comprobado; lo que es suposición va marcado como tal.
    rebotes duros** y **1 apertura de 64 entregados**.
 3. **No hay DKIM.** El dominio no tiene publicada la clave de Google
    Workspace. Esto es gratis de arreglar y es la mayor palanca que tenemos.
-4. **Hay una segunda campaña en frío saliendo de `info@thegravitywave.com`**
-   —la del llavero— **con un JPG adjunto y a direcciones @gmail.com**. Eso es
-   mucho más dañino para el dominio que la campaña de ayuntamientos.
+4. **Nada más de correo en frío desde `thegravitywave.com`.** Cualquier
+   otro envío comercial que salga del dominio corporativo (de `info@` o de
+   quien sea) comparte reputación con los correos de Amaia. Queda fuera de
+   este documento, pero no del problema.
 5. **Crear un subdominio de envío es la decisión correcta**, pero un
    subdominio no aísla tanto como creemos: para correo en frío conviene un
    **dominio aparte**. Ver [§4](#4-la-arquitectura-de-dominios).
@@ -120,37 +121,6 @@ la tasa de respuesta sería 0.
 > Algo está llegando. Esto importa, porque cambia el plan: no hace falta
 > quemarlo todo, hace falta arreglar la lista y la autenticación.
 
-### Campaña B — «1 llavero por el Mediterráneo» (desde `info@`)
-
-Esta no estaba en el planteamiento inicial y es **la que más daño está
-haciendo**. Sale directamente del buzón `info@thegravitywave.com`:
-
-- ~31 correos en los últimos 30 días, en ráfagas (el 16/09 salieron ~15 entre
-  las 13:28 y las 16:21).
-- **Con un JPG adjunto** (`llavero_y_expositor.jpg`), ~74 KB por correo.
-- **A direcciones @gmail.com personales** — al menos 7 de los ~31 que se ven:
-  `cardamomvibes@`, `macarenartesania@`, `injomabel@`, `lolabanuls@`,
-  `luz.porcelana@`, `ceramicastaana@`, `lareinadelsouvenir@`.
-- Es una oferta comercial no solicitada con precios (3,5 €/ud, pedido de 175 €).
-
-Los tres problemas, por orden de gravedad:
-
-1. **Adjuntar una imagen en un primer correo en frío** es de las señales de
-   spam más fuertes que existen. El correo comercial legítimo de primer
-   contacto casi nunca adjunta un JPG.
-2. **Escribir en frío a cuentas @gmail.com personales** es el segmento de
-   mayor riesgo que hay. Un particular pulsa «Denunciar spam» ante una oferta
-   no solicitada con muchísima más facilidad que un buzón corporativo —y la
-   denuncia de un usuario de Gmail es la señal de reputación **más dañina**
-   que Google maneja, porque la mide en su propia casa.
-3. **Sale de `info@`**, que es el buzón central: el que recibe las alertas de
-   administración de Workspace, el que está en la web, y el que figura como
-   dirección de ejercicio de derechos RGPD en el pie de los correos de Amaia.
-   Quemar la reputación de `info@` nos afecta a todo, incluido el correo
-   ordinario de la empresa.
-
-> Si hay un único motivo por el que el dominio está mal visto, es este.
-
 ---
 
 ## 3. El estado técnico del dominio
@@ -241,12 +211,10 @@ parezca a la marca y no parezca un desechable.
 | Dominio | Para qué |
 |---|---|
 | `thegravitywave.com` | Correo de empleados, respuestas, INBOUND de la web, transaccional, clientes. **Nunca** correo en frío |
-| Dominio aparte nº 1 | Campaña de ayuntamientos (Amaia) |
-| Dominio aparte nº 2 *(opcional)* | Campaña de tiendas / llavero |
+| Dominio aparte | Campaña de ayuntamientos (Amaia) |
 
-Dos dominios separados evitan que si una campaña se tuerce se lleve a la
-otra por delante. Con el volumen actual, empezar con uno y añadir el segundo
-si hace falta es razonable.
+Si algún día hay otra campaña en frío, va en **otro** dominio aparte: que
+una no pueda quemar a la otra es exactamente el objetivo.
 
 ### Nada de esto funciona sin calentamiento
 
@@ -334,18 +302,9 @@ Dos detalles menores más:
   ventas muy reconocible. En el paso 1 se puede quitar (el «responde y te
   cuento» ya es CTA suficiente) y dejarlo para el paso 2 o 3.
 
-### La campaña del llavero: hay que rehacerla
-
-- **Quitar el adjunto.** Las fotos, a un enlace a una página de la web.
-- **Quitar las direcciones @gmail.com** del envío en frío, o dejarlas para el
-  final, cuando el dominio esté curtido.
-- **Sacarla de `info@`** y llevarla al dominio de outbound.
-- Añadir un pie legal como el de la campaña de Amaia — ahora mismo solo tiene
-  «respóndeme "baja"», que se queda corto frente a la LSSI.
-
 ### Cabecera de baja en un clic
 
-Ninguna de las dos campañas lleva `List-Unsubscribe`. Con nuestro volumen
+La secuencia no lleva `List-Unsubscribe`. Con nuestro volumen
 (muy por debajo de 5.000/día) Google **no** lo exige, así que no es urgente
 —pero ayuda, y es lo que separa a un remitente que parece profesional de uno
 que no. Apollo lo puede añadir solo.
@@ -358,7 +317,7 @@ que no. Apollo lo puede añadir solo.
 
 | # | Qué | Quién | Por qué |
 |---|---|---|---|
-| 1 | **Parar la campaña del llavero desde `info@`** | — | Es la que más daño hace, y cada día cuenta |
+| 1 | **Que no salga ningún otro correo en frío desde `thegravitywave.com`** | Todos | Comparte reputación con los de Amaia |
 | 2 | **Activar DKIM** en Workspace y publicar `google._domainkey` | Admin | La mayor palanca, gratis, 10 min |
 | 3 | **Limpiar el SPF** (quitar `+a` y `+mx`) | Admin | Deja margen de consultas DNS |
 | 4 | **Sacar los 10 rebotados** de la lista y marcarlos en HubSpot | Puente | Que no vuelvan a entrar |
@@ -431,51 +390,15 @@ webs. Hay que pasar un verificador de verdad antes de inscribir a nadie.
   acortadores son de las señales de spam más fuertes que hay, porque es lo
   que usa el phishing. Sustituir por la URL completa del PDF en la web.
 
-**La campaña del llavero tiene 15 borradores más esperando**, creados en
-lote la madrugada del 16/09 (00:50–00:58) y que se van enviando a mano
-durante el día. Cuatro de ellos son a `@gmail.com` / `@hotmail.com`
-(`alteaoriginal1@`, `entrebarroypitas@`, `mrlmarelia@`, `dcarolibz@`). No
-se han tocado —no son de este trabajo—, pero **no deberían salir con
-adjunto ni a esas cuatro direcciones**.
-
-### Lo que se ha cambiado en el puente
-
-Todo en `bridge/apollo_hubspot_bridge.py`, con detalle en `bridge/README.md`:
-
-| Cambio | Por qué |
-|---|---|
-| REBOTES lee de los mensajes de la secuencia, no de la lista | Era la causa de los 0 «rebotado». Sin esto, el reinicio no podía saber a quién no escribir |
-| No se inscribe si la secuencia está pausada | Hoy ha metido 6 en una secuencia que no envía y les ha creado negocio |
-| Cortacircuito de rebotes (`OUTBOUND_MAX_BOUNCE_PCT`, 3 % por defecto) | Apollo solo se pausa sola al 4 % y a partir de 200 envíos; a 74 nunca habría saltado. Del 3,7 % al 13,5 % en tres días con el puente inscribiendo |
-| Buzón remitente por variable (`OUTBOUND_SENDER_EMAIL`) | Al mover el correo al dominio nuevo, que sea imposible que salga nada desde el corporativo porque alguien cambie el «buzón por defecto» en Apollo. Si no coincide, el puente ni arranca |
-
-Probado en seco contra respuestas con la forma exacta que devuelve Apollo
-hoy; **no se ha podido ejecutar contra la API real** (la clave no está en
-esta sesión). La primera pasada real con `BRIDGE_ENABLED=1` es la prueba:
-tiene que decir «REBOTES: 10 contacto(s) con rebote en Apollo» y marcar 10.
-
-Y en `dns/README.md`, los registros exactos que hay que publicar, en orden,
-para el dominio actual y para el nuevo.
-
-### Las tres decisiones, tomadas
+### Las decisiones, tomadas
 
 **1. Dominio aparte, no subdominio.** Por lo del §4: un subdominio arrastra
 al padre. Diez euros al año no son un motivo para no hacerlo bien.
 
-**2. Dos dominios, uno por campaña.** Las tiendas del llavero tienen
-direcciones @gmail personales, que es donde una denuncia duele más; los
-ayuntamientos no. Que una campaña no pueda quemar a la otra es
-exactamente el objetivo. Se puede empezar por el de ayuntamientos, que es
-el que tiene el puente listo, y montar el segundo la semana siguiente.
+**2. Un dominio solo para esta campaña.** Nada más sale de él, y ningún
+otro correo en frío sale de `thegravitywave.com`.
 
-**3. El llavero, de momento, no sale.** Hasta tener su dominio: ni el
-adjunto, ni las direcciones @gmail/@hotmail, ni desde `info@`. Los 15
-borradores se rehacen sin adjunto (foto por enlace) y los cuatro a cuentas
-personales se dejan para el final del calentamiento. Si hay prisa por
-seguir, a mano y a 5/día como mucho, y aun así **sin** adjunto.
-
-Y una cuarta que se desprende de las anteriores: **la secuencia actual no
-se reanuda.** Se crea una nueva en el dominio nuevo, con los pasos
+**3. La secuencia actual no se reanuda.** Se crea una nueva en el dominio nuevo, con los pasos
 corregidos (firma de texto, sin acortador, sin imagen en el paso 2, sin el
 enlace de HubSpot en el paso 1) y con la lista verificada. La actual se
 deja pausada como archivo. Motivo práctico: su 13 % de rebotes acumulado es
@@ -488,16 +411,15 @@ freno justo cuando más falta hace.
 |---|---|---|---|
 | 1 | Activar DKIM y limpiar el SPF | `dns/README.md` §1, pasos 1 y 2 | 15 min |
 | 2 | Alta en Postmaster Tools | `dns/README.md` §1, paso 4 | 5 min |
-| 3 | Parar el envío de los 15 borradores del llavero tal como están | Gmail de `info@` | 0 min |
-| 4 | Comprar el dominio y crear el buzón | `dns/README.md` §2 | 30 min + espera DNS |
-| 5 | Verificar los 137 con un verificador (NeverBounce, ZeroBounce, Bouncer) | CSV | 10 € |
-| 6 | Poner `OUTBOUND_SENDER_EMAIL` en las variables del repo cuando el buzón nuevo esté en Apollo | GitHub › Settings › Variables | 1 min |
-| 7 | Crear la secuencia nueva con los pasos corregidos | Apollo | 30 min |
-| 8 | Calentar el buzón 3 semanas | tabla del §4 | — |
-| 9 | Cambiar `SEQ_OUTBOUND` y `LIST_OUTBOUND` en el puente a la secuencia y lista nuevas | `bridge/apollo_hubspot_bridge.py` | 1 min |
+| 3 | Comprar el dominio y crear el buzón | `dns/README.md` §2 | 30 min + espera DNS |
+| 4 | Verificar los 137 con un verificador (NeverBounce, ZeroBounce, Bouncer) | CSV | 10 € |
+| 5 | Poner `OUTBOUND_SENDER_EMAIL` en las variables del repo cuando el buzón nuevo esté en Apollo | GitHub › Settings › Variables | 1 min |
+| 6 | Crear la secuencia nueva con los pasos corregidos | Apollo | 30 min |
+| 7 | Calentar el buzón 3 semanas | tabla del §4 | — |
+| 8 | Cambiar `SEQ_OUTBOUND` y `LIST_OUTBOUND` en el puente a la secuencia y lista nuevas | `bridge/apollo_hubspot_bridge.py` | 1 min |
 
-Del 1 al 3, hoy. Del 4 al 6, esta semana. El 7 y el 8 corren en paralelo. El
-9, el día que se reanude.
+El 1 y el 2, hoy. Del 3 al 5, esta semana. El 6 y el 7 corren en paralelo. El
+8, el día que se reanude.
 
 ---
 
