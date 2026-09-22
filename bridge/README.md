@@ -130,6 +130,40 @@ lista. El índice vive solo durante la pasada, así que no hay datos viejos.
 Si algún día hay que volver a leer de Apollo por contacto, la cuenta a hacer
 es: `llamadas por pasada × 24 < 600`.
 
+### Nunca se inscribe en una secuencia pausada
+
+Apollo **acepta** inscribir contactos en una secuencia pausada. No falla, no
+los devuelve en `skipped_contact_ids`: los aparca con `status: paused` e
+`inactive_reason: "Sequence inactive"` y no les programa ni un correo. El
+puente se creía la inscripción, sellaba `apollo_estado = enviado` en HubSpot y
+les creaba el negocio en el embudo.
+
+Pasó del 19 al 21/09. La secuencia OUTBOUND se pausó el **21/09 a las 06:09
+UTC** y se llevó por delante tres tandas enteras, **18 ayuntamientos**:
+
+| Tanda | Por qué no salió el correo |
+| --- | --- |
+| 19/09 (sábado) | El envío quedó en cola para el lunes: el horario es L-V, 10:00-19:00. La pausa llegó antes de que abriera la ventana. |
+| 20/09 (domingo) | Igual: en cola para el lunes, y la pausa se le adelantó dos horas. |
+| 21/09 (lunes) | Se inscribieron a las 09:33, con la secuencia **ya pausada** desde las 06:09. |
+
+Lo grave no era el dato falso, era el silencio. Las pasadas salían en verde,
+`apollo_estado = enviado` hacía de memoria del puente y el filtro de «ya
+procesados» los daba por contactados, así que esos 18 quedaban **excluidos de
+la campaña para siempre** sin haber recibido nada. Solo se ve contando
+negocios a mano.
+
+Ahora `apollo_secuencia_activa()` comprueba el estado **antes** de inscribir a
+nadie, tanto en OUTBOUND como en INBOUND, y si está pausada no toca nada: lo
+dice en el log y los candidatos siguen pendientes, así que en cuanto la
+secuencia vuelva a estar activa entran solos, sin perder a nadie. Si Apollo no
+devolviera la secuencia, o no dijera si está activa, la pasada sale en **rojo**
+en vez de decidirlo a ciegas.
+
+No es un caso rebuscado: Apollo pausa la secuencia **ella sola** en cuanto los
+rebotes duros pasan del 4% (`auto_pause_config`, con 200 envíos mínimos), que
+es justo el riesgo que arrastra esta lista — el 22/09 iban al 12,8%.
+
 ## Las tres señales de parada
 
 La cadencia se corta en cuanto hay contacto real, venga por donde venga. Las

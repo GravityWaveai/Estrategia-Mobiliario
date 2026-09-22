@@ -337,6 +337,52 @@ def apollo_enroll(sequence_id, contact_ids, sender_id, misma_empresa=False):
     return apollo("POST", f"/emailer_campaigns/{sequence_id}/add_contact_ids", body)
 
 
+def apollo_secuencia(sequence_id):
+    """La secuencia tal y como la ve Apollo, o None si Apollo no la devuelve."""
+    res = apollo("POST", "/emailer_campaigns/search", {"page": 1, "per_page": 100})
+    return next((s for s in res.get("emailer_campaigns", [])
+                 if s.get("id") == sequence_id), None)
+
+
+def apollo_secuencia_activa(sequence_id, nombre):
+    """False si la secuencia está pausada; entonces NO se inscribe a nadie.
+
+    Apollo acepta inscribir en una secuencia pausada sin protestar: no falla,
+    no devuelve al contacto en `skipped_contact_ids` y lo deja aparcado con
+    `status: paused` e `inactive_reason: "Sequence inactive"`, sin programarle
+    ni un correo. El puente se creía la inscripción, sellaba `apollo_estado =
+    enviado` en HubSpot y le creaba el negocio en el embudo.
+
+    Pasó del 19 al 21/09: la secuencia se pausó el 21/09 a las 06:09 UTC y 18
+    ayuntamientos (las tandas del 19, 20 y 21) acabaron como contactados y con
+    negocio por un correo que nunca existió. Lo grave no es el dato falso, es
+    que el filtro de "ya procesados" los daba por hechos, así que quedaban
+    fuera de la campaña para siempre. Un fallo silencioso: las pasadas salían
+    en verde y solo se ve contando negocios a mano.
+
+    Y no es un caso rebuscado: Apollo pausa la secuencia ella sola cuando los
+    rebotes duros pasan del 4% (auto_pause_config), que es justo el riesgo que
+    arrastra esta lista.
+    """
+    seq = apollo_secuencia(sequence_id)
+    if seq is None:
+        raise RuntimeError(f"Apollo no devuelve la secuencia {nombre} ({sequence_id})")
+    if "active" not in seq:
+        # Si Apollo dejase de informar del estado, mejor que la pasada salga en
+        # rojo que decidirlo a ciegas: inscribir a ciegas es el fallo que esto
+        # viene a evitar, y no inscribir nunca pararía el embudo en silencio.
+        raise RuntimeError(
+            f"Apollo no informa de si {nombre} está activa; no se inscribe a ciegas")
+    if not seq.get("active"):
+        log(f"{nombre}: la secuencia está PAUSADA en Apollo "
+            f"(motivo: {seq.get('status_reason') or 'sin especificar'}). No se inscribe a "
+            f"nadie: Apollo lo aceptaría sin enviar ningún correo y el ayuntamiento "
+            f"quedaría marcado como contactado y con negocio en el embudo. En cuanto la "
+            f"secuencia vuelva a estar activa se inscriben solos, sin perder a nadie.")
+        return False
+    return True
+
+
 def apollo_stop(sequence_id, contact_ids):
     # A diferencia de add_contact_ids, esta ruta NO lleva el id de la secuencia
     # y espera las secuencias en plural. Con el id en la ruta Apollo devolvía
@@ -503,6 +549,8 @@ def _volcar_en_apollo(email, contact_id, campos):
 
 def enroll_inbound(sender_id):
     """Leads del formulario web que aún no están en la secuencia."""
+    if not apollo_secuencia_activa(SEQ_INBOUND, "INBOUND"):
+        return
     # lastmodifieddate, no createdate: si el email ya existía en el CRM,
     # HubSpot actualiza ese contacto en vez de crear uno nuevo, así que su
     # fecha de creación puede ser de años atrás aunque el formulario se
@@ -584,6 +632,8 @@ def enroll_inbound(sender_id):
 
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
+    if not apollo_secuencia_activa(SEQ_OUTBOUND, "OUTBOUND"):
+        return
     candidatos, sin_municipio, page = {}, [], 1
     while len(candidatos) < CAP:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
