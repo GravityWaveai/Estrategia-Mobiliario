@@ -136,6 +136,10 @@ ESTADO_SOLO_APOLLO = {
     "bounced": "rebotado",
     "hard_bounced": "rebotado",
     "spam_blocked": "rebotado",
+    # Apollo ni siquiera envía: la dirección está en su lista global de
+    # rebotes (pasó con Eivissa y Manacor en septiembre). A efectos de la
+    # campaña es lo mismo: ese correo no va a llegar nunca.
+    "email_on_global_bounce_list": "rebotado",
 }
 
 # Estados desde los que todavía se puede pasar a «respondido»
@@ -836,11 +840,19 @@ def sync_bounces():
     """Lo único que HubSpot no puede saber: el correo que nunca llegó."""
     marcados = 0
     for c in apollo_lista_outbound().values():
+        # Apollo no pone status = "bounced" al contacto que rebota: lo deja en
+        # status = "failed" y el motivo va en failure_reason / inactive_reason
+        # ("bounced"). Por eso, hasta el 14/10, esta fase no marcó a ninguno
+        # de los 11 rebotados de septiembre: miraba solo el status.
         estado = next(
-            (ESTADO_SOLO_APOLLO[s["status"]]
+            (ESTADO_SOLO_APOLLO.get(s.get("status"))
+             or ESTADO_SOLO_APOLLO.get(s.get("failure_reason"))
+             or ESTADO_SOLO_APOLLO.get(s.get("inactive_reason"))
              for s in (c.get("contact_campaign_statuses") or [])
              if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
-             and s.get("status") in ESTADO_SOLO_APOLLO),
+             and (s.get("status") in ESTADO_SOLO_APOLLO
+                  or s.get("failure_reason") in ESTADO_SOLO_APOLLO
+                  or s.get("inactive_reason") in ESTADO_SOLO_APOLLO)),
             None)
         if not estado:
             continue

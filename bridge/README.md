@@ -40,7 +40,17 @@ calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
 inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
 lleva su propio reloj desde el día en que entra.
 
-### El tope diario está en 6 (16/09)
+### El tope diario está en 5 (14/10)
+
+Relanzamiento tras verificar la lista a mano: de los 64 ayuntamientos que
+quedaban por inscribir, 19 tenían un correo que no existía o no aparecía en
+ninguna fuente oficial (dominios cambiados, buzones personales de empleados
+que ya no están, buzones de incidencias) y 9 no se pudieron confirmar porque
+la web estaba caída. Los primeros se corrigieron en Apollo; los segundos se
+quedan fuera hasta que alguien llame. Con eso, y a 5 inscripciones al día, la
+lista pendiente (~50) tarda unas dos semanas en recibir el primer correo.
+
+### Antes: el tope en 6 (16/09)
 
 Estuvo un día en 30 para vaciar la lista y se volvió a bajar por
 **entregabilidad**, no por la cuenta de correos: el buzón se conectó el 07/09
@@ -467,7 +477,7 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
-| — | `OUTBOUND_DAILY_CAP` | fijado a `30` en el workflow — **modo vaciado**, ver abajo. Se cambia editando `apollo-bridge.yml`, no con una variable |
+| — | `OUTBOUND_DAILY_CAP` | fijado a `5` en el workflow desde el 14/10 (relanzamiento con la lista verificada). Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 
 ## Primera ejecución
