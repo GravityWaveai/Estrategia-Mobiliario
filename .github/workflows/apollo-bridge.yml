@@ -38,10 +38,13 @@ jobs:
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
           BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
           OUTBOUND_ENABLED: ${{ vars.OUTBOUND_ENABLED || '1' }}
-          # A 5 desde el 14/10, relanzamiento con la lista verificada a mano
-          # (ver bridge/README.md, «El tope diario está en 5»). Antes estuvo en
-          # 6, y un día en 30 (modo vaciado); la cuenta de aquel modo sigue en
-          # el README por si algún día se vuelve a él con el buzón curtido.
-          OUTBOUND_DAILY_CAP: '5'
+          # Relanzamiento del 14/10 con la lista verificada a mano. El tope de
+          # verdad está en Apollo: la secuencia OUTBOUND tiene max_emails_per_day
+          # = 5, y eso cuenta TODO lo que sale (primeros correos y seguimientos).
+          # Este número solo dice cuántos ayuntamientos NUEVOS inscribe el
+          # puente al día; con 70 a medio camino pendientes de 4 seguimientos
+          # cada uno, inscribir más de 1 al día solo haría cola. Ver
+          # bridge/README.md, «El tope diario está en 5».
+          OUTBOUND_DAILY_CAP: '1'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
         run: python3 bridge/apollo_hubspot_bridge.py
