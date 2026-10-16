@@ -186,6 +186,10 @@ function doGet(e) {
 
     // Visita a la landing: ?v=1&p=<ruta>&s=<utm_source>&m=<utm_medium>&cmp=<utm_campaign>&r=<referente>
     if (p.v === "1") {
+      // Solo la landing. La vista previa de Tag Manager dispara la etiqueta en
+      // su propia página (/render, referente gtm-msr.appspot.com) y no es una
+      // visita; tampoco lo es nada que no sea /mobiliario-urbano.
+      if (!/mobiliario-urbano/.test(String(p.p || "")) || /gtm-msr|tagassistant/.test(String(p.r || ""))) return texto_("ignorado");
       var errVis = apuntarVisita_(p);
       return texto_(errVis ? "error: " + errVis : "ok");
     }
