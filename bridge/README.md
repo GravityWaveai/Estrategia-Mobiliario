@@ -80,12 +80,13 @@ este orden, antes de despausar:
    Free. En su lugar, el 16/10 se montó un **píxel propio** (`tracking/`):
    los 135 contactos de la lista tienen `tracking_id`, los cinco correos
    llevan el píxel al final (texto sin cambios) y la fase APERTURAS lee el
-   receptor. Queda publicar la última versión de `tracking/aperturas.gs`
-   (la desplegada responde 400 al píxel y no apunta nada).
+   receptor. Receptor publicado y comprobado el 16/10 a las 13:12 UTC: la
+   primera pasada leyó 3 aperturas reales y marcó 3 contactos «abierto».
 2. ~~Poner `max_emails_per_day = 5` en la secuencia OUTBOUND~~ — hecho el
    16/10 por API, con los textos de los cinco correos sin cambios.
 3. ~~Fusionar esta rama en la que corre el cron~~ — hecho el 16/10.
-4. **Despausar la secuencia.** Los 70 a medio camino retoman con el correo 2
+4. ~~Despausar la secuencia~~ — hecha a mano el 16/10 (13:08 UTC), con 70
+   contactos activos y tope 5/día. Los 70 a medio camino retoman con el correo 2
    («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
    1 nuevo al día a las 8:20 UTC.
 
