@@ -20,11 +20,17 @@ contiene /mobiliario-urbano». Guarda fecha, ruta, `utm_source`,
 `utm_medium`, `utm_campaign` y el dominio que enlazó; nada de la persona.
 
 Los **clics del banner de la home** son las visitas que llegan con
-`utm_source=home&utm_medium=banner`. Para eso el botón del banner tiene que
-enlazar a
+`utm_source=home&utm_medium=banner`. El botón «Descubre más» de la home
+enlaza desde el 16/10 a
 `https://www.thegravitywave.com/mobiliario-urbano/?utm_source=home&utm_medium=banner&utm_campaign=mobiliario-2026`
-(hoy enlaza sin parámetros). El panel lee `?visits=1&key=…` y muestra
+(comprobado en la home publicada). El panel lee `?visits=1&key=…` y muestra
 visitas, clics del banner, origen y visitas por día.
+
+En marcha desde el 16/10: receptor en su versión 5, etiqueta publicada en la
+versión 64 del contenedor. La vista previa de Tag Manager dispara la
+etiqueta en su propia página (`/render`, referente `gtm-msr.appspot.com`);
+el receptor y el panel ignoran esas filas, y también las pruebas
+(`utm_source` que empieza por `prueba` o `DIAG`).
 
 Por qué así y no con Google Analytics: la web lleva GA4 (`G-7LN8GNKJM8`),
 pero no hay forma de leerlo desde el panel ni desde el puente (la prueba de

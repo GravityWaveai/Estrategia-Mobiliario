@@ -23,6 +23,9 @@
 <script>
 (function () {
   try {
+    // Solo en la landing: la vista previa de Tag Manager ejecuta la etiqueta
+    // en su propia página (/render) y eso no es una visita.
+    if (!/mobiliario-urbano/.test(location.pathname)) return;
     var q = new URLSearchParams(location.search);
     var ref = "";
     try { ref = document.referrer ? new URL(document.referrer).hostname : ""; } catch (e) {}
