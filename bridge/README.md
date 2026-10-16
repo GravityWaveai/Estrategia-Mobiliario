@@ -90,7 +90,7 @@ directo con las conexiones de quien lo abre, y avisa solo si la secuencia
 está pausada, el tope no es 5, los rebotes pasan del 3% o el seguimiento
 de aperturas sigue apagado.
 
-4b. (sigue) **Despausar la secuencia.** Los 70 a medio camino retoman con el correo 2
+   Los 70 a medio camino retoman con el correo 2
    («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
    1 nuevo al día a las 8:20 UTC.
 
