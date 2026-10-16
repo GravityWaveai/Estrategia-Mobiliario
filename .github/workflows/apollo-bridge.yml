@@ -51,6 +51,6 @@ jobs:
           # la aplicación web de Apps Script, termina en /exec; se rellena al
           # publicarla. La clave tiene que ser la misma que CLAVE en
           # tracking/aperturas.gs; solo protege la lectura de la hoja.
-          APERTURAS_URL: ''
+          APERTURAS_URL: 'https://script.google.com/macros/s/AKfycbxGCY4zJU395WGvBjVsRZxMXnXwm_jC0-h2os7ZTISnWZpoN-60HaXAeqaqy76SOIf7/exec'
           APERTURAS_KEY: 'la0AAolKM5Xogs4dmh4ZSZpRcNV87aNt'
         run: python3 bridge/apollo_hubspot_bridge.py
