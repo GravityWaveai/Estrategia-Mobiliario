@@ -14,7 +14,8 @@ es la única pieza que los une. Se lanza cada hora desde
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
 | **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta `OUTBOUND_DAILY_CAP` al día (1 desde el 14/10, ver abajo) en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot — y **crea el contacto en HubSpot** a quien Apollo no haya empujado (la lista OUTBOUND se sube por CSV, así que el pull nativo no los trae solo) |
 | **REBOTES** | El estado de campaña en Apollo (`status = failed` con `failure_reason`/`inactive_reason` = `bounced`, o `email_on_global_bounce_list`) | Marca `apollo_estado = rebotado`. Hasta el 14/10 miraba solo el `status` y por eso no marcó a ninguno de los 11 rebotados de septiembre |
-| **APERTURAS** | Los mensajes de la secuencia con estado `opened` en Apollo | Pasa `apollo_estado` de `enviado` a `abierto` (nunca pisa un estado posterior). Solo tiene datos si el seguimiento de aperturas está activado en el buzón de Amaia dentro de Apollo |
+| **TRACKING** | Contactos de la lista OUTBOUND sin el campo `tracking_id` | Les pone su propio id de Apollo en `tracking_id` (crea el campo si no existe), al ritmo que Apollo permite (50 cambios por minuto). Los correos llevan `{{tracking_id}}` en el píxel de aperturas y Apollo no envía con una variable vacía, así que va antes de inscribir a nadie |
+| **APERTURAS** | Las aperturas apuntadas por el receptor propio (`tracking/aperturas.gs`, hoja «Aperturas · Mobiliario Urbano») | Pasa `apollo_estado` de `enviado` a `abierto` (nunca pisa un estado posterior). Ignora las aperturas de los 90 s siguientes al envío (prefetch de Gmail/Apple). Apollo Free no mide aperturas; por eso el receptor es propio, ver `tracking/README.md` |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
 acaba de responder o de agendar una reunión.
@@ -75,9 +76,12 @@ aperturas solo estaba activo en 1 de los 63 correos entregados, así que no
 hay forma de saber cuántos se leyeron. Lo que hay que hacer distinto, en
 este orden, antes de despausar:
 
-1. **Activar el seguimiento de aperturas** en el buzón de Amaia dentro de
-   Apollo (Settings → Mailboxes → `amaia@thegravitywave.com` → Tracking).
-   Sin esto la fase APERTURAS no tiene nada que leer.
+1. ~~Activar el seguimiento de aperturas en Apollo~~ — no existe en el plan
+   Free. En su lugar, el 16/10 se montó un **píxel propio** (`tracking/`):
+   los 135 contactos de la lista tienen `tracking_id`, los cinco correos
+   llevan el píxel al final (texto sin cambios) y la fase APERTURAS lee el
+   receptor. Queda publicar la última versión de `tracking/aperturas.gs`
+   (la desplegada responde 400 al píxel y no apunta nada).
 2. ~~Poner `max_emails_per_day = 5` en la secuencia OUTBOUND~~ — hecho el
    16/10 por API, con los textos de los cinco correos sin cambios.
 3. ~~Fusionar esta rama en la que corre el cron~~ — hecho el 16/10.
@@ -89,8 +93,8 @@ El seguimiento del relanzamiento se mira en el panel
 <https://claude.ai/artifact/6WfgvWDcH8dvKy5HUig6zK>: lee Apollo (envíos,
 entregas, aperturas, rebotes, cadencia) y HubSpot (embudo, negocios) en
 directo con las conexiones de quien lo abre, y avisa solo si la secuencia
-está pausada, el tope no es 5, los rebotes pasan del 3% o el seguimiento
-de aperturas sigue apagado.
+está pausada, el tope no es 5, los rebotes pasan del 3%, algún correo va sin
+píxel o el receptor de aperturas no responde.
 
 ### Antes: el tope en 6 (16/09)
 

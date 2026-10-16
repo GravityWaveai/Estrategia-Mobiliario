@@ -35,12 +35,17 @@ APERTURAS no hace nada y lo dice en el log.
 
 ## Orden para encender
 
-1. El puente, en su primera pasada tras fusionar esto, crea el campo
-   `tracking_id` en Apollo y lo rellena en los ~135 contactos de la lista
-   (fase TRACKING). Se comprueba en el log: `TRACKING: N contacto(s) con
-   tracking_id nuevo`.
-2. Alguien publica `aperturas.gs` y pega la URL.
-3. Se añade el píxel a las cinco plantillas **solo cuando todos los
-   contactos en cadencia tienen `tracking_id`**: si a alguno le faltara,
-   Apollo no le enviaría el correo (variable vacía).
-4. Se despausa la secuencia.
+1. ~~El puente crea el campo `tracking_id` en Apollo y lo rellena en los
+   contactos de la lista (fase TRACKING)~~ — hecho el 16/10: 135 de 135,
+   los 71 en cadencia incluidos. El campo es `6ad207bd5a7c2e0014573df8`.
+2. ~~Alguien publica `aperturas.gs` y pega la URL~~ — publicado el 16/10;
+   la URL está en el workflow. **Falta publicar la versión actual del
+   script**: la desplegada devuelve una respuesta vacía al píxel, Google la
+   convierte en un 400 y no apunta la fila. En el editor: Implementar →
+   Gestionar implementaciones → lápiz → Versión: «Nueva versión» →
+   Implementar. La URL no cambia. Comprobación: `curl "<URL>?c=PRUEBA&p=0"`
+   tiene que devolver `ok` y la fila aparecer en `?list=1&key=…`.
+3. ~~Se añade el píxel a las cinco plantillas~~ — hecho el 16/10 por API,
+   con el texto de los cinco correos sin cambios (comprobado byte a byte
+   en `body_text`). El píxel va justo antes de `</body>`, con `p=1…5`.
+4. Se despausa la secuencia. Eso lo hace una persona, en Apollo.
