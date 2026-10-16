@@ -1,0 +1,41 @@
+<!--
+  Medición de visitas a la landing de Mobiliario Urbano.
+  Gravity Wave · se pega en Google Tag Manager (contenedor GTM-M6FNQ79 de
+  thegravitywave.com) como etiqueta «HTML personalizado».
+
+  Cómo se pone (3 minutos, una vez):
+    1. tagmanager.google.com → contenedor de thegravitywave.com → Etiquetas →
+       Nueva → «HTML personalizado». Pega TODO este archivo.
+    2. Activador: Nuevo → «Vista de página» → «Algunas vistas de página» →
+       Page Path · contiene · /mobiliario-urbano
+    3. Guardar → «Enviar» (publicar la versión del contenedor).
+
+  Y en la home, el botón del banner tiene que enlazar a:
+    https://www.thegravitywave.com/mobiliario-urbano/?utm_source=home&utm_medium=banner&utm_campaign=mobiliario-2026
+  Así cada clic en el banner llega a la landing con su etiqueta y el panel
+  los cuenta como «clics del banner».
+
+  Qué guarda: fecha, ruta, utm_source, utm_medium, utm_campaign y el dominio
+  de la página que enlazó. No guarda IP, ni cookies, ni nada de la persona.
+  No afecta a la carga de la página: es una imagen de 1 píxel que se pide en
+  segundo plano.
+-->
+<script>
+(function () {
+  try {
+    var q = new URLSearchParams(location.search);
+    var ref = "";
+    try { ref = document.referrer ? new URL(document.referrer).hostname : ""; } catch (e) {}
+    var params = new URLSearchParams({
+      v: "1",
+      p: location.pathname,
+      s: q.get("utm_source") || "",
+      m: q.get("utm_medium") || "",
+      cmp: q.get("utm_campaign") || "",
+      r: ref
+    });
+    var img = new Image(1, 1);
+    img.src = "https://script.google.com/macros/s/AKfycbxGCY4zJU395WGvBjVsRZxMXnXwm_jC0-h2os7ZTISnWZpoN-60HaXAeqaqy76SOIf7/exec?" + params.toString();
+  } catch (e) {}
+})();
+</script>

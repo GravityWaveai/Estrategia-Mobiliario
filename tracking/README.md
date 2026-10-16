@@ -11,6 +11,26 @@ que lo haría Apollo, pero con piezas propias:
 | Lector | Fase **APERTURAS** de `bridge/apollo_hubspot_bridge.py` | Cada hora pide al receptor las aperturas nuevas y pasa `apollo_estado` de `enviado` a `abierto` en HubSpot |
 | Relleno | Fase **TRACKING** del puente | Da `tracking_id` a todo contacto de la lista OUTBOUND que no lo tenga, y crea el campo en Apollo si no existe |
 
+## Visitas a la landing y clics del banner (16/10)
+
+El mismo receptor tiene una segunda pestaña, «visitas». La alimenta
+`visitas-gtm.html`, un fragmento que se pega en Google Tag Manager
+(contenedor `GTM-M6FNQ79`) con el activador «vista de página · Page Path
+contiene /mobiliario-urbano». Guarda fecha, ruta, `utm_source`,
+`utm_medium`, `utm_campaign` y el dominio que enlazó; nada de la persona.
+
+Los **clics del banner de la home** son las visitas que llegan con
+`utm_source=home&utm_medium=banner`. Para eso el botón del banner tiene que
+enlazar a
+`https://www.thegravitywave.com/mobiliario-urbano/?utm_source=home&utm_medium=banner&utm_campaign=mobiliario-2026`
+(hoy enlaza sin parámetros). El panel lee `?visits=1&key=…` y muestra
+visitas, clics del banner, origen y visitas por día.
+
+Por qué así y no con Google Analytics: la web lleva GA4 (`G-7LN8GNKJM8`),
+pero no hay forma de leerlo desde el panel ni desde el puente (la prueba de
+Supermetrics caducó el 30/09 y HubSpot no tiene su código en la web). Con
+el receptor propio el dato es nuestro y gratis.
+
 ## Publicar el receptor (una vez)
 
 Está explicado en la cabecera de `aperturas.gs`. En corto: script.google.com →
