@@ -53,8 +53,8 @@ quedan fuera hasta que alguien llame.
 El límite que se pidió es **5 correos al día en total, seguimientos
 incluidos**. Eso no lo puede garantizar el puente, que solo inscribe: lo
 garantiza el `max_emails_per_day` de la secuencia OUTBOUND en Apollo, que
-hay que poner a `5` en la configuración de la secuencia (estaba en 30). Con
-ese tope, `OUTBOUND_DAILY_CAP` pasa a `1`: hay 70 ayuntamientos a medio
+está a `5` desde el 16/10 (estaba en 30). Con ese tope, `OUTBOUND_DAILY_CAP`
+pasa a `1`: hay 70 ayuntamientos a medio
 camino con 4 seguimientos pendientes cada uno (280 correos), y cada
 inscripción nueva son 5 correos más en la misma cola. A 5/día, inscribir más
 de 1 nuevo al día solo haría que Apollo retrasara los seguimientos de los que
@@ -78,9 +78,9 @@ este orden, antes de despausar:
 1. **Activar el seguimiento de aperturas** en el buzón de Amaia dentro de
    Apollo (Settings → Mailboxes → `amaia@thegravitywave.com` → Tracking).
    Sin esto la fase APERTURAS no tiene nada que leer.
-2. **Poner `max_emails_per_day = 5`** en la secuencia OUTBOUND.
-3. **Fusionar esta rama** en la que corre el cron, para que el tope de 1 y
-   el arreglo de REBOTES/APERTURAS estén en producción.
+2. ~~Poner `max_emails_per_day = 5` en la secuencia OUTBOUND~~ — hecho el
+   16/10 por API, con los textos de los cinco correos sin cambios.
+3. ~~Fusionar esta rama en la que corre el cron~~ — hecho el 16/10.
 4. **Despausar la secuencia.** Los 70 a medio camino retoman con el correo 2
    («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
    1 nuevo al día a las 8:20 UTC.
