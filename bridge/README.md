@@ -12,8 +12,9 @@ es la única pieza que los une. Se lanza cada hora desde
 | **PARADA** | Tres señales, ver abajo | Saca al contacto de la secuencia |
 | **DESCARTE** | Contactos «en curso» cuya secuencia de Apollo ya terminó (`status = finished`) sin respuesta | Marca `apollo_estado = finalizado` y mueve el negocio de «Información enviada» a «Descartado», con `motivo_perdida = Sin respuesta` |
 | **INBOUND** | Contactos con `productos_interes` relleno y `apollo_estado` vacío (últimos 30 días) | Vuelca en Apollo lo que contó el lead en el formulario (productos, unidades, plazo, tipo de entidad, mensaje), los inscribe en la secuencia INBOUND y marca `apollo_estado = enviado`. Si el lead aún no está en Apollo pasados 15 min del formulario, el puente crea el contacto él mismo |
-| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta 6 al día en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot — y **crea el contacto en HubSpot** a quien Apollo no haya empujado (la lista OUTBOUND se sube por CSV, así que el pull nativo no los trae solo) |
-| **REBOTES** | El estado de campaña en Apollo | Marca `apollo_estado = rebotado`. Es lo único que sigue viniendo de Apollo |
+| **OUTBOUND** | Contactos de la lista de Apollo que no están en ninguna secuencia **y tienen el campo `Municipio` relleno** (los correos llevan `{{municipio}}` y Apollo no envía con una variable vacía; los que no lo tengan se listan en el log y no gastan cupo) | Inscribe hasta `OUTBOUND_DAILY_CAP` al día (1 desde el 14/10, ver abajo) en la secuencia OUTBOUND, y marca `apollo_estado = enviado`, `apollo_fecha_inscripcion`, `campana_apollo` y `municipio` en los que ya estén en HubSpot — y **crea el contacto en HubSpot** a quien Apollo no haya empujado (la lista OUTBOUND se sube por CSV, así que el pull nativo no los trae solo) |
+| **REBOTES** | El estado de campaña en Apollo (`status = failed` con `failure_reason`/`inactive_reason` = `bounced`, o `email_on_global_bounce_list`) | Marca `apollo_estado = rebotado`. Hasta el 14/10 miraba solo el `status` y por eso no marcó a ninguno de los 11 rebotados de septiembre |
+| **APERTURAS** | Los mensajes de la secuencia con estado `opened` en Apollo | Pasa `apollo_estado` de `enviado` a `abierto` (nunca pisa un estado posterior). Solo tiene datos si el seguimiento de aperturas está activado en el buzón de Amaia dentro de Apollo |
 
 Lo que corta va primero a propósito: no tiene sentido inscribir a alguien que
 acaba de responder o de agendar una reunión.
@@ -40,7 +41,51 @@ calendario propio de esa secuencia (día 0, +5, +10, +16, +23 desde su
 inscripción) — no hay ningún "envío diario a todos"; cada ayuntamiento
 lleva su propio reloj desde el día en que entra.
 
-### El tope diario está en 6 (16/09)
+### El tope diario está en 5 (14/10) — y vive en Apollo, no aquí
+
+Relanzamiento tras verificar la lista a mano: de los 64 ayuntamientos que
+quedaban por inscribir, 19 tenían un correo que no existía o no aparecía en
+ninguna fuente oficial (dominios cambiados, buzones personales de empleados
+que ya no están, buzones de incidencias) y 9 no se pudieron confirmar porque
+la web estaba caída. Los primeros se corrigieron en Apollo; los segundos se
+quedan fuera hasta que alguien llame.
+
+El límite que se pidió es **5 correos al día en total, seguimientos
+incluidos**. Eso no lo puede garantizar el puente, que solo inscribe: lo
+garantiza el `max_emails_per_day` de la secuencia OUTBOUND en Apollo, que
+está a `5` desde el 16/10 (estaba en 30). Con ese tope, `OUTBOUND_DAILY_CAP`
+pasa a `1`: hay 70 ayuntamientos a medio
+camino con 4 seguimientos pendientes cada uno (280 correos), y cada
+inscripción nueva son 5 correos más en la misma cola. A 5/día, inscribir más
+de 1 nuevo al día solo haría que Apollo retrasara los seguimientos de los que
+ya están en cadencia.
+
+La cuenta, para que nadie se sorprenda: 280 seguimientos + 1 nuevo/día × 5
+correos ≈ **unos 2 meses** hasta vaciar la cola con este tope. Si se quiere
+ir más rápido, el número a tocar es el de Apollo, y hay que mover
+`OUTBOUND_DAILY_CAP` en la misma proporción (tope ÷ 5).
+
+### Qué pasó en septiembre y por qué el relanzamiento es distinto
+
+De los 74 correos que salieron entre el 15 y el 21/09, **73 eran el
+primero**; solo un ayuntamiento llegó a recibir el segundo. La secuencia se
+pausó a mano el 21/09 a las 06:09 UTC, justo antes de que la tanda del 15/09
+cumpliera los 5 días del correo 2, y así se quedó. Además el seguimiento de
+aperturas solo estaba activo en 1 de los 63 correos entregados, así que no
+hay forma de saber cuántos se leyeron. Lo que hay que hacer distinto, en
+este orden, antes de despausar:
+
+1. **Activar el seguimiento de aperturas** en el buzón de Amaia dentro de
+   Apollo (Settings → Mailboxes → `amaia@thegravitywave.com` → Tracking).
+   Sin esto la fase APERTURAS no tiene nada que leer.
+2. ~~Poner `max_emails_per_day = 5` en la secuencia OUTBOUND~~ — hecho el
+   16/10 por API, con los textos de los cinco correos sin cambios.
+3. ~~Fusionar esta rama en la que corre el cron~~ — hecho el 16/10.
+4. **Despausar la secuencia.** Los 70 a medio camino retoman con el correo 2
+   («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
+   1 nuevo al día a las 8:20 UTC.
+
+### Antes: el tope en 6 (16/09)
 
 Estuvo un día en 30 para vaciar la lista y se volvió a bajar por
 **entregabilidad**, no por la cuenta de correos: el buzón se conectó el 07/09
@@ -467,7 +512,7 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Secret | `APOLLO_API_KEY` | Settings → Integrations → API en Apollo |
 | Variable | `BRIDGE_ENABLED` | `1` para escribir de verdad. Sin ella, simulacro |
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
-| — | `OUTBOUND_DAILY_CAP` | fijado a `30` en el workflow — **modo vaciado**, ver abajo. Se cambia editando `apollo-bridge.yml`, no con una variable |
+| — | `OUTBOUND_DAILY_CAP` | fijado a `5` en el workflow desde el 14/10 (relanzamiento con la lista verificada). Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
 
 ## Primera ejecución

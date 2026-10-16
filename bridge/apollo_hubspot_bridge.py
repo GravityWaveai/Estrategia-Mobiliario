@@ -136,6 +136,10 @@ ESTADO_SOLO_APOLLO = {
     "bounced": "rebotado",
     "hard_bounced": "rebotado",
     "spam_blocked": "rebotado",
+    # Apollo ni siquiera envía: la dirección está en su lista global de
+    # rebotes (pasó con Eivissa y Manacor en septiembre). A efectos de la
+    # campaña es lo mismo: ese correo no va a llegar nunca.
+    "email_on_global_bounce_list": "rebotado",
 }
 
 # Estados desde los que todavía se puede pasar a «respondido»
@@ -836,11 +840,19 @@ def sync_bounces():
     """Lo único que HubSpot no puede saber: el correo que nunca llegó."""
     marcados = 0
     for c in apollo_lista_outbound().values():
+        # Apollo no pone status = "bounced" al contacto que rebota: lo deja en
+        # status = "failed" y el motivo va en failure_reason / inactive_reason
+        # ("bounced"). Por eso, hasta el 14/10, esta fase no marcó a ninguno
+        # de los 11 rebotados de septiembre: miraba solo el status.
         estado = next(
-            (ESTADO_SOLO_APOLLO[s["status"]]
+            (ESTADO_SOLO_APOLLO.get(s.get("status"))
+             or ESTADO_SOLO_APOLLO.get(s.get("failure_reason"))
+             or ESTADO_SOLO_APOLLO.get(s.get("inactive_reason"))
              for s in (c.get("contact_campaign_statuses") or [])
              if s.get("emailer_campaign_id") in (SEQ_INBOUND, SEQ_OUTBOUND)
-             and s.get("status") in ESTADO_SOLO_APOLLO),
+             and (s.get("status") in ESTADO_SOLO_APOLLO
+                  or s.get("failure_reason") in ESTADO_SOLO_APOLLO
+                  or s.get("inactive_reason") in ESTADO_SOLO_APOLLO)),
             None)
         if not estado:
             continue
@@ -853,6 +865,56 @@ def sync_bounces():
             hs_stamp(h["id"], {"apollo_estado": estado})
             marcados += 1
     log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
+
+
+def apollo_mensajes(seq, estado):
+    """Mensajes de una secuencia en un estado dado (opened, delivered...).
+    Si la API key no tiene acceso a este endpoint, avisa y devuelve vacío en
+    vez de tumbar la fase: la apertura es información extra, no un cierre."""
+    out, page = [], 1
+    while True:
+        try:
+            res = apollo("POST", "/emailer_messages/search", {
+                "emailer_campaign_id": seq, "emailer_message_stats": [estado],
+                "page": page, "per_page": 100})
+        except RuntimeError as e:
+            log(f"  Apollo no deja leer los mensajes de la secuencia ({str(e)[:120]}); "
+                "las aperturas no se sincronizan en esta pasada")
+            return out
+        lote = res.get("emailer_messages", [])
+        out += lote
+        if not lote or page >= res.get("pagination", {}).get("total_pages", 1):
+            return out
+        page += 1
+
+
+def sync_opens():
+    """Quién ha abierto algún correo: `apollo_estado = abierto`.
+
+    Solo pasa de «enviado» a «abierto»; nunca pisa «respondido»,
+    «reunion_agendada» ni ningún estado posterior. Sirve para que el embudo
+    distinga al que no ha abierto nada del que lee y no contesta, que son dos
+    conversaciones distintas para Amaia. Depende de que el seguimiento de
+    aperturas esté activado en el buzón dentro de Apollo: en septiembre solo lo
+    estaba en 1 de 63 correos, así que no había nada que leer."""
+    por_id = {c["id"]: c for c in apollo_lista_outbound().values()}
+    abiertos = set()
+    for seq in (SEQ_OUTBOUND, SEQ_INBOUND):
+        for m in apollo_mensajes(seq, "opened"):
+            c = por_id.get(m.get("contact_id"))
+            if c and c.get("email"):
+                abiertos.add(c["email"].lower())
+    marcados = 0
+    for email in sorted(abiertos):
+        for h in hs_search_contacts(
+                [{"filters": [
+                    {"propertyName": "email", "operator": "EQ", "value": email},
+                    {"propertyName": "apollo_estado", "operator": "EQ", "value": "enviado"},
+                ]}],
+                ["email", "apollo_estado"]):
+            hs_stamp(h["id"], {"apollo_estado": "abierto"})
+            marcados += 1
+    log(f"APERTURAS: {len(abiertos)} contacto(s) han abierto algo; {marcados} pasan a «abierto»")
 
 
 def hs_search_deals(filter_groups, properties):
@@ -1149,6 +1211,7 @@ def main():
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
     ok &= _fase("REBOTES", sync_bounces)
+    ok &= _fase("APERTURAS", sync_opens)
     # Va al final: así repara también lo que se acabe de inscribir en esta
     # misma pasada, en cuanto se le pase la gracia.
     ok &= _fase("NEGOCIOS", repair_negocios_sin_crear)
