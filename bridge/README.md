@@ -48,8 +48,14 @@ Relanzamiento tras verificar la lista a mano: de los 64 ayuntamientos que
 quedaban por inscribir, 19 tenían un correo que no existía o no aparecía en
 ninguna fuente oficial (dominios cambiados, buzones personales de empleados
 que ya no están, buzones de incidencias) y 9 no se pudieron confirmar porque
-la web estaba caída. Los primeros se corrigieron en Apollo; los segundos se
-quedan fuera hasta que alguien llame.
+la web estaba caída. Los primeros se corrigieron en Apollo el 14/10. De los
+9, el 16/10 se confirmaron 8 por boletines oficiales y sedes electrónicas y
+se corrigieron 7 en Apollo (Sóller → urbanisme@a-soller.es, Altafulla →
+recepcio@altafulla.altanet.org, El Prat → contractacio@elprat.cat, Cabanes →
+cabanes@cabanes.es, Escorca → ajuntament@escorca.cat, Mataró →
+mediambient@ajmataro.cat, Palamós → oac@palamos.cat; Alboraya ya tenía el
+bueno). Sant Lluís sigue sin correo verificable (web caída, el único oficial
+es de 2013): se queda con el que tenía y es el único que hay que llamar.
 
 El límite que se pidió es **5 correos al día en total, seguimientos
 incluidos**. Eso no lo puede garantizar el puente, que solo inscribe: lo
