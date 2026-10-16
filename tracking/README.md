@@ -53,14 +53,16 @@ ignoran.
    contactos de la lista (fase TRACKING)~~ — hecho el 16/10: 135 de 135,
    los 71 en cadencia incluidos. El campo es `6ad207bd5a7c2e0014573df8`.
 2. ~~Alguien publica `aperturas.gs` y pega la URL~~ — publicado el 16/10;
-   la URL está en el workflow. La versión 2 (16/10, 14:09) responde bien
-   sin contacto («ignorado») pero devuelve un 400 cuando tiene que escribir
-   la fila. **Falta publicar la versión actual del script**, que apunta el
-   error en la respuesta en vez de dejar que Google lo tape, lee la clave
-   de las propiedades del script y tiene `?diag=1`. Comprobación:
-   `curl "<URL>?t=PRUEBA&p=0"` tiene que devolver `ok` y la fila aparecer
-   en `?list=1&key=…`.
+   la URL está en el workflow. El 400 que daba el píxel no era la escritura
+   sino el nombre del parámetro: Google reserva `c` en las aplicaciones web
+   y la petición no llegaba al script; con `t` funciona. Versión con la
+   clave en propiedades y `?diag=1` publicada el 16/10. Comprobación:
+   `curl "<URL>?t=PRUEBA&p=0"` devuelve `ok` y la fila aparece en
+   `?list=1&key=…`.
 3. ~~Se añade el píxel a las cinco plantillas~~ — hecho el 16/10 por API,
    con el texto de los cinco correos sin cambios (comprobado byte a byte
    en `body_text`). El píxel va justo antes de `</body>`, con `p=1…5`.
-4. Se despausa la secuencia. Eso lo hace una persona, en Apollo.
+4. ~~Se despausa la secuencia~~ — hecha a mano el 16/10. La pasada del
+   puente de las 13:12 UTC leyó 3 aperturas reales (Badalona, Creixell y
+   Elche, correo 2 del relanzamiento) y marcó los 3 contactos «abierto» en
+   HubSpot. Todo encendido.
