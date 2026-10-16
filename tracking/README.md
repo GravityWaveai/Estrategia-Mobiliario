@@ -6,7 +6,7 @@ que lo haría Apollo, pero con piezas propias:
 
 | Pieza | Dónde | Qué hace |
 |---|---|---|
-| Píxel | Al final de los cinco correos de la secuencia OUTBOUND | `<img src="<URL>?c={{tracking_id}}&p=N" width="1" height="1">`. `{{tracking_id}}` es un campo personalizado de Apollo que el puente rellena con el id del contacto; `N` es el número de correo (1-5) |
+| Píxel | Al final de los cinco correos de la secuencia OUTBOUND | `<img src="<URL>?t={{tracking_id}}&p=N" width="1" height="1">`. `{{tracking_id}}` es un campo personalizado de Apollo que el puente rellena con el id del contacto; `N` es el número de correo (1-5). Va en `t` y no en `c` porque Google reserva `c` en las aplicaciones web y corta la petición |
 | Receptor | `aperturas.gs`, publicado como aplicación web de Google Apps Script en la cuenta de Google de Gravity Wave | Apunta fecha, contacto y paso en la hoja «Aperturas · Mobiliario Urbano» (se crea sola en Drive) |
 | Lector | Fase **APERTURAS** de `bridge/apollo_hubspot_bridge.py` | Cada hora pide al receptor las aperturas nuevas y pasa `apollo_estado` de `enviado` a `abierto` en HubSpot |
 | Relleno | Fase **TRACKING** del puente | Da `tracking_id` a todo contacto de la lista OUTBOUND que no lo tenga, y crea el campo en Apollo si no existe |
@@ -58,7 +58,7 @@ ignoran.
    la fila. **Falta publicar la versión actual del script**, que apunta el
    error en la respuesta en vez de dejar que Google lo tape, lee la clave
    de las propiedades del script y tiene `?diag=1`. Comprobación:
-   `curl "<URL>?c=PRUEBA&p=0"` tiene que devolver `ok` y la fila aparecer
+   `curl "<URL>?t=PRUEBA&p=0"` tiene que devolver `ok` y la fila aparecer
    en `?list=1&key=…`.
 3. ~~Se añade el píxel a las cinco plantillas~~ — hecho el 16/10 por API,
    con el texto de los cinco correos sin cambios (comprobado byte a byte
