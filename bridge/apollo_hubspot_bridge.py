@@ -40,6 +40,7 @@ Variables de entorno:
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -946,6 +947,11 @@ def fill_tracking_ids(tope=150):
         actual = (c.get("typed_custom_fields") or {}).get(campo)
         if actual == c["id"]:
             continue
+        # Apollo limita contacts/update a 50 llamadas por minuto (el 16/10 cortó
+        # con 429 a mitad de lista): cada 40 se espera a que pase el minuto.
+        if hechos and hechos % 40 == 0 and ENABLED:
+            log("  TRACKING: 40 actualizados, esperando 65 s por el límite de Apollo")
+            time.sleep(65)
         write(f"tracking_id de {c.get('email')}",
               lambda cid=c["id"]: apollo("PATCH", f"/contacts/{cid}",
                                          {"typed_custom_fields": {campo: cid}}))
