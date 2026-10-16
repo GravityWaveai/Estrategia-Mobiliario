@@ -17,9 +17,23 @@ Está explicado en la cabecera de `aperturas.gs`. En corto: script.google.com �
 nuevo proyecto → pegar el archivo → Implementar → Aplicación web, ejecutar
 como «Yo», acceso «Cualquier usuario» → copiar la URL `/exec`.
 
-Esa URL va en `APERTURAS_URL` del workflow, y la clave `CLAVE` del script tiene
-que coincidir con `APERTURAS_KEY`. Hasta que la URL esté puesta, la fase
-APERTURAS no hace nada y lo dice en el log.
+Esa URL va en `APERTURAS_URL` del workflow. La clave vive en dos sitios y
+tiene que ser la misma en ambos, y **en ninguno de los dos es el código**:
+
+- GitHub: secreto `APERTURAS_KEY` del repositorio (Settings → Secrets and
+  variables → Actions → New repository secret).
+- Apps Script: propiedad `CLAVE` del script (Configuración del proyecto →
+  Propiedades del script).
+
+La primera clave estuvo escrita en este repositorio público (en el
+workflow y en `aperturas.gs`) hasta el 16/10; sigue en el historial de git,
+por eso se cambió por otra y se sacó del código. Hasta que la URL esté
+puesta, la fase APERTURAS no hace nada y lo dice en el log. Si falta el
+secreto, el receptor contesta «clave incorrecta» y la fase lo dice.
+
+`URL?diag=1&key=CLAVE` prueba cada paso del receptor (propiedad, hoja,
+escritura) y dice cuál falla; añade una fila `DIAG` que el puente y el panel
+ignoran.
 
 ## Qué mide y qué no
 
@@ -39,12 +53,13 @@ APERTURAS no hace nada y lo dice en el log.
    contactos de la lista (fase TRACKING)~~ — hecho el 16/10: 135 de 135,
    los 71 en cadencia incluidos. El campo es `6ad207bd5a7c2e0014573df8`.
 2. ~~Alguien publica `aperturas.gs` y pega la URL~~ — publicado el 16/10;
-   la URL está en el workflow. **Falta publicar la versión actual del
-   script**: la desplegada devuelve una respuesta vacía al píxel, Google la
-   convierte en un 400 y no apunta la fila. En el editor: Implementar →
-   Gestionar implementaciones → lápiz → Versión: «Nueva versión» →
-   Implementar. La URL no cambia. Comprobación: `curl "<URL>?c=PRUEBA&p=0"`
-   tiene que devolver `ok` y la fila aparecer en `?list=1&key=…`.
+   la URL está en el workflow. La versión 2 (16/10, 14:09) responde bien
+   sin contacto («ignorado») pero devuelve un 400 cuando tiene que escribir
+   la fila. **Falta publicar la versión actual del script**, que apunta el
+   error en la respuesta en vez de dejar que Google lo tape, lee la clave
+   de las propiedades del script y tiene `?diag=1`. Comprobación:
+   `curl "<URL>?c=PRUEBA&p=0"` tiene que devolver `ok` y la fila aparecer
+   en `?list=1&key=…`.
 3. ~~Se añade el píxel a las cinco plantillas~~ — hecho el 16/10 por API,
    con el texto de los cinco correos sin cambios (comprobado byte a byte
    en `body_text`). El píxel va justo antes de `</body>`, con `p=1…5`.
