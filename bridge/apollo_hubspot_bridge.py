@@ -983,6 +983,10 @@ def sync_opens():
     if not APERTURAS_URL:
         log("APERTURAS: sin receptor configurado (APERTURAS_URL vacío); nada que leer")
         return
+    if not APERTURAS_KEY:
+        log("APERTURAS: falta el secreto APERTURAS_KEY del repositorio; "
+            "sin él el receptor no deja leer la hoja")
+        return
     por_id = {c["id"]: c for c in apollo_lista_outbound().values()}
     desde = datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)
     abiertos = {}

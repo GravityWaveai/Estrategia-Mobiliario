@@ -53,9 +53,11 @@ jobs:
           OUTBOUND_DAILY_CAP: '1'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
           # Receptor propio de aperturas (tracking/README.md). La URL es la de
-          # la aplicación web de Apps Script, termina en /exec; se rellena al
-          # publicarla. La clave tiene que ser la misma que CLAVE en
-          # tracking/aperturas.gs; solo protege la lectura de la hoja.
+          # la aplicación web de Apps Script, termina en /exec. La clave es el
+          # secreto APERTURAS_KEY del repositorio (Settings → Secrets and
+          # variables → Actions) y tiene que ser la misma que la propiedad
+          # CLAVE del script. Solo protege la lectura de la hoja; hasta el
+          # 16/10 estuvo escrita aquí y por eso se cambió.
           APERTURAS_URL: 'https://script.google.com/macros/s/AKfycbxGCY4zJU395WGvBjVsRZxMXnXwm_jC0-h2os7ZTISnWZpoN-60HaXAeqaqy76SOIf7/exec'
-          APERTURAS_KEY: 'la0AAolKM5Xogs4dmh4ZSZpRcNV87aNt'
+          APERTURAS_KEY: ${{ secrets.APERTURAS_KEY }}
         run: python3 bridge/apollo_hubspot_bridge.py
