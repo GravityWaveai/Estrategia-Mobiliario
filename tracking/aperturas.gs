@@ -73,19 +73,19 @@ function doGet(e) {
   // Píxel: ?c=<id de contacto en Apollo>&p=<número de correo 1..5>
   var c = String(p.c || "").trim();
   var paso = String(p.p || "").trim();
+  var resultado = "ignorado";
   if (c && c !== "{{tracking_id}}") {
     try {
-      var ua = "";
-      var ip = "";
-      try { ua = (e.headers && (e.headers["User-Agent"] || e.headers["user-agent"])) || ""; } catch (x) {}
-      // Google no expone la IP del lector; se deja la columna por si algún
-      // día cambia. Nunca se guarda la IP en claro.
-      hoja_().appendRow([new Date(), c, paso, ua.substring(0, 120), ip]);
+      // Google no expone ni la IP ni el User-Agent del lector; las columnas
+      // quedan por si algún día cambia. Nunca se guarda la IP en claro.
+      hoja_().appendRow([new Date(), c, paso, "", ""]);
+      resultado = "ok";
     } catch (err) {
-      // Si la hoja falla no se pierde nada más: el correo ya se abrió.
+      resultado = "error: " + err;
     }
   }
   // Apps Script no puede devolver una imagen; el programa de correo pide la
   // dirección igualmente y eso es lo que cuenta. Lo que reciba lo descarta.
-  return ContentService.createTextOutput("").setMimeType(ContentService.MimeType.TEXT);
+  // (Una respuesta vacía la rechaza Google con un 400: siempre va texto.)
+  return ContentService.createTextOutput(resultado).setMimeType(ContentService.MimeType.TEXT);
 }
