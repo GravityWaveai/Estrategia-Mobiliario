@@ -885,23 +885,47 @@ def apollo_campo_tracking():
     global _CAMPO_TRACKING_ID
     if _CAMPO_TRACKING_ID:
         return _CAMPO_TRACKING_ID
-    campos = apollo("GET", "/typed_custom_fields").get("typed_custom_fields", [])
+    res = apollo("GET", "/typed_custom_fields")
+    campos = res.get("typed_custom_fields") or res.get("fields") or []
     for c in campos:
-        if (c.get("label") or "").strip().lower() == CAMPO_TRACKING_LABEL and c.get("modality") == "contact":
+        if ((c.get("label") or c.get("name") or "").strip().lower() == CAMPO_TRACKING_LABEL
+                and c.get("modality", "contact") == "contact"):
             _CAMPO_TRACKING_ID = c["id"]
             return _CAMPO_TRACKING_ID
     if not ENABLED:
         log(f"    [simulacro] crear el campo personalizado «{CAMPO_TRACKING_LABEL}» en Apollo")
         return None
-    creado = apollo("POST", "/typed_custom_fields",
-                    {"label": CAMPO_TRACKING_LABEL, "type": "string", "modality": "contact"})
-    campo = (creado or {}).get("typed_custom_field") or {}
-    if not campo.get("id"):
-        raise RuntimeError(
-            f"Apollo no ha creado el campo «{CAMPO_TRACKING_LABEL}». Créalo a mano: "
-            "Settings → Data management → Custom fields → Contact → texto, etiqueta tracking_id")
-    _CAMPO_TRACKING_ID = campo["id"]
-    return _CAMPO_TRACKING_ID
+    # Apollo no documenta este endpoint; el 16/10 rechazó {label,type,modality}
+    # con «undefined method 'strip' for nil». Se prueban las formas plausibles
+    # en orden y se deja en el log cuál ha aceptado, para fijarla después.
+    intentos = [
+        {"name": CAMPO_TRACKING_LABEL, "label": CAMPO_TRACKING_LABEL, "type": "string",
+         "modality": "contact", "description": "Id del contacto para el píxel de aperturas"},
+        {"typed_custom_field": {"name": CAMPO_TRACKING_LABEL, "label": CAMPO_TRACKING_LABEL,
+                                "type": "string", "modality": "contact"}},
+        {"name": CAMPO_TRACKING_LABEL, "label": CAMPO_TRACKING_LABEL, "type": "text",
+         "modality": "contact", "field_type": "text"},
+        {"label": CAMPO_TRACKING_LABEL, "type": "string", "modality": "contact",
+         "options": [], "description": ""},
+    ]
+    errores = []
+    for body in intentos:
+        try:
+            creado = apollo("POST", "/typed_custom_fields", body) or {}
+        except RuntimeError as e:
+            errores.append(f"{sorted(body)} -> {str(e)[-160:]}")
+            continue
+        campo = creado.get("typed_custom_field") or creado.get("field") or creado
+        if campo.get("id"):
+            log(f"  campo «{CAMPO_TRACKING_LABEL}» creado en Apollo con el cuerpo {sorted(body)}")
+            _CAMPO_TRACKING_ID = campo["id"]
+            return _CAMPO_TRACKING_ID
+        errores.append(f"{sorted(body)} -> respuesta sin id: {str(creado)[:160]}")
+    raise RuntimeError(
+        f"Apollo no ha creado el campo «{CAMPO_TRACKING_LABEL}» con ninguna forma: "
+        + " | ".join(errores)
+        + ". Créalo a mano: Settings → Data management → Custom fields → Contact → "
+        "texto, etiqueta tracking_id; el puente lo encontrará en la siguiente pasada")
 
 
 def fill_tracking_ids(tope=150):
