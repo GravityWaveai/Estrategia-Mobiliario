@@ -81,7 +81,9 @@ este orden, antes de despausar:
 2. ~~Poner `max_emails_per_day = 5` en la secuencia OUTBOUND~~ — hecho el
    16/10 por API, con los textos de los cinco correos sin cambios.
 3. ~~Fusionar esta rama en la que corre el cron~~ — hecho el 16/10.
-4. **Despausar la secuencia.**
+4. **Despausar la secuencia.** Los 70 a medio camino retoman con el correo 2
+   («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
+   1 nuevo al día a las 8:20 UTC.
 
 El seguimiento del relanzamiento se mira en el panel
 <https://claude.ai/artifact/6WfgvWDcH8dvKy5HUig6zK>: lee Apollo (envíos,
@@ -89,10 +91,6 @@ entregas, aperturas, rebotes, cadencia) y HubSpot (embudo, negocios) en
 directo con las conexiones de quien lo abre, y avisa solo si la secuencia
 está pausada, el tope no es 5, los rebotes pasan del 3% o el seguimiento
 de aperturas sigue apagado.
-
-   Los 70 a medio camino retoman con el correo 2
-   («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
-   1 nuevo al día a las 8:20 UTC.
 
 ### Antes: el tope en 6 (16/09)
 
