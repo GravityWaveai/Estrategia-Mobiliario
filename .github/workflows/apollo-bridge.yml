@@ -37,7 +37,12 @@ jobs:
           HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
           BRIDGE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.enabled || vars.BRIDGE_ENABLED }}
-          OUTBOUND_ENABLED: ${{ vars.OUTBOUND_ENABLED || '1' }}
+          # La variable OUTBOUND_ENABLED del repositorio estaba a 0 desde la
+          # pausa de septiembre y dejaba el relanzamiento sin inscripciones sin
+          # que nadie lo viera. Desde el 16/10 va fija a 1: el interruptor de
+          # verdad es la secuencia en Apollo (pausada = no sale nada) y, para
+          # todo el puente, BRIDGE_ENABLED.
+          OUTBOUND_ENABLED: '1'
           # Relanzamiento del 14/10 con la lista verificada a mano. El tope de
           # verdad está en Apollo: la secuencia OUTBOUND tiene max_emails_per_day
           # = 5, y eso cuenta TODO lo que sale (primeros correos y seguimientos).
