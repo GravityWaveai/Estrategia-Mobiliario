@@ -47,4 +47,10 @@ jobs:
           # bridge/README.md, «El tope diario está en 5».
           OUTBOUND_DAILY_CAP: '1'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
+          # Receptor propio de aperturas (tracking/README.md). La URL es la de
+          # la aplicación web de Apps Script, termina en /exec; se rellena al
+          # publicarla. La clave tiene que ser la misma que CLAVE en
+          # tracking/aperturas.gs; solo protege la lectura de la hoja.
+          APERTURAS_URL: ''
+          APERTURAS_KEY: 'la0AAolKM5Xogs4dmh4ZSZpRcNV87aNt'
         run: python3 bridge/apollo_hubspot_bridge.py

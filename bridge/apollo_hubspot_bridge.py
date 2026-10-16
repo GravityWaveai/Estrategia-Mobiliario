@@ -41,6 +41,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -50,6 +51,13 @@ ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
 OUTBOUND_ENABLED = os.environ.get("OUTBOUND_ENABLED", "1") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
 HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
+# Receptor propio de aperturas (tracking/aperturas.gs publicado en Google).
+# Vacío = la fase APERTURAS no hace nada.
+APERTURAS_URL = os.environ.get("APERTURAS_URL", "").strip()
+APERTURAS_KEY = os.environ.get("APERTURAS_KEY", "")
+# Etiqueta del campo personalizado de Apollo que lleva el id del contacto al
+# píxel ({{tracking_id}} en las plantillas). Se crea solo si no existe.
+CAMPO_TRACKING_LABEL = "tracking_id"
 
 # Identificadores fijos del embudo
 SEQ_INBOUND = "6a9844b94208650014fc4754"
@@ -867,43 +875,94 @@ def sync_bounces():
     log(f"REBOTES: {marcados} contacto(s) marcados como rebotados")
 
 
-def apollo_mensajes(seq, estado):
-    """Mensajes de una secuencia en un estado dado (opened, delivered...).
-    Si la API key no tiene acceso a este endpoint, avisa y devuelve vacío en
-    vez de tumbar la fase: la apertura es información extra, no un cierre."""
-    out, page = [], 1
-    while True:
-        try:
-            res = apollo("POST", "/emailer_messages/search", {
-                "emailer_campaign_id": seq, "emailer_message_stats": [estado],
-                "page": page, "per_page": 100})
-        except RuntimeError as e:
-            log(f"  Apollo no deja leer los mensajes de la secuencia ({str(e)[:120]}); "
-                "las aperturas no se sincronizan en esta pasada")
-            return out
-        lote = res.get("emailer_messages", [])
-        out += lote
-        if not lote or page >= res.get("pagination", {}).get("total_pages", 1):
-            return out
-        page += 1
+_CAMPO_TRACKING_ID = None
+
+
+def apollo_campo_tracking():
+    """Id del campo personalizado `tracking_id` en Apollo; lo crea si falta.
+    Apollo lo expone como {{tracking_id}} en las plantillas (igual que
+    «Municipio» sale como {{municipio}})."""
+    global _CAMPO_TRACKING_ID
+    if _CAMPO_TRACKING_ID:
+        return _CAMPO_TRACKING_ID
+    campos = apollo("GET", "/typed_custom_fields").get("typed_custom_fields", [])
+    for c in campos:
+        if (c.get("label") or "").strip().lower() == CAMPO_TRACKING_LABEL and c.get("modality") == "contact":
+            _CAMPO_TRACKING_ID = c["id"]
+            return _CAMPO_TRACKING_ID
+    if not ENABLED:
+        log(f"    [simulacro] crear el campo personalizado «{CAMPO_TRACKING_LABEL}» en Apollo")
+        return None
+    creado = apollo("POST", "/typed_custom_fields",
+                    {"label": CAMPO_TRACKING_LABEL, "type": "string", "modality": "contact"})
+    campo = (creado or {}).get("typed_custom_field") or {}
+    if not campo.get("id"):
+        raise RuntimeError(
+            f"Apollo no ha creado el campo «{CAMPO_TRACKING_LABEL}». Créalo a mano: "
+            "Settings → Data management → Custom fields → Contact → texto, etiqueta tracking_id")
+    _CAMPO_TRACKING_ID = campo["id"]
+    return _CAMPO_TRACKING_ID
+
+
+def fill_tracking_ids(tope=150):
+    """Da `tracking_id` (= su propio id de Apollo) a todo contacto de la lista
+    OUTBOUND que no lo tenga. El píxel de los correos lo usa para saber quién
+    abre. Sin este valor Apollo no enviaría el correo (variable vacía), así
+    que esta fase va antes que la inscripción y antes de añadir el píxel a
+    las plantillas."""
+    campo = apollo_campo_tracking()
+    if not campo:
+        log("TRACKING: sin campo en simulacro; nada que rellenar")
+        return
+    hechos = 0
+    for c in apollo_lista_outbound().values():
+        if hechos >= tope:
+            log(f"  TRACKING: tope de {tope} por pasada; el resto en la siguiente")
+            break
+        actual = (c.get("typed_custom_fields") or {}).get(campo)
+        if actual == c["id"]:
+            continue
+        write(f"tracking_id de {c.get('email')}",
+              lambda cid=c["id"]: apollo("PATCH", f"/contacts/{cid}",
+                                         {"typed_custom_fields": {campo: cid}}))
+        hechos += 1
+    log(f"TRACKING: {hechos} contacto(s) con tracking_id nuevo")
+
+
+def aperturas_del_receptor(desde):
+    """Aperturas apuntadas por tracking/aperturas.gs desde una fecha."""
+    url = (f"{APERTURAS_URL}?list=1&key={urllib.parse.quote(APERTURAS_KEY)}"
+           f"&since={desde.strftime('%Y-%m-%d')}")
+    res = _req(url, "GET", {"accept": "application/json"})
+    if res.get("error"):
+        raise RuntimeError(f"el receptor de aperturas responde: {res['error']}")
+    return res.get("aperturas", [])
 
 
 def sync_opens():
     """Quién ha abierto algún correo: `apollo_estado = abierto`.
 
-    Solo pasa de «enviado» a «abierto»; nunca pisa «respondido»,
-    «reunion_agendada» ni ningún estado posterior. Sirve para que el embudo
-    distinga al que no ha abierto nada del que lee y no contesta, que son dos
-    conversaciones distintas para Amaia. Depende de que el seguimiento de
-    aperturas esté activado en el buzón dentro de Apollo: en septiembre solo lo
-    estaba en 1 de 63 correos, así que no había nada que leer."""
+    Lee el receptor propio (tracking/aperturas.gs), porque Apollo solo ofrece
+    seguimiento de aperturas en planes de pago. Solo pasa de «enviado» a
+    «abierto»; nunca pisa «respondido», «reunion_agendada» ni ningún estado
+    posterior. Sirve para que el embudo distinga al que no ha abierto nada del
+    que lee y no contesta, que son dos conversaciones distintas para Amaia.
+
+    Las aperturas de los 90 segundos siguientes a la inscripción se ignoran:
+    Gmail y Apple Mail descargan las imágenes antes de que nadie lea nada."""
+    if not APERTURAS_URL:
+        log("APERTURAS: sin receptor configurado (APERTURAS_URL vacío); nada que leer")
+        return
     por_id = {c["id"]: c for c in apollo_lista_outbound().values()}
-    abiertos = set()
-    for seq in (SEQ_OUTBOUND, SEQ_INBOUND):
-        for m in apollo_mensajes(seq, "opened"):
-            c = por_id.get(m.get("contact_id"))
-            if c and c.get("email"):
-                abiertos.add(c["email"].lower())
+    desde = datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)
+    abiertos = {}
+    for a in aperturas_del_receptor(desde):
+        c = por_id.get(a.get("contacto"))
+        if not c or not c.get("email"):
+            continue
+        fecha = _ts(a.get("fecha"))
+        if fecha:
+            abiertos.setdefault(c["email"].lower(), []).append(fecha)
     marcados = 0
     for email in sorted(abiertos):
         for h in hs_search_contacts(
@@ -911,7 +970,12 @@ def sync_opens():
                     {"propertyName": "email", "operator": "EQ", "value": email},
                     {"propertyName": "apollo_estado", "operator": "EQ", "value": "enviado"},
                 ]}],
-                ["email", "apollo_estado"]):
+                ["email", "apollo_estado", FECHA_INSCRIPCION]):
+            inscrito = _ts(h["properties"].get(FECHA_INSCRIPCION))
+            reales = [f for f in abiertos[email]
+                      if not inscrito or f >= inscrito + timedelta(seconds=90)]
+            if not reales:
+                continue
             hs_stamp(h["id"], {"apollo_estado": "abierto"})
             marcados += 1
     log(f"APERTURAS: {len(abiertos)} contacto(s) han abierto algo; {marcados} pasan a «abierto»")
@@ -1199,6 +1263,9 @@ def main():
     ok &= _fase("PARADA", stop_when_engaged)
     ok &= _fase("ENTRANTES", stop_on_any_inbound)
     ok &= _fase("SIN RESPUESTA", mark_sin_respuesta)
+    # Antes de inscribir a nadie: el píxel de los correos necesita que todo
+    # contacto lleve tracking_id, si no Apollo no envía (variable vacía).
+    ok &= _fase("TRACKING", fill_tracking_ids)
     ok &= _fase("INBOUND", lambda: enroll_inbound(sender_id))
     # OUTBOUND solo inscribe una vez al día, a esta hora — si no, el tope de
     # 50 se salta: el cron corre cada hora, así que sin este freno un lunes
