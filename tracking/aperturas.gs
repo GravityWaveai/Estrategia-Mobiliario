@@ -30,7 +30,7 @@
  * apertura; se llama «Aperturas · Mobiliario Urbano».
  *
  * Comprobaciones desde fuera (URL = la de la aplicación web):
- *   URL?c=PRUEBA&p=0            → debe responder «ok» y añadir una fila
+ *   URL?t=PRUEBA&p=0            → debe responder «ok» y añadir una fila
  *   URL?list=1&key=CLAVE        → la lista en JSON
  *   URL?diag=1&key=CLAVE        → prueba cada paso y dice cuál falla
  */
@@ -117,8 +117,10 @@ function doGet(e) {
       return json_({hoja: h.getParent().getUrl(), total: out.length, aperturas: out});
     }
 
-    // Píxel: ?c=<id de contacto en Apollo>&p=<número de correo 1..5>
-    var c = String(p.c || "").trim();
+    // Píxel: ?t=<id de contacto en Apollo>&p=<número de correo 1..5>
+    // OJO: Google reserva el parámetro «c» (la petición no llega al script).
+    // El píxel usa «t»; «c» se deja solo por compatibilidad.
+    var c = String(p.t || p.c || "").trim();
     var paso = String(p.p || "").trim();
     if (!c || c === "{{tracking_id}}") return texto_("ignorado");
     var err = apuntar_(c, paso);
