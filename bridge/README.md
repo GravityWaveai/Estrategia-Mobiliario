@@ -85,6 +85,13 @@ este orden, antes de despausar:
    («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
    1 nuevo al día a las 8:20 UTC.
 
+El seguimiento del relanzamiento se mira en el panel
+<https://claude.ai/artifact/6WfgvWDcH8dvKy5HUig6zK>: lee Apollo (envíos,
+entregas, aperturas, rebotes, cadencia) y HubSpot (embudo, negocios) en
+directo con las conexiones de quien lo abre, y avisa solo si la secuencia
+está pausada, el tope no es 5, los rebotes pasan del 3% o el seguimiento
+de aperturas sigue apagado.
+
 ### Antes: el tope en 6 (16/09)
 
 Estuvo un día en 30 para vaciar la lista y se volvió a bajar por
