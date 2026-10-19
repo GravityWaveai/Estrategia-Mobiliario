@@ -513,6 +513,45 @@ key de Apollo, no algo que se arregle desde este repo.
 - Un lead que falla ya pone la pasada en rojo en Actions: antes dos leads
   fallando cada hora pasaban por una ejecución correcta.
 
+## PANEL: la página del panel con los datos dentro (19/10)
+
+El panel de la campaña era una página que pedía los datos a Apollo, HubSpot
+y el receptor desde el navegador de quien la abría. En la práctica salía
+vacía: el visor de claude.ai no le daba acceso a los conectores
+(`not_granted`) y el navegador bloquea las peticiones al receptor y a
+`dns.google`. Así que el dato lo pone ahora el puente, que ya tiene todas las
+llaves, y la página no pide nada a nadie.
+
+La fase **PANEL** corre al final de cada pasada, con HubSpot ya al día:
+
+1. `datos_panel()` junta todo en un diccionario: la secuencia OUTBOUND de
+   Apollo con su cadencia por paso (`emailer_touches`), si las cinco
+   plantillas llevan el píxel, los contactos que Apollo no envía por
+   `snippets_missing`, las aperturas y visitas del receptor (visitas solo de
+   la landing, sin pruebas ni vista previa de Tag Manager, y un mismo origen
+   en 90 s cuenta una vez), los contactos, negocios y leads web de HubSpot
+   (sin las pruebas), la secuencia INBOUND y los TXT de SPF, DMARC y DKIM del
+   dominio. El contrato del diccionario está en `panel/README.md`.
+2. `construir_panel()` mete ese JSON en `panel/plantilla.html`, en el hueco
+   `const D = /*DATOS*/null;`. Lo único que hace la página es pintarlo.
+3. `publicar_panel()` manda la página y los datos al receptor con
+   `POST …/exec?panel=1&key=…`. El receptor la guarda en la pestaña «panel»
+   de la hoja y la sirve en `…/exec?ver=1&key=…` (como página) y
+   `…/exec?panel=1&key=…` (JSON). Si el receptor aún no tiene la versión con
+   `doPost`, lo dice en el log y la pasada no falla por eso.
+4. Además deja una copia **cifrada** de la página en `PANEL_SALIDA`
+   (variable que pone el workflow), y el paso siguiente del workflow la sube
+   como artefacto «panel» de la pasada, dos días de retención. Cifrada
+   porque el repositorio es público y el panel lleva nombres y correos de
+   los ayuntamientos: `cifrar_panel()` comprime y aplica un flujo
+   HMAC-SHA256 en modo contador con la clave del receptor (`APERTURAS_KEY`),
+   sin dependencias. Se abre con
+   `APERTURAS_KEY=… python3 bridge/descifrar_panel.py relanzamiento.bin > panel.html`.
+
+El panel que se mira en claude.ai es esa misma página, republicada varias
+veces al día a partir del artefacto o del receptor. Para regenerar solo el
+panel sin tocar nada más: `python3 bridge/apollo_hubspot_bridge.py --solo-panel`.
+
 ## Idempotencia
 
 `apollo_estado` en HubSpot es la memoria del puente: si está relleno, el
@@ -532,6 +571,8 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
 | — | `OUTBOUND_DAILY_CAP` | fijado a `5` en el workflow desde el 14/10 (relanzamiento con la lista verificada). Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
+| Secret | `APERTURAS_KEY` | clave del receptor de aperturas; la misma que la propiedad `CLAVE` del script (ver `tracking/README.md`). Protege la lectura de la hoja y el panel, y cifra el artefacto del panel |
+| — | `APERTURAS_URL`, `PANEL_SALIDA` | fijas en el workflow: la URL `/exec` del receptor y dónde deja la fase PANEL la copia cifrada que se sube como artefacto |
 
 ## Primera ejecución
 

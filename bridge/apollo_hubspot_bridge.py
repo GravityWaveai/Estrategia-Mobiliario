@@ -37,6 +37,9 @@ Variables de entorno:
                          no hacen nada nuevo en OUTBOUND)
 """
 
+import gzip
+import hashlib
+import hmac
 import json
 import os
 import sys
@@ -56,6 +59,9 @@ HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
 # Vacío = la fase APERTURAS no hace nada.
 APERTURAS_URL = os.environ.get("APERTURAS_URL", "").strip()
 APERTURAS_KEY = os.environ.get("APERTURAS_KEY", "")
+# Ruta donde la fase PANEL deja una copia cifrada de la página generada; el
+# workflow la sube como artefacto de la pasada. Vacío = no se guarda.
+PANEL_SALIDA = os.environ.get("PANEL_SALIDA", "").strip()
 # Etiqueta del campo personalizado de Apollo que lleva el id del contacto al
 # píxel ({{tracking_id}} en las plantillas). Se crea solo si no existe.
 CAMPO_TRACKING_LABEL = "tracking_id"
@@ -1271,6 +1277,303 @@ def mark_sin_respuesta():
     log(f"SIN RESPUESTA: {descartados}/{len(activos)} negocio(s) pasan a Descartado")
 
 
+# --------------------------------------------------------------------------
+# PANEL: el panel de seguimiento se genera aquí, con datos incrustados.
+#
+# Hasta el 19/10 el panel leía Apollo y HubSpot con las conexiones de quien
+# lo abría y el receptor con fetch(); dentro de claude.ai ni las conexiones
+# estaban concedidas ni el fetch salía, así que se veía vacío. Ahora el puente
+# reúne todo en cada pasada, lo incrusta en panel/plantilla.html y manda la
+# página al receptor (?panel=1, POST). Desde allí se sirve en vivo (?ver=1)
+# y una sesión de Claude la copia al artefacto de claude.ai varias veces al
+# día. El panel ya no depende de nada del lector.
+
+RELANZAMIENTO = "2026-10-14"
+# Desde cuándo mide visitas el fragmento de Tag Manager (versión 64 del
+# contenedor); antes de esa fecha no hay datos, no es que no hubiera visitas.
+VISITAS_DESDE = "2026-10-16T14:25:00Z"
+PLANTILLA_PANEL = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "..", "panel", "plantilla.html")
+_ES_PRUEBA = ("prueba", "test", "diag")
+
+
+def _n(v):
+    """Contadores de Apollo: a veces llegan como 'loading' en vez de número."""
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _es_prueba(*textos):
+    return any(p in (t or "").lower() for t in textos for p in _ES_PRUEBA)
+
+
+def _municipio_de(contacto):
+    return ((contacto.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO) or "").strip()
+
+
+def apollo_secuencia_detalle(sequence_id):
+    """Secuencia con pasos, toques y plantillas; si Apollo no da el detalle,
+    el resumen de la búsqueda (sin cadencia por paso)."""
+    try:
+        res = apollo("GET", f"/emailer_campaigns/{sequence_id}")
+        if res.get("emailer_campaign"):
+            return res
+    except RuntimeError as e:
+        log(f"  PANEL: sin detalle de la secuencia {sequence_id} ({str(e)[:120]}); se usa el resumen")
+    return {"emailer_campaign": apollo_secuencia(sequence_id) or {},
+            "emailer_steps": [], "emailer_touches": [], "emailer_templates": []}
+
+
+def visitas_del_receptor(desde):
+    """Visitas a la landing apuntadas por tracking/aperturas.gs (pestaña visitas)."""
+    url = (f"{APERTURAS_URL}?visits=1&key={urllib.parse.quote(APERTURAS_KEY)}"
+           f"&since={desde[:10]}")
+    res = _req(url, "GET", {"accept": "application/json"})
+    if res.get("error"):
+        raise RuntimeError(f"el receptor responde: {res['error']}")
+    return res.get("visitas", [])
+
+
+def _dns_txt(nombre):
+    """Registros TXT de un nombre, vía dns.google. None si no se pudo consultar."""
+    try:
+        res = _req(f"https://dns.google/resolve?name={urllib.parse.quote(nombre)}&type=TXT",
+                   "GET", {"accept": "application/json"})
+    except Exception as e:
+        log(f"  PANEL: DNS de {nombre} sin respuesta ({str(e)[:80]})")
+        return None
+    out = []
+    for a in res.get("Answer", []) or []:
+        # dns.google devuelve el TXT entre comillas y los largos partidos en
+        # trozos: "v=spf1 ..." "...". Se juntan.
+        out.append("".join(t.strip('"') for t in (a.get("data") or "").split('" "')).strip('"'))
+    return out
+
+
+def datos_panel():
+    """Todo lo que pinta el panel, en un solo diccionario."""
+    ahora = datetime.now(timezone.utc)
+    # --- Apollo: secuencia OUTBOUND, pasos y plantillas
+    det = apollo_secuencia_detalle(SEQ_OUTBOUND)
+    camp = det.get("emailer_campaign") or {}
+    toques = {t.get("emailer_step_id"): t for t in det.get("emailer_touches") or []}
+    pasos = []
+    for s in sorted(det.get("emailer_steps") or [], key=lambda s: s.get("position") or 0):
+        t = toques.get(s.get("id")) or {}
+        pasos.append({"position": s.get("position"), "wait_time": s.get("wait_time") or 0,
+                      "delivered": _n(t.get("unique_delivered")),
+                      "bounced": _n(t.get("unique_bounced")),
+                      "replied": _n(t.get("unique_replied"))})
+    plantillas = det.get("emailer_templates") or []
+    pixel_ok = (all("script.google.com/macros/" in (p.get("body_html") or "") for p in plantillas)
+                if plantillas else None)
+    cs = camp.get("contact_statuses") or {}
+    apollo_datos = {
+        "active": bool(camp.get("active")),
+        "status_reason": camp.get("status_reason"),
+        "max_emails_per_day": camp.get("max_emails_per_day"),
+        "contact_statuses": {k: _n(cs.get(k)) for k in ("active", "paused", "finished", "bounced", "not_sent")},
+        "unique_replied": _n(camp.get("unique_replied")),
+        "unique_bounced": _n(camp.get("unique_bounced")),
+        "unique_spam_blocked": _n(camp.get("unique_spam_blocked")),
+        "steps": pasos,
+        "pixel_ok": pixel_ok,
+        "no_enviados": [],
+    }
+    # --- lista OUTBOUND: municipio por id, y los que Apollo no envía
+    indice = apollo_lista_outbound()
+    por_id = {c["id"]: c for c in indice.values()}
+    for c in indice.values():
+        for st in c.get("contact_campaign_statuses") or []:
+            if (st.get("emailer_campaign_id") == SEQ_OUTBOUND and st.get("status") == "failed"
+                    and st.get("failure_reason") == "snippets_missing"):
+                quien = " ".join(x for x in (c.get("first_name"), c.get("last_name")) if x) or c.get("email")
+                apollo_datos["no_enviados"].append(
+                    {"municipio": _municipio_de(c), "quien": quien, "motivo": st.get("failure_reason")})
+    # --- receptor: aperturas (solo contactos de la lista) y visitas
+    aperturas = []
+    if APERTURAS_URL and APERTURAS_KEY:
+        for a in aperturas_del_receptor(ahora - timedelta(days=VENTANA_CADENCIA)):
+            c = por_id.get(a.get("contacto"))
+            if not c:
+                continue
+            aperturas.append({"fecha": a.get("fecha"), "contacto": c["id"], "email": c.get("email"),
+                              "municipio": _municipio_de(c) or c.get("organization_name"),
+                              "paso": a.get("paso")})
+    visitas, visitas_ok = [], False
+    if APERTURAS_URL and APERTURAS_KEY:
+        try:
+            crudas = visitas_del_receptor(VISITAS_DESDE)
+            visitas_ok = True
+        except Exception as e:
+            log(f"  PANEL: el receptor no da visitas todavía ({str(e)[:100]})")
+            crudas = []
+        ultima = {}
+        for v in sorted(crudas, key=lambda v: v.get("fecha") or ""):
+            if "mobiliario-urbano" not in (v.get("pagina") or ""):
+                continue
+            if _es_prueba(v.get("utm_source")) or "gtm-msr" in (v.get("referente") or ""):
+                continue
+            # La etiqueta a veces se dispara dos veces en la misma carga: un
+            # mismo origen en 90 s cuenta una vez.
+            k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"), v.get("referente"))
+            t = _ts(v.get("fecha"))
+            if t is None:
+                continue
+            if k in ultima and (t - ultima[k]).total_seconds() < 90:
+                ultima[k] = t
+                continue
+            ultima[k] = t
+            visitas.append({"fecha": v.get("fecha"), "utm_source": v.get("utm_source") or "",
+                            "utm_medium": v.get("utm_medium") or "", "utm_campaign": v.get("utm_campaign") or "",
+                            "referente": v.get("referente") or ""})
+    # --- HubSpot: contactos de la campaña, negocios del pipeline, leads web
+    contactos = []
+    for h in hs_search_contacts(
+            [{"filters": [{"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA}]}],
+            ["email", "firstname", "lastname", "municipio", "apollo_estado",
+             FECHA_INSCRIPCION, "apollo_fecha_respuesta"]):
+        p = h.get("properties") or {}
+        if _es_prueba(p.get("firstname"), p.get("lastname")):
+            continue
+        contactos.append({"id": h["id"], "mun": p.get("municipio") or "",
+                          "who": " ".join(x for x in (p.get("firstname"), p.get("lastname")) if x),
+                          "email": p.get("email") or "", "estado": p.get("apollo_estado") or "",
+                          "insc": p.get(FECHA_INSCRIPCION), "resp": p.get("apollo_fecha_respuesta")})
+    negocios = []
+    for d in hs_search_deals(
+            [{"filters": [{"propertyName": "pipeline", "operator": "EQ", "value": PIPELINE}]}],
+            ["dealname", "dealstage", "createdate"]):
+        p = d.get("properties") or {}
+        if _es_prueba(p.get("dealname")):
+            continue
+        negocios.append({"id": d["id"], "nombre": p.get("dealname") or "",
+                         "etapa": p.get("dealstage") or "", "creado": p.get("createdate")})
+    leads = []
+    for h in hs_search_contacts(
+            [{"filters": [{"propertyName": "productos_interes", "operator": "HAS_PROPERTY"},
+                          {"propertyName": "createdate", "operator": "GTE", "value": "2026-09-15T00:00:00Z"}]}],
+            ["email", "firstname", "lastname", "productos_interes", "createdate"]):
+        p = h.get("properties") or {}
+        if _es_prueba(p.get("firstname"), p.get("lastname"), p.get("email")):
+            continue
+        leads.append({"id": h["id"], "email": p.get("email") or "",
+                      "nombre": " ".join(x for x in (p.get("firstname"), p.get("lastname")) if x),
+                      "productos": _productos_legibles(p.get("productos_interes") or ""),
+                      "fecha": p.get("createdate")})
+    leads.sort(key=lambda l: l.get("fecha") or "", reverse=True)
+    # --- Apollo: secuencia INBOUND
+    ins = (apollo_secuencia_detalle(SEQ_INBOUND).get("emailer_campaign") or {})
+    ics = ins.get("contact_statuses") or {}
+    inbound = {"en_cadencia": _n(ics.get("active")) + _n(ics.get("paused")),
+               "terminados": _n(ics.get("finished")), "respondieron": _n(ins.get("unique_replied")),
+               "entregados": _n(ins.get("unique_delivered")), "spam": _n(ins.get("unique_spam_blocked"))}
+    # --- DNS del dominio
+    spf = _dns_txt("thegravitywave.com")
+    dmarc = _dns_txt("_dmarc.thegravitywave.com")
+    dkim = _dns_txt("google._domainkey.thegravitywave.com")
+    dns = {"consultado": spf is not None,
+           "spf": next((x for x in (spf or []) if x.lower().startswith("v=spf1")), None),
+           "dmarc": next((x for x in (dmarc or []) if x.lower().startswith("v=dmarc1")), None),
+           "dkim": next((x for x in (dkim or []) if x.lower().startswith("v=dkim1")), None)}
+    return {
+        "generado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "relanzamiento": RELANZAMIENTO,
+        "visitas_desde": VISITAS_DESDE if visitas_ok else None,
+        "apollo": apollo_datos,
+        "lista": {"total": len(indice)},
+        "aperturas": aperturas,
+        "visitas": visitas,
+        "hubspot": {"contactos": contactos, "negocios": negocios, "leads": leads},
+        "inbound": inbound,
+        "dns": dns,
+    }
+
+
+def construir_panel(datos):
+    with open(PLANTILLA_PANEL, encoding="utf-8") as f:
+        plantilla = f.read()
+    if "/*DATOS*/null" not in plantilla:
+        raise RuntimeError("panel/plantilla.html no tiene el hueco /*DATOS*/null")
+    # «</» dentro de una cadena JSON cerraría el <script>; se escapa.
+    js = json.dumps(datos, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    return plantilla.replace("/*DATOS*/null", js, 1)
+
+
+def _flujo(datos, nonce, clave):
+    """Flujo de clave HMAC-SHA256 en modo contador, XOR con los datos. La misma
+    función cifra y descifra."""
+    k = clave.encode("utf-8")
+    out = bytearray(len(datos))
+    for i in range(0, len(datos), 32):
+        bloque = hmac.new(k, nonce + (i // 32).to_bytes(8, "big"), hashlib.sha256).digest()
+        trozo = datos[i:i + 32]
+        out[i:i + len(trozo)] = bytes(a ^ b for a, b in zip(trozo, bloque))
+    return bytes(out)
+
+
+def cifrar_panel(texto, clave):
+    """Comprime y cifra la página del panel con la clave del receptor, solo con
+    la biblioteca estándar (sin dependencias en el runner). El workflow guarda
+    el resultado como artefacto de la pasada y el repositorio es público, así
+    que el panel —nombres y correos de los ayuntamientos— no puede ir en claro.
+    Lo lee bridge/descifrar_panel.py con la misma clave (APERTURAS_KEY)."""
+    nonce = os.urandom(16)
+    return nonce + _flujo(gzip.compress(texto.encode("utf-8")), nonce, clave)
+
+
+def descifrar_panel(blob, clave):
+    return gzip.decompress(_flujo(blob[16:], blob[:16], clave)).decode("utf-8")
+
+
+def guardar_panel_cifrado(html):
+    """Deja en PANEL_SALIDA la copia cifrada para el artefacto del workflow."""
+    if not PANEL_SALIDA:
+        return False
+    if not APERTURAS_KEY:
+        log("PANEL: sin APERTURAS_KEY no se guarda la copia cifrada")
+        return False
+    os.makedirs(os.path.dirname(PANEL_SALIDA) or ".", exist_ok=True)
+    with open(PANEL_SALIDA, "wb") as f:
+        f.write(cifrar_panel(html, APERTURAS_KEY))
+    log(f"  PANEL: copia cifrada en {PANEL_SALIDA}")
+    return True
+
+
+def publicar_panel(html, datos):
+    """Manda la página y los datos al receptor (?panel=1). Si el receptor no
+    tiene aún la versión que los guarda, lo dice y no tumba la pasada."""
+    if not APERTURAS_URL or not APERTURAS_KEY:
+        log("PANEL: sin receptor o sin clave; el panel no se publica")
+        return False
+    url = f"{APERTURAS_URL}?panel=1&key={urllib.parse.quote(APERTURAS_KEY)}"
+    try:
+        res = _req(url, "POST", {"Content-Type": "application/json", "accept": "application/json"},
+                   {"html": html, "datos": datos})
+    except json.JSONDecodeError:
+        log("PANEL: el receptor no acepta todavía el panel (falta publicar la versión "
+            "de tracking/aperturas.gs con doPost); la página se ha generado igual")
+        return False
+    if res.get("error"):
+        raise RuntimeError(f"el receptor rechaza el panel: {res['error']}")
+    return True
+
+
+def build_panel():
+    datos = datos_panel()
+    html = construir_panel(datos)
+    a = datos["apollo"]
+    log(f"  PANEL: {len(html)//1024} KB · secuencia {'activa' if a['active'] else 'PAUSADA'} · "
+        f"{len(datos['aperturas'])} aperturas · {len(datos['visitas'])} visitas · "
+        f"{len(datos['hubspot']['contactos'])} contactos · salud DNS "
+        f"{'ok' if datos['dns']['consultado'] else 'sin consultar'}")
+    guardar_panel_cifrado(html)
+    if publicar_panel(html, datos):
+        log("PANEL: publicado en el receptor")
+
+
 def _fase(nombre, fn):
     """Corre una fase de la pasada de forma aislada: si una revienta (una API
     key mal configurada, un timeout...) no debe impedir que las demás corran
@@ -1316,10 +1619,18 @@ def main():
     # Va al final: así repara también lo que se acabe de inscribir en esta
     # misma pasada, en cuanto se le pase la gracia.
     ok &= _fase("NEGOCIOS", repair_negocios_sin_crear)
+    # Al final del todo, con HubSpot ya actualizado en esta misma pasada.
+    ok &= _fase("PANEL", build_panel)
     log("Listo." if ok else "Listo, con fallos — revisa los ### de arriba.")
     if not ok:
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    if "--solo-panel" in sys.argv:
+        # Solo regenerar y publicar el panel, sin tocar nada más.
+        if not HUBSPOT_TOKEN or not APOLLO_API_KEY:
+            sys.exit("Faltan HUBSPOT_TOKEN o APOLLO_API_KEY")
+        build_panel()
+    else:
+        main()

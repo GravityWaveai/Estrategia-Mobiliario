@@ -10,6 +10,7 @@ que lo haría Apollo, pero con piezas propias:
 | Receptor | `aperturas.gs`, publicado como aplicación web de Google Apps Script en la cuenta de Google de Gravity Wave | Apunta fecha, contacto y paso en la hoja «Aperturas · Mobiliario Urbano» (se crea sola en Drive) |
 | Lector | Fase **APERTURAS** de `bridge/apollo_hubspot_bridge.py` | Cada hora pide al receptor las aperturas nuevas y pasa `apollo_estado` de `enviado` a `abierto` en HubSpot |
 | Relleno | Fase **TRACKING** del puente | Da `tracking_id` a todo contacto de la lista OUTBOUND que no lo tenga, y crea el campo en Apollo si no existe |
+| Panel | Fase **PANEL** del puente + pestaña «panel» del receptor | El puente genera la página del panel con los datos dentro y el receptor la guarda y la sirve (`?ver=1&key=…`) |
 
 ## Visitas a la landing y clics del banner (16/10)
 
@@ -31,6 +32,27 @@ versión 64 del contenedor. La vista previa de Tag Manager dispara la
 etiqueta en su propia página (`/render`, referente `gtm-msr.appspot.com`);
 el receptor y el panel ignoran esas filas, y también las pruebas
 (`utm_source` que empieza por `prueba` o `DIAG`).
+
+## El panel, servido desde el receptor (19/10)
+
+El receptor tiene desde el 19/10 una tercera pestaña, «panel». Cada media
+hora el puente genera la página del panel con todos los datos ya dentro
+(fase PANEL, ver `bridge/README.md`) y la manda con
+`POST URL?panel=1&key=CLAVE` y el cuerpo `{"html": …, "datos": …}`. El
+receptor la guarda troceada (una celda no admite más de 50.000 caracteres;
+cada trozo empieza por `~` para que la hoja no lo tome por una fórmula) y
+la sirve:
+
+- `URL?ver=1&key=CLAVE` — la página, para abrirla en el navegador. La clave
+  va en el enlace, así que ese enlace es tan privado como la clave.
+- `URL?panel=1&key=CLAVE` — JSON `{generado, html, datos}`, para quien quiera
+  los datos sin la página.
+- `URL?diag=1&key=CLAVE` dice ahora también cuándo se generó el panel guardado.
+
+Hasta que se publique la versión del script con `doPost` (Implementar →
+Gestionar implementaciones → lápiz → Nueva versión), el puente avisa en el
+log «el receptor no acepta todavía el panel» y sigue; la página se genera
+igual y se sube como artefacto cifrado de la pasada.
 
 Por qué así y no con Google Analytics: la web lleva GA4 (`G-7LN8GNKJM8`),
 pero no hay forma de leerlo desde el panel ni desde el puente (la prueba de

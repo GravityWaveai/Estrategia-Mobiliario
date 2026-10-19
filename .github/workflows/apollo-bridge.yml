@@ -65,4 +65,20 @@ jobs:
           # 16/10 estuvo escrita aquí y por eso se cambió.
           APERTURAS_URL: 'https://script.google.com/macros/s/AKfycbxGCY4zJU395WGvBjVsRZxMXnXwm_jC0-h2os7ZTISnWZpoN-60HaXAeqaqy76SOIf7/exec'
           APERTURAS_KEY: ${{ secrets.APERTURAS_KEY }}
+          # La fase PANEL genera la página del panel con los datos dentro y la
+          # manda al receptor (?panel=1). Además deja aquí una copia cifrada
+          # con APERTURAS_KEY, que el paso de abajo sube como artefacto: así se
+          # puede recoger la página de la pasada sin pasar por el receptor
+          # (bridge/descifrar_panel.py). Cifrada porque el repositorio es
+          # público y el panel lleva nombres y correos de los ayuntamientos.
+          PANEL_SALIDA: ${{ runner.temp }}/panel/relanzamiento.bin
         run: python3 bridge/apollo_hubspot_bridge.py
+
+      - name: Guardar el panel de la pasada
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: panel
+          path: ${{ runner.temp }}/panel/relanzamiento.bin
+          retention-days: 2
+          if-no-files-found: ignore
