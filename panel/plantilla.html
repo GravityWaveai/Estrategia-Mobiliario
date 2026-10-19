@@ -1,0 +1,402 @@
+<title>Relanzamiento Mobiliario Urbano</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: cabecera petróleo con antetítulo/titular GW, luego una columna de 1120px con filas que
+   apilan a una columna en móvil. Los datos van embebidos (DATOS, al final): los genera el puente y no dependen de ninguna conexión del lector. */
+@font-face{font-family:'Cera Pro';font-weight:900;font-style:normal;font-display:swap;src:url(fonts/CeraPro-Black-latin.woff2) format('woff2')}
+@font-face{font-family:'Cera Pro';font-weight:500;font-style:normal;font-display:swap;src:url(fonts/CeraPro-Medium-latin.woff2) format('woff2')}
+@font-face{font-family:'Cera Pro';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/CeraPro-Regular-latin.woff2) format('woff2')}
+:root{
+  --bg:#FFFFFF; --surface:#F1F6F7; --surface-2:#E3EDEF; --fg:#101820; --muted:#4F6A73; --line:#D3E0E3;
+  --accent:#00ADB5; --deep:#1E6778; --deep-2:#6FA0AC; --neg:#5B6B70; --band:#01313D; --band-fg:#FFFFFF; --band-muted:#9DBAC1;
+  --display:'Cera Pro','Poppins',system-ui,sans-serif; --body:'Cera Pro','Poppins',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#01313D; --surface:#0A3F4C; --surface-2:#124A57; --fg:#FFFFFF; --muted:#9DBAC1; --line:#1E5663;
+  --accent:#00ADB5; --deep:#3C8A9B; --deep-2:#2A6B79; --neg:#8A9AA0; --band:#012530; --band-fg:#FFFFFF; --band-muted:#9DBAC1; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#01313D; --surface:#0A3F4C; --surface-2:#124A57; --fg:#FFFFFF; --muted:#9DBAC1; --line:#1E5663;
+  --accent:#00ADB5; --deep:#3C8A9B; --deep-2:#2A6B79; --neg:#8A9AA0; --band:#012530; --band-fg:#FFFFFF; --band-muted:#9DBAC1; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{background:var(--band);color:var(--band-fg)}
+.band .wrap{padding-block:36px 28px;display:flex;flex-wrap:wrap;gap:24px 40px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(34px,6vw,58px);line-height:.96;letter-spacing:-.02em;margin:0;text-transform:uppercase;text-wrap:balance}
+h1 small{display:block;font-weight:400;font-size:.42em;letter-spacing:0;text-transform:none;color:var(--band-muted);margin-top:10px;line-height:1.3}
+.estado{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px 28px;font-size:13px;color:var(--band-muted)}
+.estado b{display:block;color:var(--band-fg);font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:-.01em}
+.estado .on b{color:var(--accent)}
+main .wrap{padding-block:28px 56px;display:grid;gap:28px}
+h2{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:-.02em;line-height:1.1;margin:0 0 4px;text-transform:uppercase}
+h2 + p.sub{margin:0 0 16px;color:var(--muted);font-size:14px;max-width:64ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--surface);padding:16px 16px 14px;min-width:0}
+.tile .k{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--display);font-weight:900;font-size:40px;line-height:1;letter-spacing:-.02em;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.tile.hi .v{color:var(--accent)}
+.tile .s{font-size:12px;color:var(--muted);line-height:1.4}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}.estado{grid-template-columns:1fr 1fr}}
+.panel{min-width:0}
+.bars{display:grid;gap:8px;margin-top:6px}
+.bar{display:grid;grid-template-columns:minmax(120px,34%) 1fr auto;gap:12px;align-items:center;font-size:14px}
+.bar .lab{color:var(--fg);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .trk{height:14px;background:var(--surface-2);position:relative;border-radius:0 3px 3px 0}
+.bar .fil{position:absolute;inset:0 auto 0 0;background:var(--deep);border-radius:0 3px 3px 0;min-width:0}
+.bar.hi .fil{background:var(--accent)}
+.bar.neg .fil{background:var(--neg)}
+.bar .n{font-family:var(--display);font-weight:900;font-variant-numeric:tabular-nums;min-width:3ch;text-align:right}
+.bar .n small{font-weight:400;color:var(--muted);font-size:12px;margin-left:4px}
+.aviso{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;font-size:14px}
+.aviso + .aviso{margin-top:8px}
+.keyform{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.keyform input{font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--surface-2);border-radius:4px;background:var(--bg);color:var(--fg);min-width:200px}
+.keyform button{font:inherit;font-size:13px;padding:4px 10px;border:0;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer}
+.aviso b{font-family:var(--display);font-weight:900}
+.avisos.ok .aviso{border-left-color:var(--deep-2)}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.chart .grid line{stroke:var(--line);stroke-width:1}
+.chart rect.d{fill:var(--deep)}
+.chart rect.d.rel{fill:var(--accent)}
+.chart .mark{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3}
+.chart .markt{fill:var(--accent);font-weight:500;letter-spacing:.1em;font-size:10px}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:5px 11px;font:500 12px var(--display);letter-spacing:.04em;cursor:pointer;border-radius:999px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible,.buscar:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.buscar{border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:6px 10px;font:14px var(--body);min-width:200px;flex:1 1 200px}
+.tabla{overflow-x:auto;border-top:2px solid var(--fg)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+th{text-align:left;font:500 11px var(--display);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:10px 10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+td.mun{font-family:var(--display);font-weight:900;letter-spacing:-.01em;white-space:nowrap}
+td .who{display:block;font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font:500 11px var(--display);letter-spacing:.06em;text-transform:uppercase;background:var(--surface-2);color:var(--fg);white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--deep-2)}
+.pill.enviado::before{background:var(--deep-2)}
+.pill.abierto::before{background:var(--deep)}
+.pill.respondido::before,.pill.reunion_agendada::before{background:var(--accent)}
+.pill.rebotado::before,.pill.finalizado::before{background:var(--neg)}
+.pill.rebotado,.pill.finalizado{color:var(--muted)}
+.muted{color:var(--muted)}
+.lista{border-top:2px solid var(--fg)}
+.lista .fila{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
+.lista .fila .q{font-family:var(--display);font-weight:900;letter-spacing:-.01em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lista .fila .d{color:var(--muted);font-size:13px;white-space:nowrap}
+.lista .fila .ok{color:var(--deep)} .lista .fila .ko{color:var(--neg)} .lista .fila .meh{color:var(--muted)}
+.lista .fila .ok::before,.lista .fila .ko::before,.lista .fila .meh::before{content:"●";margin-right:6px;font-size:10px}
+.err{background:var(--surface);padding:14px 16px;font-size:14px;color:var(--fg)}
+.err b{font-family:var(--display);font-weight:900}
+.btn{border:1px solid var(--fg);background:transparent;color:var(--fg);padding:6px 12px;font:500 12px var(--display);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.src{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.src b{font-weight:500;color:var(--fg)}
+.sk{color:var(--muted);font-size:13px}
+.vis{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.firma{font-family:var(--display);font-weight:900;font-size:12px;line-height:1.05;letter-spacing:.02em;color:var(--band-muted);text-transform:uppercase}
+@media (prefers-reduced-motion:no-preference){.bar .fil{transition:width .5s ease}}
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Mobiliario urbano · Ayuntamientos del Mediterráneo</p>
+      <h1>Relanzamiento <small>Secuencia de Amaia desde el 14 de octubre de 2026 · tope de 5 correos al día, seguimientos incluidos</small></h1>
+    </div>
+    <div class="estado" id="estado" aria-live="polite">
+      <div id="e-seq"><span>Secuencia</span><b class="sk">…</b></div>
+      <div id="e-cap"><span>Tope Apollo</span><b class="sk">…</b></div>
+      <div id="e-cola"><span>En cadencia</span><b class="sk">…</b></div>
+      <div id="e-salud"><span>Salud del dominio</span><b class="sk">…</b></div>
+      <div id="e-upd"><span>Datos de</span><b class="sk">…</b></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <section aria-labelledby="h-avisos">
+      <h2 id="h-avisos">Qué hay que mirar hoy</h2>
+      <p class="sub">Lo que el panel detecta solo. Si esta caja está vacía, todo va según lo previsto.</p>
+      <div class="avisos" id="avisos"><div class="aviso sk">…</div></div>
+    </section>
+
+    <section aria-labelledby="h-correos">
+      <h2 id="h-correos">Correos</h2>
+      <p class="sub">Lo que sale del buzón de Amaia según Apollo, acumulado desde el inicio de la campaña (15/09). «Abiertos» sale del píxel propio que lleva cada correo desde el relanzamiento: cuenta ayuntamientos distintos que han cargado el correo con las imágenes activadas, así que mide menos de lo real, nunca más.</p>
+      <div class="tiles" id="tiles">
+        <div class="tile"><div class="k">Enviados</div><div class="v sk">—</div><div class="s">correos salidos</div></div>
+        <div class="tile"><div class="k">Entregados</div><div class="v sk">—</div><div class="s">aceptados por el servidor del ayuntamiento</div></div>
+        <div class="tile"><div class="k">Abiertos</div><div class="v sk">—</div><div class="s">ayuntamientos que han abierto algún correo</div></div>
+        <div class="tile hi"><div class="k">Respondidos</div><div class="v sk">—</div><div class="s">han contestado</div></div>
+        <div class="tile"><div class="k">Rebotados</div><div class="v sk">—</div><div class="s">la dirección no existe</div></div>
+        <div class="tile"><div class="k">Pendientes</div><div class="v sk">—</div><div class="s">en la lista sin inscribir</div></div>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-cadencia">
+        <h2 id="h-cadencia">Cadencia</h2>
+        <p class="sub">Cuántos ayuntamientos han recibido cada uno de los cinco correos (día 0, +5, +10, +16, +23).</p>
+        <div class="bars" id="cadencia"><div class="sk">…</div></div>
+      </section>
+      <section class="panel" aria-labelledby="h-embudo">
+        <h2 id="h-embudo">Embudo en HubSpot</h2>
+        <p class="sub">Estado de cada contacto de la campaña según el puente Apollo ↔ HubSpot.</p>
+        <div class="bars" id="embudo"><div class="sk">…</div></div>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-aperturas">
+        <h2 id="h-aperturas">Últimas aperturas</h2>
+        <p class="sub">Quién ha abierto qué correo, según el píxel propio. Solo ayuntamientos de la lista; las pruebas internas no cuentan.</p>
+        <div class="lista" id="aperturas"><div class="sk">…</div></div>
+      </section>
+      <section class="panel" aria-labelledby="h-salud">
+        <h2 id="h-salud">Salud del envío</h2>
+        <p class="sub">Lo que hace que un correo de Amaia llegue a la bandeja de entrada y no a spam. El puente consulta el DNS del dominio en cada pasada.</p>
+        <div class="lista" id="salud"><div class="sk">…</div></div>
+      </section>
+    </div>
+
+    <section aria-labelledby="h-inbound">
+      <h2 id="h-inbound">Inbound · formulario de la web</h2>
+      <p class="sub">Del banner de la home a la landing <a href="https://www.thegravitywave.com/mobiliario-urbano/" target="_blank" rel="noopener">thegravitywave.com/mobiliario-urbano</a>, de la landing al formulario, y del formulario a la secuencia INBOUND de Amaia. Las visitas las mide nuestro propio receptor (fragmento en Google Tag Manager); los clics del banner son las visitas que llegan con <code>utm_source=home&amp;utm_medium=banner</code>.</p>
+      <div class="tiles" id="tiles-vis">
+        <div class="tile"><div class="k">Visitas a la landing</div><div class="v sk">—</div><div class="s">últimos 30 días</div></div>
+        <div class="tile hi"><div class="k">Clics del banner</div><div class="v sk">—</div><div class="s">visitas que llegan desde la home</div></div>
+        <div class="tile"><div class="k">Hoy</div><div class="v sk">—</div><div class="s">visitas de hoy</div></div>
+        <div class="tile"><div class="k">Formulario</div><div class="v sk">—</div><div class="s">visitas que acaban en lead</div></div>
+      </div>
+      <div class="grid2">
+        <div>
+          <h3 class="sub" style="margin:0 0 8px;font-weight:600">De dónde vienen las visitas</h3>
+          <div class="bars" id="origenes"><div class="sk">…</div></div>
+        </div>
+        <div>
+          <h3 class="sub" style="margin:0 0 8px;font-weight:600">Visitas por día</h3>
+          <div id="visdias"><div class="sk">…</div></div>
+        </div>
+      </div>
+      <div class="tiles" id="tiles-in" style="margin-top:18px">
+        <div class="tile hi"><div class="k">Leads web</div><div class="v sk">—</div><div class="s">formularios recibidos desde el 15/09</div></div>
+        <div class="tile"><div class="k">Últimos 30 días</div><div class="v sk">—</div><div class="s">leads nuevos</div></div>
+        <div class="tile"><div class="k">En cadencia INBOUND</div><div class="v sk">—</div><div class="s">recibiendo los correos de Amaia</div></div>
+        <div class="tile"><div class="k">Respondieron</div><div class="v sk">—</div><div class="s">a la secuencia INBOUND</div></div>
+      </div>
+      <div class="lista" id="leads"><div class="sk">…</div></div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-dias">
+        <h2 id="h-dias">Inscripciones por día</h2>
+        <p class="sub">Ayuntamientos que entran en la secuencia cada día. La línea marca el relanzamiento.</p>
+        <div id="dias"><div class="sk">…</div></div>
+      </section>
+      <section class="panel" aria-labelledby="h-negocios">
+        <h2 id="h-negocios">Negocios por etapa</h2>
+        <p class="sub">Pipeline «Mobiliario Urbano» en HubSpot.</p>
+        <div class="bars" id="negocios"><div class="sk">…</div></div>
+      </section>
+    </div>
+
+    <section aria-labelledby="h-tabla">
+      <h2 id="h-tabla">Ayuntamiento a ayuntamiento</h2>
+      <p class="sub">Todos los contactos de la campaña. Pulsa un estado para filtrar; cada fila abre la ficha en HubSpot.</p>
+      <div class="filtros" id="filtros">
+        <button class="chip" aria-pressed="true" data-f="">Todos</button>
+        <button class="chip" aria-pressed="false" data-f="enviado">Enviado</button>
+        <button class="chip" aria-pressed="false" data-f="abierto">Abierto</button>
+        <button class="chip" aria-pressed="false" data-f="respondido">Respondido</button>
+        <button class="chip" aria-pressed="false" data-f="reunion_agendada">Reunión</button>
+        <button class="chip" aria-pressed="false" data-f="finalizado">Sin respuesta</button>
+        <button class="chip" aria-pressed="false" data-f="rebotado">Rebotado</button>
+        <button class="chip" aria-pressed="false" data-f="(sin)">Sin inscribir</button>
+        <label class="vis" for="q">Buscar municipio</label>
+        <input class="buscar" id="q" type="search" placeholder="Buscar municipio o correo…" autocomplete="off">
+      </div>
+      <div class="tabla"><table id="tabla">
+        <thead><tr><th>Municipio</th><th>Estado</th><th>Inscrito</th><th>Abrió</th><th>Respondió</th><th>Negocio</th><th>Ficha</th></tr></thead>
+        <tbody><tr><td colspan="7" class="sk">…</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <p class="src" id="src"><b>Fuentes.</b> Apollo: secuencia «OUTBOUND · Mobiliario Urbano — Ayuntamientos» (envíos, entregas, rebotes, cadencia). Aperturas y visitas: receptor propio en Google Apps Script (hoja «Aperturas · Mobiliario Urbano»), alimentado por el píxel de los correos y por el fragmento de Google Tag Manager de la landing. Salud del dominio: DNS público (SPF, DMARC, DKIM) más rebotes y bloqueos de Apollo; el porcentaje de la cabecera suma 25 SPF, 25 DKIM propio (10 si firma Google), 20 DMARC (10 si cubre menos del 100%), 20 rebotes bajo el 2% y 10 sin bloqueos de spam. Inbound: contactos de HubSpot con <code>productos_interes</code> y secuencia «INBOUND · Mobiliario Urbano — Lead web». HubSpot: contactos con <code>campana_apollo = mobiliario_urbano</code> y negocios del pipeline Mobiliario Urbano. <span id="src-gen"></span></p>
+  </div>
+</main>
+
+<script>
+(function(){
+// El puente (bridge/apollo_hubspot_bridge.py, fase PANEL) sustituye la línea siguiente por los datos reales.
+const D = /*DATOS*/null;
+
+const ETAPAS={'5948376264':'Información enviada','5948376265':'Muestra interés','5948376266':'Propuesta enviada','5948376267':'Reunión agendada','5948376268':'Negociación','5948376269':'Ganado','5948376270':'Descartado'};
+const ORDEN_ETAPAS=['5948376264','5948376265','5948376266','5948376267','5948376268','5948376269','5948376270'];
+const ESTADOS=[['enviado','Enviado'],['abierto','Abierto'],['respondido','Respondido'],['reunion_agendada','Reunión agendada'],['finalizado','Sin respuesta (fin de secuencia)'],['rebotado','Rebotado'],['(sin)','Sin inscribir todavía']];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fecha=v=>{ if(!v) return null; const d=new Date(/^\d+$/.test(String(v))?Number(v):v); return isNaN(d)?null:d; };
+const fmtDate=v=>{ const d=fecha(v); return d?d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}):'—'; };
+const fmtHora=d=>d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+const pct=(a,b)=>b?Math.round(100*a/b)+'%':'—';
+const DIA=864e5;
+
+if(!D){
+  $('#avisos').innerHTML='<div class="aviso"><b>Esta copia del panel no lleva datos.</b> La genera el puente Apollo ↔ HubSpot en cada pasada; hay que publicar la versión generada, no la plantilla.</div>';
+  return;
+}
+
+const A=D.apollo||{}, H=D.hubspot||{}, AP=D.aperturas||[], V=D.visitas||[], IN=D.inbound||{}, DNS=D.dns||{};
+const RELANZAMIENTO=D.relanzamiento||'2026-10-14';
+const generado=fecha(D.generado)||new Date();
+const ahora=generado;            // «hoy» y «últimos 30 días» se miden desde el momento en que el puente generó los datos
+const hoy0=new Date(ahora); hoy0.setHours(0,0,0,0);
+
+function barras(el,rows){
+  const max=Math.max(1,...rows.map(r=>r.n));
+  el.innerHTML=rows.map(r=>`<div class="bar ${r.cls||''}"><span class="lab" title="${esc(r.lab)}">${esc(r.lab)}</span><div class="trk" role="img" aria-label="${esc(r.lab)}: ${r.n}"><div class="fil" style="width:${Math.max(r.n?1.5:0,100*r.n/max)}%"></div></div><span class="n">${r.n}${r.s?`<small>${esc(r.s)}</small>`:''}</span></div>`).join('')||'<div class="sk">Sin datos todavía.</div>';
+}
+function tile(sel,i,v,s){ const t=$(sel).children[i]; t.querySelector('.v').textContent=v; t.querySelector('.v').classList.remove('sk'); if(s!=null) t.querySelector('.s').textContent=s; }
+
+/* ---------- cabecera ---------- */
+const cs=A.contact_statuses||{}; const enCola=(+cs.active||0)+(+cs.paused||0);
+$('#e-seq').innerHTML=`<span>Secuencia</span><b>${A.active?'Activa':'Pausada'}</b>`; $('#e-seq').className=A.active?'on':'';
+$('#e-cap').innerHTML=`<span>Tope Apollo</span><b>${A.max_emails_per_day??'—'}/día</b>`;
+$('#e-cola').innerHTML=`<span>En cadencia</span><b>${enCola}</b>`;
+$('#e-upd').innerHTML=`<span>Datos de</span><b>${fmtHora(generado)} · ${generado.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})}</b>`;
+$('#src-gen').textContent=`Datos generados por el puente el ${generado.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})} a las ${fmtHora(generado)} (hora de quien mira el panel). Se regeneran en cada pasada del puente; el panel publicado se refresca varias veces al día.`;
+
+/* ---------- correos ---------- */
+const steps=(A.steps||[]).slice().sort((a,b)=>a.position-b.position);
+const enviados=steps.reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0);
+const entregados=steps.reduce((s,x)=>s+(+x.delivered||0),0);
+const resp=+A.unique_replied||0, reb=+A.unique_bounced||0;
+const abiertos=new Set(AP.map(x=>x.contacto)).size;
+const pend=D.lista&&D.lista.total!=null?Math.max(0,D.lista.total-((+cs.active||0)+(+cs.paused||0)+(+cs.finished||0)+(+cs.bounced||0)+(+cs.not_sent||0))):null;
+tile('#tiles',0,enviados,'correos salidos del buzón');
+tile('#tiles',1,entregados,`${pct(entregados,enviados)} de los enviados`);
+tile('#tiles',2,abiertos,`${pct(abiertos,entregados)} de los entregados · ${AP.length} apertura(s) registradas desde el relanzamiento`);
+tile('#tiles',3,resp,`${pct(resp,entregados)} de los entregados`);
+tile('#tiles',4,reb,`${pct(reb,enviados)} de los enviados · Apollo pausa al 4%`);
+if(pend!=null) tile('#tiles',5,pend,'en la lista, aún sin inscribir');
+barras($('#cadencia'),steps.map(s=>{const k=new Set(AP.filter(x=>String(x.paso)===String(s.position)).map(x=>x.contacto)).size;
+  return {lab:`Correo ${s.position}${s.position===1?' (día 0)':` (+${steps.slice(1,s.position).reduce((a,b)=>a+(+b.wait_time||0),0)} días)`}`,n:+s.delivered||0,s:[(+s.replied?`${s.replied} resp.`:''),(k?`${k} abiertos`:'')].filter(Boolean).join(' · ')};}));
+
+/* ---------- aperturas ---------- */
+(function(){
+  const el=$('#aperturas'); const ap=AP.slice().sort((a,b)=>fecha(b.fecha)-fecha(a.fecha));
+  const vistos=new Set(); const filas=[];
+  for(const a of ap){ const k=a.contacto+'|'+a.paso; if(vistos.has(k)) continue; vistos.add(k); const n=ap.filter(x=>x.contacto===a.contacto&&x.paso===a.paso).length; const d=fecha(a.fecha);
+    filas.push(`<div class="fila"><span class="q" title="${esc(a.email||'')}">${esc(a.municipio||a.contacto)}</span><span class="d">correo ${esc(a.paso||'?')}${n>1?` · ${n} veces`:''}</span><span class="d">${d?d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+' '+fmtHora(d):''}</span></div>`); if(filas.length>=12) break; }
+  el.innerHTML=filas.join('')||'<div class="sk">Todavía ninguna apertura desde el relanzamiento.</div>';
+})();
+
+/* ---------- salud ---------- */
+let salud=null;
+(function(){
+  const filas=[]; const d=DNS;
+  if(d&&d.consultado!==false){
+    filas.push({c:d.spf?'ok':'ko',q:'SPF',d:d.spf?(/_spf\.google\.com/.test(d.spf)?'autoriza a Google a enviar por el dominio':'existe, pero no incluye a Google'):'no hay registro SPF'});
+    const pctD=d.dmarc&&/pct=(\d+)/i.test(d.dmarc)?+d.dmarc.match(/pct=(\d+)/i)[1]:100;
+    filas.push({c:d.dmarc?(pctD<100?'meh':'ok'):'ko',q:'DMARC',d:d.dmarc?`política ${(d.dmarc.match(/p=(\w+)/i)||[])[1]||'?'}${pctD<100?` aplicada solo al ${pctD}% del correo`:''}`:'no hay registro DMARC'});
+    filas.push({c:d.dkim?'ok':'meh',q:'DKIM propio',d:d.dkim?'firma con la clave del dominio':'sin clave propia: firma Google por defecto (vale, pero se rompe si reenvían el correo)'});
+  } else filas.push({c:'meh',q:'DNS',d:'el puente no pudo consultar el DNS en esta pasada'});
+  const spam=+A.unique_spam_blocked||0; const pctR=enviados?reb/enviados:0;
+  filas.push({c:pctR>=0.04?'ko':(pctR>=0.03?'meh':'ok'),q:'Rebotes',d:`${pct(reb,enviados)} de ${enviados} enviados · Apollo avisa al 3% y pausa al 4%`});
+  filas.push({c:spam?'ko':'ok',q:'Bloqueos por spam',d:spam?`${spam} correo(s) rechazados como spam`:'ninguno'});
+  filas.push({c:A.active?'ok':'ko',q:'Buzón de Amaia en Apollo',d:A.active?`enviando, tope ${A.max_emails_per_day}/día`:'secuencia pausada'});
+  $('#salud').innerHTML=filas.map(f=>`<div class="fila"><span class="${f.c}"></span><span class="q">${esc(f.q)}</span><span class="d">${esc(f.d)}</span></div>`).join('');
+  // 25 SPF · 25 DKIM propio (10 si firma Google) · 20 DMARC (10 si pct<100) · 20 rebotes bajo el 2% (10 bajo el 4%) · 10 sin bloqueos de spam.
+  if(d&&d.consultado!==false){ const pctD=d.dmarc&&/pct=(\d+)/i.test(d.dmarc)?+d.dmarc.match(/pct=(\d+)/i)[1]:100;
+    salud=(d.spf?25:0)+(d.dkim?25:10)+(d.dmarc?(pctD<100?10:20):0)+(pctR<0.02?20:(pctR<0.04?10:0))+(spam?0:10);
+    const b=$('#e-salud b'); b.textContent=`${salud}%`; b.classList.remove('sk'); b.title='SPF, DKIM, DMARC, rebotes y bloqueos de spam'; $('#e-salud').className=salud>=80?'on':''; }
+  else { const b=$('#e-salud b'); b.textContent='—'; b.classList.remove('sk'); }
+})();
+
+/* ---------- inbound: visitas, origen, por día, leads ---------- */
+const esBanner=v=>(v.utm_source||'').toLowerCase()==='home'&&(v.utm_medium||'').toLowerCase()==='banner';
+const leads=(H.leads||[]);
+(function(){
+  const hace30=ahora.getTime()-30*DIA;
+  const v30=V.filter(v=>fecha(v.fecha)>hace30); const banner=v30.filter(esBanner).length; const hoyN=V.filter(v=>fecha(v.fecha)>=hoy0).length;
+  const leads30=leads.filter(c=>fecha(c.fecha)>hace30).length;
+  if(D.visitas_desde){ tile('#tiles-vis',0,v30.length,`desde el ${fmtDate(D.visitas_desde)}, cuando empezó a medirse`); } else tile('#tiles-vis',0,v30.length);
+  tile('#tiles-vis',1,banner,v30.length?`${pct(banner,v30.length)} de las visitas`:'visitas que llegan desde la home');
+  tile('#tiles-vis',2,hoyN);
+  tile('#tiles-vis',3,leads30,v30.length?`${pct(leads30,v30.length)} de las visitas acaban en formulario`:'visitas que acaban en lead');
+  const org={}; v30.forEach(v=>{ const k=esBanner(v)?'Banner de la home':(v.utm_source?`${v.utm_source} / ${v.utm_medium||'?'}`:(v.referente&&!/thegravitywave/.test(v.referente)?v.referente:(v.referente?'Otra página de la web':'Directo / sin referente'))); org[k]=(org[k]||0)+1; });
+  barras($('#origenes'),Object.entries(org).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([lab,n])=>({lab,n,cls:lab==='Banner de la home'?'hi':''})));
+  const dias=[]; for(let i=29;i>=0;i--){const d=new Date(hoy0);d.setDate(hoy0.getDate()-i);dias.push(d);} const key=d=>d.toISOString().slice(0,10);
+  const m={},mb={}; v30.forEach(v=>{const k=key(fecha(v.fecha)); m[k]=(m[k]||0)+1; if(esBanner(v)) mb[k]=(mb[k]||0)+1;});
+  const vals=dias.map(d=>m[key(d)]||0); const max=Math.max(5,...vals); const W=520,Hh=160,pl=28,pr=8,pt=12,pb=26; const iw=W-pl-pr, ih=Hh-pt-pb; const bw=iw/dias.length; const y=v=>pt+ih-ih*v/max;
+  let svg=`<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Visitas a la landing por día, últimos 30 días">`;
+  svg+=`<g class="grid">${[0,Math.ceil(max/2),max].map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('')}</g>`;
+  dias.forEach((d,i)=>{const k=key(d); const v=vals[i], b=mb[k]||0; const x=pl+i*bw+1, w=Math.max(1,bw-2); if(v>0) svg+=`<rect class="d" x="${x}" y="${y(v)}" width="${w}" height="${ih*v/max}" rx="2"><title>${d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})}: ${v} visitas, ${b} del banner</title></rect>`; if(b>0) svg+=`<rect class="d rel" x="${x}" y="${y(b)}" width="${w}" height="${ih*b/max}" rx="2"/>`; if(d.getDay()===1) svg+=`<text x="${x+w/2}" y="${Hh-8}" text-anchor="middle">${d.getDate()}/${d.getMonth()+1}</text>`;});
+  svg+='</svg>';
+  $('#visdias').innerHTML=svg+`<p class="muted" style="font-size:13px;margin:6px 0 0">En color, las visitas que vienen del banner de la home.</p>`;
+  tile('#tiles-in',0,leads.length); tile('#tiles-in',1,leads30);
+  $('#leads').innerHTML=leads.slice(0,8).map(c=>`<div class="fila"><span class="q">${esc(c.nombre||c.email||'')}</span><span class="d">${esc(c.productos||'')}</span><span class="d">${fmtDate(c.fecha)}</span><span class="d"><a href="https://app.hubspot.com/contacts/26243090/record/0-1/${esc(c.id)}" target="_blank" rel="noopener">HubSpot ↗</a></span></div>`).join('')||'<div class="sk">Ningún formulario recibido todavía. El formulario existe y valida; lo que falta es tráfico.</div>';
+  tile('#tiles-in',2,+IN.en_cadencia||0,`${+IN.terminados||0} terminaron la cadencia`); tile('#tiles-in',3,+IN.respondieron||0,`de ${+IN.entregados||0} entregados`);
+})();
+
+/* ---------- HubSpot: embudo, negocios, inscripciones por día, tabla ---------- */
+const C=(H.contactos||[]); const N=(H.negocios||[]);
+(function(){
+  const cnt={}; C.forEach(c=>{cnt[c.estado||'(sin)']=(cnt[c.estado||'(sin)']||0)+1;});
+  barras($('#embudo'),ESTADOS.map(([k,l])=>({lab:l,n:cnt[k]||0,cls:k==='respondido'||k==='reunion_agendada'?'hi':(k==='rebotado'||k==='finalizado'?'neg':'')})));
+  const nc={}; N.forEach(d=>{nc[d.etapa]=(nc[d.etapa]||0)+1;});
+  barras($('#negocios'),ORDEN_ETAPAS.map(k=>({lab:ETAPAS[k],n:nc[k]||0,cls:k==='5948376270'?'neg':(['5948376267','5948376268','5948376269'].includes(k)?'hi':'')})));
+  // inscripciones por día (45 días)
+  const dias=[]; for(let i=44;i>=0;i--){const d=new Date(hoy0);d.setDate(hoy0.getDate()-i);dias.push(d);} const key=d=>d.toISOString().slice(0,10);
+  const m={}; C.forEach(c=>{const d=fecha(c.insc); if(!d) return; const k=key(d); m[k]=(m[k]||0)+1;});
+  const vals=dias.map(d=>m[key(d)]||0); const max=Math.max(5,...vals); const W=520,Hh=190,pl=28,pr=8,pt=16,pb=28; const iw=W-pl-pr, ih=Hh-pt-pb; const bw=iw/dias.length; const y=v=>pt+ih-ih*v/max;
+  let svg=`<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Inscripciones por día, últimos 45 días">`;
+  svg+=`<g class="grid">${[0,Math.ceil(max/2),max].map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('')}</g>`;
+  dias.forEach((d,i)=>{const v=vals[i]; const k=key(d); const x=pl+i*bw+1; const w=Math.max(1,bw-2); if(v>0) svg+=`<rect class="d ${k>=RELANZAMIENTO?'rel':''}" x="${x}" y="${y(v)}" width="${w}" height="${ih*v/max}" rx="2"><title>${d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})}: ${v}</title></rect>`; if(d.getDay()===1) svg+=`<text x="${x+w/2}" y="${Hh-10}" text-anchor="middle">${d.getDate()}/${d.getMonth()+1}</text>`;});
+  const ri=dias.findIndex(d=>key(d)===RELANZAMIENTO); if(ri>=0){const x=pl+ri*bw; svg+=`<line class="mark" x1="${x}" x2="${x}" y1="${pt-6}" y2="${pt+ih}"/><text class="markt" x="${x+4}" y="${pt+2}">RELANZAMIENTO</text>`;}
+  svg+='</svg>';
+  const tot=vals.reduce((a,b)=>a+b,0), desde=dias.reduce((s,d,i)=>s+(key(d)>=RELANZAMIENTO?vals[i]:0),0);
+  $('#dias').innerHTML=svg+`<p class="muted" style="font-size:13px;margin:6px 0 0">${tot} inscripciones en 45 días · <b style="color:var(--fg)">${desde}</b> desde el relanzamiento.</p>`;
+})();
+
+let filtro='', q='';
+const ultimaApertura={}; AP.forEach(a=>{ const e=(a.email||'').toLowerCase(); const d=fecha(a.fecha); if(e&&d&&(!ultimaApertura[e]||d>ultimaApertura[e])) ultimaApertura[e]=d; });
+function renderTabla(){
+  const dealPorNombre={}; N.forEach(d=>{const n=(d.nombre||'').replace(/^Mobiliario urbano\s*[—-]\s*/i,'').trim().toLowerCase(); if(n) dealPorNombre[n]=d;});
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const rows=C.map(c=>({id:c.id,mun:c.mun||'(sin municipio)',who:c.who||'',email:c.email||'',estado:c.estado||'',insc:c.insc,resp:c.resp,abrio:ultimaApertura[(c.email||'').toLowerCase()]||null,deal:dealPorNombre[(c.mun||'').toLowerCase()]||null}))
+    .filter(r=>(!filtro||(filtro==='(sin)'?!r.estado:r.estado===filtro))&&(!q||norm(r.mun+' '+r.who+' '+r.email).includes(norm(q))))
+    .sort((a,b)=>((fecha(b.insc)||0)-(fecha(a.insc)||0))||a.mun.localeCompare(b.mun,'es'));
+  const lbl=Object.fromEntries(ESTADOS);
+  $('#tabla tbody').innerHTML=rows.map(r=>`<tr><td class="mun">${esc(r.mun)}<span class="who" style="font-family:var(--body);font-weight:400">${esc(r.who||r.email)}</span></td><td>${r.estado?`<span class="pill ${esc(r.estado)}">${esc(lbl[r.estado]||r.estado)}</span>`:'<span class="muted">sin inscribir</span>'}</td><td>${fmtDate(r.insc)}</td><td>${r.abrio?fmtDate(r.abrio):'—'}</td><td>${fmtDate(r.resp)}</td><td>${r.deal?esc(ETAPAS[r.deal.etapa]||'—'):'<span class="muted">—</span>'}</td><td><a href="https://app.hubspot.com/contacts/26243090/record/0-1/${esc(r.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`).join('')||`<tr><td colspan="7" class="muted">Ningún contacto con ese filtro.</td></tr>`;
+}
+renderTabla();
+$('#filtros').addEventListener('click',e=>{const b=e.target.closest('.chip'); if(!b) return; filtro=b.dataset.f; document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(c===b))); renderTabla();});
+$('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
+
+/* ---------- avisos ---------- */
+(function(){
+  const av=[];
+  const edad=(Date.now()-generado.getTime())/36e5;
+  if(edad>6) av.push(`<b>Estos datos tienen ${Math.round(edad)} horas.</b> El puente los regenera en cada pasada; si el panel publicado no se ha refrescado, mira la última pasada en GitHub.`);
+  if(!A.active) av.push(`<b>La secuencia está pausada${A.status_reason?` (${esc(A.status_reason)})`:''}.</b> No sale ningún correo hasta que alguien la active en Apollo. Los ${enCola} ayuntamientos en cadencia esperan.`);
+  if(A.max_emails_per_day!==5) av.push(`<b>El tope de Apollo es ${A.max_emails_per_day}/día, no 5.</b> Lo acordado es 5 correos al día contando seguimientos.`);
+  if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)}.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). Todos los rebotes son de septiembre; desde el relanzamiento no hay ninguno nuevo.`);
+  if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
+  (A.no_enviados||[]).forEach(x=>{ if(x.motivo==='snippets_missing') av.push(`<b>${esc(x.municipio||x.quien||'Un contacto')} no recibe el correo:</b> le falta el campo «municipio» en Apollo. Se arregla rellenándolo en la ficha del contacto; la secuencia reintenta sola.`); });
+  if(DNS&&DNS.consultado!==false&&(!DNS.spf||!DNS.dmarc)) av.push(`<b>Falta ${!DNS.spf?'SPF':'DMARC'} en el dominio.</b> Sin él, Gmail y Outlook pueden mandar los correos de Amaia a spam.`);
+  if(leads.length&&!leads.some(c=>fecha(c.fecha)>ahora.getTime()-30*DIA)) av.push(`<b>Ningún lead web en 30 días.</b> El formulario funciona y valida; lo que falta es tráfico que llegue hasta él.`);
+  if(!leads.length) av.push(`<b>Ningún formulario real recibido desde el 15/09.</b> El formulario existe y valida; el banner de la home enlaza con UTM desde el 16/10, así que a partir de ahora se verá cuánta gente llega y cuánta rellena.`);
+  if(D.visitas_desde&&(ahora.getTime()-fecha(D.visitas_desde).getTime())>7*DIA&&!V.some(v=>esBanner(v)&&fecha(v.fecha)>ahora.getTime()-7*DIA)) av.push(`<b>Ninguna visita llega etiquetada desde el banner de la home en 7 días.</b> Comprueba que el botón sigue enlazando con <code>utm_source=home&amp;utm_medium=banner</code>.`);
+  if((+IN.spam||0)>0) av.push(`<b>La secuencia INBOUND tiene ${IN.spam} correo(s) bloqueados como spam</b> (de las pruebas de septiembre). Conviene mirar a qué dirección fue antes de que entren leads reales.`);
+  const box=$('#avisos'); box.className='avisos'+(av.length?'':' ok');
+  box.innerHTML=av.length?av.map(x=>`<div class="aviso">${x}</div>`).join(''):'<div class="aviso">Nada que mirar: secuencia en marcha, tope en 5, rebotes bajo control.</div>';
+})();
+})();
+</script>
