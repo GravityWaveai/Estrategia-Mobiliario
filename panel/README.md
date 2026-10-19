@@ -53,7 +53,10 @@ de cada paso; abiertos = contactos distintos con alguna apertura;
 pendientes = lista menos los que ya están en la secuencia; clics del banner =
 visitas con `utm_source=home&utm_medium=banner`; salud del dominio = 25 SPF
 + 25 DKIM propio (10 si firma Google) + 20 DMARC (10 si `pct<100`) + 20
-rebotes <2 % (10 si <4 %) + 10 sin spam.
+rebotes <2 % (10 si <4 %) + 10 sin spam. Los rebotes de la salud son los
+**posteriores al relanzamiento** (seguimientos del correo 2 en adelante más
+los inscritos desde el 14/10): los de septiembre venían de la lista sin
+verificar y se enseñan aparte, como acumulado.
 
 ## Cambiar la plantilla
 

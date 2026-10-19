@@ -652,12 +652,36 @@ def enroll_inbound(sender_id):
         raise RuntimeError(f"{errores} lead(s) no se pudieron inscribir (ver arriba)")
 
 
+def inscritos_hoy():
+    """Cuántos contactos de la campaña ha inscrito ya el puente hoy (UTC),
+    según la fecha de inscripción que él mismo sella en HubSpot."""
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00Z")
+    return len(hs_search_contacts(
+        [{"filters": [{"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+                      {"propertyName": FECHA_INSCRIPCION, "operator": "GTE", "value": hoy}]}],
+        ["email"]))
+
+
 def enroll_outbound(sender_id):
     """Hasta CAP ayuntamientos al día, desde la lista de Apollo."""
     if not apollo_secuencia_activa(SEQ_OUTBOUND, "OUTBOUND"):
         return
+    # Apollo no envía en fin de semana (lunes a viernes, 10-19 h). Inscribir
+    # un sábado y un domingo solo apilaría tres primeros correos el lunes.
+    if datetime.now(timezone.utc).weekday() >= 5:
+        log("OUTBOUND: fin de semana, no se inscribe a nadie")
+        return
+    # El cron de GitHub se salta pasadas (del 14 al 19/10 no hubo ninguna en
+    # la hora prevista, y no entró nadie en seis días). Por eso OUTBOUND corre
+    # en cualquier pasada a partir de la hora de inscripción y es HubSpot quien
+    # dice cuántos han entrado ya hoy: el tope es diario, no por pasada.
+    ya_hoy = inscritos_hoy()
+    cupo = CAP - ya_hoy
+    if cupo <= 0:
+        log(f"OUTBOUND: hoy ya se han inscrito {ya_hoy} (tope {CAP}); nada más hasta mañana")
+        return
     candidatos, sin_municipio, page = {}, [], 1
-    while len(candidatos) < CAP:
+    while len(candidatos) < cupo:
         res = apollo_contacts(page=page, contact_label_ids=[LIST_OUTBOUND])
         lote = res.get("contacts", [])
         if not lote:
@@ -676,7 +700,7 @@ def enroll_outbound(sender_id):
                 sin_municipio.append(f"{c['email']} ({c.get('organization_name') or 'sin organización'})")
                 continue
             candidatos[c["email"]] = c
-            if len(candidatos) >= CAP:
+            if len(candidatos) >= cupo:
                 break
         if page >= res.get("pagination", {}).get("total_pages", 1):
             break
@@ -705,7 +729,8 @@ def enroll_outbound(sender_id):
                     for email, c in candidatos.items() if email.lower() not in ya_procesados}
     saltados = len(candidatos) - len(pendientes)
 
-    log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP})"
+    log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP}"
+        + (f", {ya_hoy} ya inscritos hoy" if ya_hoy else "") + ")"
         + (f", {saltados} descartado(s) por tener ya apollo_estado en HubSpot" if saltados else ""))
     if not pendientes:
         return
@@ -1514,12 +1539,21 @@ def _flujo(datos, nonce, clave):
     return bytes(out)
 
 
+def clave_panel():
+    """Clave con la que se cifra la copia del panel del artefacto. Se deriva del
+    token de HubSpot, que tienen tanto el runner de GitHub como la sesión que
+    republica el panel en claude.ai: así no hay que guardar ni pasar ninguna
+    clave más, y quien tenga el token tiene de todas formas acceso a HubSpot,
+    que es mucho más que el panel."""
+    return hashlib.sha256(("panel-mobiliario|" + HUBSPOT_TOKEN).encode("utf-8")).hexdigest()
+
+
 def cifrar_panel(texto, clave):
-    """Comprime y cifra la página del panel con la clave del receptor, solo con
-    la biblioteca estándar (sin dependencias en el runner). El workflow guarda
-    el resultado como artefacto de la pasada y el repositorio es público, así
-    que el panel —nombres y correos de los ayuntamientos— no puede ir en claro.
-    Lo lee bridge/descifrar_panel.py con la misma clave (APERTURAS_KEY)."""
+    """Comprime y cifra la página del panel, solo con la biblioteca estándar
+    (sin dependencias en el runner). El workflow guarda el resultado como
+    artefacto de la pasada y el repositorio es público, así que el panel
+    —nombres y correos de los ayuntamientos— no puede ir en claro. Lo lee
+    bridge/descifrar_panel.py con la misma clave (clave_panel())."""
     nonce = os.urandom(16)
     return nonce + _flujo(gzip.compress(texto.encode("utf-8")), nonce, clave)
 
@@ -1532,12 +1566,9 @@ def guardar_panel_cifrado(html):
     """Deja en PANEL_SALIDA la copia cifrada para el artefacto del workflow."""
     if not PANEL_SALIDA:
         return False
-    if not APERTURAS_KEY:
-        log("PANEL: sin APERTURAS_KEY no se guarda la copia cifrada")
-        return False
     os.makedirs(os.path.dirname(PANEL_SALIDA) or ".", exist_ok=True)
     with open(PANEL_SALIDA, "wb") as f:
-        f.write(cifrar_panel(html, APERTURAS_KEY))
+        f.write(cifrar_panel(html, clave_panel()))
     log(f"  PANEL: copia cifrada en {PANEL_SALIDA}")
     return True
 
@@ -1604,16 +1635,18 @@ def main():
     # contacto lleve tracking_id, si no Apollo no envía (variable vacía).
     ok &= _fase("TRACKING", fill_tracking_ids)
     ok &= _fase("INBOUND", lambda: enroll_inbound(sender_id))
-    # OUTBOUND solo inscribe una vez al día, a esta hora — si no, el tope de
-    # 50 se salta: el cron corre cada hora, así que sin este freno un lunes
-    # con mucho pendiente (importación semanal) metería 50 en la primera
-    # pasada y otros 50 en la siguiente, la misma mañana.
+    # OUTBOUND inscribe como mucho CAP al día, a partir de esta hora. Hasta el
+    # 19/10 solo corría en la pasada de esa hora exacta, y como GitHub se
+    # salta pasadas (ese día no hubo ninguna entre las 04:54 y las 10:56 UTC)
+    # desde el relanzamiento no había entrado nadie. Ahora corre en cualquier
+    # pasada posterior y enroll_outbound() descuenta lo ya inscrito hoy.
     if not OUTBOUND_ENABLED:
         log("OUTBOUND: desactivado explícitamente (OUTBOUND_ENABLED=0)")
-    elif datetime.now(timezone.utc).hour == HORA_ENVIO_OUTBOUND:
+    elif datetime.now(timezone.utc).hour >= HORA_ENVIO_OUTBOUND:
         ok &= _fase("OUTBOUND", lambda: enroll_outbound(sender_id))
     else:
-        log(f"OUTBOUND: no toca todavía hoy (se inscribe a las {HORA_ENVIO_OUTBOUND}:20 UTC)")
+        log(f"OUTBOUND: no toca todavía hoy (se inscribe en la primera pasada "
+            f"a partir de las {HORA_ENVIO_OUTBOUND}:00 UTC)")
     ok &= _fase("REBOTES", sync_bounces)
     ok &= _fase("APERTURAS", sync_opens)
     # Va al final: así repara también lo que se acabe de inscribir en esta

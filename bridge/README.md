@@ -28,9 +28,14 @@ poner además `OUTBOUND_ENABLED = 0` — con eso el paso OUTBOUND se salta
 entero en cada pasada, pase la hora que pase, y no se toca ni Apollo ni
 HubSpot para esa parte.
 
-**OUTBOUND solo inscribe una vez al día**, a las `OUTBOUND_ENROLL_HOUR` UTC
-(8 por defecto — 10h en España en verano, 9h en invierno), aunque el cron
-corra cada hora. Sin este freno, el tope de 50 no era un tope diario de
+**OUTBOUND inscribe como mucho el tope diario**, en la primera pasada a
+partir de `OUTBOUND_ENROLL_HOUR` UTC (8 por defecto; en el repositorio está
+a 9, las 11h en España) y nunca en fin de semana. Hasta el 19/10 solo corría
+en la pasada de esa hora exacta, y como GitHub se salta pasadas (del 14 al
+19/10 no hubo ninguna entre las 05 y las 10 UTC), desde el relanzamiento no
+había entrado nadie. Ahora corre en cualquier pasada posterior a esa hora y
+`inscritos_hoy()` pregunta a HubSpot cuántos han entrado ya hoy (por
+`apollo_fecha_inscripcion`) para descontarlos del tope. Sin este freno, el tope de 50 no era un tope diario de
 verdad: si había más de 50 candidatos pendientes en un momento dado —por
 ejemplo, tras una importación semanal grande— se inscribían 50 en una pasada
 y otros 50 en la siguiente, la misma mañana. El resto de pasos (RESPUESTA,
@@ -94,7 +99,9 @@ este orden, antes de despausar:
 4. ~~Despausar la secuencia~~ — hecha a mano el 16/10 (13:08 UTC), con 70
    contactos activos y tope 5/día. Los 70 a medio camino retoman con el correo 2
    («Hola de nuevo…», aguanta las tres semanas de pausa); el puente inscribe
-   1 nuevo al día a las 8:20 UTC.
+   1 nuevo al día en la primera pasada a partir de las 9:00 UTC (hasta el
+   19/10 solo en la pasada de esa hora exacta, que GitHub se saltó seis días
+   seguidos: nadie nuevo entre el 14 y el 19/10).
 
 El seguimiento del relanzamiento se mira en el panel
 <https://claude.ai/artifact/6WfgvWDcH8dvKy5HUig6zK>: lee Apollo (envíos,
@@ -544,9 +551,11 @@ La fase **PANEL** corre al final de cada pasada, con HubSpot ya al día:
    como artefacto «panel» de la pasada, dos días de retención. Cifrada
    porque el repositorio es público y el panel lleva nombres y correos de
    los ayuntamientos: `cifrar_panel()` comprime y aplica un flujo
-   HMAC-SHA256 en modo contador con la clave del receptor (`APERTURAS_KEY`),
-   sin dependencias. Se abre con
-   `APERTURAS_KEY=… python3 bridge/descifrar_panel.py relanzamiento.bin > panel.html`.
+   HMAC-SHA256 en modo contador, sin dependencias, con una clave derivada
+   del token de HubSpot (`clave_panel()`): la tienen el runner y la sesión
+   que republica el panel sin guardar nada más, y quien tenga ese token
+   tiene de todas formas HubSpot entero. Se abre con
+   `HUBSPOT_TOKEN=… python3 bridge/descifrar_panel.py relanzamiento.bin > panel.html`.
 
 El panel que se mira en claude.ai es esa misma página, republicada varias
 veces al día a partir del artefacto o del receptor. Para regenerar solo el
@@ -571,7 +580,7 @@ sus contactos eran invisibles para RESPUESTA, PARADA y DESCARTE.
 | Variable | `OUTBOUND_ENABLED` | `0` para desactivar solo OUTBOUND sin tocar INBOUND. Por defecto `1` |
 | — | `OUTBOUND_DAILY_CAP` | fijado a `5` en el workflow desde el 14/10 (relanzamiento con la lista verificada). Se cambia editando `apollo-bridge.yml`, no con una variable |
 | Variable | `OUTBOUND_ENROLL_HOUR` | opcional, hora UTC de la inscripción diaria, por defecto `8` |
-| Secret | `APERTURAS_KEY` | clave del receptor de aperturas; la misma que la propiedad `CLAVE` del script (ver `tracking/README.md`). Protege la lectura de la hoja y el panel, y cifra el artefacto del panel |
+| Secret | `APERTURAS_KEY` | clave del receptor de aperturas; la misma que la propiedad `CLAVE` del script (ver `tracking/README.md`). Protege la lectura de la hoja y del panel servido por el receptor |
 | — | `APERTURAS_URL`, `PANEL_SALIDA` | fijas en el workflow: la URL `/exec` del receptor y dónde deja la fase PANEL la copia cifrada que se sube como artefacto |
 
 ## Primera ejecución
