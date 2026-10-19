@@ -10,6 +10,11 @@ name: Puente Apollo ↔ HubSpot
 on:
   schedule:
     - cron: '20 * * * *'      # cada hora, en el minuto 20
+    # GitHub retrasa o se salta pasadas programadas sin avisar (el 16/10
+    # faltaron cuatro seguidas; el 19/10, seis horas sin pasada). Un segundo
+    # horario a otro minuto reduce los huecos; la concurrencia de abajo
+    # impide que dos pasadas coincidan y el puente es idempotente.
+    - cron: '50 * * * *'
   workflow_dispatch:
     inputs:
       enabled:
