@@ -276,17 +276,29 @@ $('#src-gen').textContent=`Datos generados por el puente el ${generado.toLocaleD
 const steps=(A.steps||[]).slice().sort((a,b)=>a.position-b.position);
 const enviados=steps.reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0);
 const entregados=steps.reduce((s,x)=>s+(+x.delivered||0),0);
-const resp=+A.unique_replied||0, reb=+A.unique_bounced||0;
+// Respuestas: las que detecta HubSpot en el buzón de Amaia (es lo que usa el
+// puente para parar la secuencia). El contador de la secuencia en Apollo
+// (unique_replied) va por libre: el 19/10 decía 3 cuando su propia lista de
+// correos solo tenía 1 respondido.
+const resp=(H.contactos||[]).filter(c=>c.estado==='respondido'||c.estado==='reunion_agendada').length, reb=+A.unique_bounced||0;
 const abiertos=new Set(AP.map(x=>x.contacto)).size;
+// Rebotes desde el relanzamiento (14/10): los de septiembre venían de la lista
+// sin verificar y no dicen nada de la salud de hoy. Se suman los de los
+// seguimientos (correo 2 en adelante, todos posteriores al relanzamiento) y
+// los de los ayuntamientos inscritos desde esa fecha.
+const tRel=(fecha(RELANZAMIENTO)||new Date()).getTime();
+const inscRel=(H.contactos||[]).filter(c=>c.insc&&fecha(c.insc)&&fecha(c.insc).getTime()>=tRel);
+const envRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0)+inscRel.filter(c=>c.estado&&c.estado!=='(sin)').length;
+const rebRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.bounced||0),0)+inscRel.filter(c=>c.estado==='rebotado').length;
 const pend=D.lista&&D.lista.total!=null?Math.max(0,D.lista.total-((+cs.active||0)+(+cs.paused||0)+(+cs.finished||0)+(+cs.bounced||0)+(+cs.not_sent||0))):null;
 tile('#tiles',0,enviados,'correos salidos del buzón');
 tile('#tiles',1,entregados,`${pct(entregados,enviados)} de los enviados`);
 tile('#tiles',2,abiertos,`${pct(abiertos,entregados)} de los entregados · ${AP.length} apertura(s) registradas desde el relanzamiento`);
-tile('#tiles',3,resp,`${pct(resp,entregados)} de los entregados`);
-tile('#tiles',4,reb,`${pct(reb,enviados)} de los enviados · Apollo pausa al 4%`);
+tile('#tiles',3,resp,`${pct(resp,entregados)} de los entregados · respuestas reales en el buzón${+A.unique_replied>resp?` (Apollo cuenta ${A.unique_replied}, pero solo ${resp} correo(s) con respuesta)`:''}`);
+tile('#tiles',4,reb,`${pct(reb,enviados)} de los enviados · ${rebRel} desde el relanzamiento`);
 if(pend!=null) tile('#tiles',5,pend,'en la lista, aún sin inscribir');
 barras($('#cadencia'),steps.map(s=>{const k=new Set(AP.filter(x=>String(x.paso)===String(s.position)).map(x=>x.contacto)).size;
-  return {lab:`Correo ${s.position}${s.position===1?' (día 0)':` (+${steps.slice(1,s.position).reduce((a,b)=>a+(+b.wait_time||0),0)} días)`}`,n:+s.delivered||0,s:[(+s.replied?`${s.replied} resp.`:''),(k?`${k} abiertos`:'')].filter(Boolean).join(' · ')};}));
+  return {lab:`Correo ${s.position}${s.position===1?' (día 0)':` (+${steps.slice(1,s.position).reduce((a,b)=>a+(+b.wait_time||0),0)} días)`}`,n:+s.delivered||0,s:k?`${k} abiertos`:''};}));
 
 /* ---------- aperturas ---------- */
 (function(){
@@ -307,12 +319,12 @@ let salud=null;
     filas.push({c:d.dmarc?(pctD<100?'meh':'ok'):'ko',q:'DMARC',d:d.dmarc?`política ${(d.dmarc.match(/p=(\w+)/i)||[])[1]||'?'}${pctD<100?` aplicada solo al ${pctD}% del correo`:''}`:'no hay registro DMARC'});
     filas.push({c:d.dkim?'ok':'meh',q:'DKIM propio',d:d.dkim?'firma con la clave del dominio':'sin clave propia: firma Google por defecto (vale, pero se rompe si reenvían el correo)'});
   } else filas.push({c:'meh',q:'DNS',d:'el puente no pudo consultar el DNS en esta pasada'});
-  const spam=+A.unique_spam_blocked||0; const pctR=enviados?reb/enviados:0;
-  filas.push({c:pctR>=0.04?'ko':(pctR>=0.03?'meh':'ok'),q:'Rebotes',d:`${pct(reb,enviados)} de ${enviados} enviados · Apollo avisa al 3% y pausa al 4%`});
+  const spam=+A.unique_spam_blocked||0; const pctR=envRel?rebRel/envRel:0;
+  filas.push({c:pctR>=0.04?'ko':(pctR>=0.03?'meh':'ok'),q:'Rebotes',d:`${rebRel} de ${envRel} enviados desde el relanzamiento${reb?` · ${pct(reb,enviados)} acumulado desde septiembre (${reb} de ${enviados}, lista antigua)`:''} · Apollo avisa al 3% y pausa al 4%`});
   filas.push({c:spam?'ko':'ok',q:'Bloqueos por spam',d:spam?`${spam} correo(s) rechazados como spam`:'ninguno'});
   filas.push({c:A.active?'ok':'ko',q:'Buzón de Amaia en Apollo',d:A.active?`enviando, tope ${A.max_emails_per_day}/día`:'secuencia pausada'});
   $('#salud').innerHTML=filas.map(f=>`<div class="fila"><span class="${f.c}"></span><span class="q">${esc(f.q)}</span><span class="d">${esc(f.d)}</span></div>`).join('');
-  // 25 SPF · 25 DKIM propio (10 si firma Google) · 20 DMARC (10 si pct<100) · 20 rebotes bajo el 2% (10 bajo el 4%) · 10 sin bloqueos de spam.
+  // 25 SPF · 25 DKIM propio (10 si firma Google) · 20 DMARC (10 si pct<100) · 20 rebotes bajo el 2% desde el relanzamiento (10 bajo el 4%) · 10 sin bloqueos de spam.
   if(d&&d.consultado!==false){ const pctD=d.dmarc&&/pct=(\d+)/i.test(d.dmarc)?+d.dmarc.match(/pct=(\d+)/i)[1]:100;
     salud=(d.spf?25:0)+(d.dkim?25:10)+(d.dmarc?(pctD<100?10:20):0)+(pctR<0.02?20:(pctR<0.04?10:0))+(spam?0:10);
     const b=$('#e-salud b'); b.textContent=`${salud}%`; b.classList.remove('sk'); b.title='SPF, DKIM, DMARC, rebotes y bloqueos de spam'; $('#e-salud').className=salud>=80?'on':''; }
@@ -387,7 +399,8 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
   if(edad>6) av.push(`<b>Estos datos tienen ${Math.round(edad)} horas.</b> El puente los regenera en cada pasada; si el panel publicado no se ha refrescado, mira la última pasada en GitHub.`);
   if(!A.active) av.push(`<b>La secuencia está pausada${A.status_reason?` (${esc(A.status_reason)})`:''}.</b> No sale ningún correo hasta que alguien la active en Apollo. Los ${enCola} ayuntamientos en cadencia esperan.`);
   if(A.max_emails_per_day!==5) av.push(`<b>El tope de Apollo es ${A.max_emails_per_day}/día, no 5.</b> Lo acordado es 5 correos al día contando seguimientos.`);
-  if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)}.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). Todos los rebotes son de septiembre; desde el relanzamiento no hay ninguno nuevo.`);
+  if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)} acumulado.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). ${rebRel?`<b>${rebRel} rebote(s) desde el relanzamiento</b> de ${envRel} enviados: conviene revisar esas direcciones.`:`Todos son de septiembre (lista antigua); desde el relanzamiento, 0 de ${envRel}.`}`);
+  if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${A.max_emails_per_day===5?'1':'alguno'} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
   if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
   (A.no_enviados||[]).forEach(x=>{ if(x.motivo==='snippets_missing') av.push(`<b>${esc(x.municipio||x.quien||'Un contacto')} no recibe el correo:</b> le falta el campo «municipio» en Apollo. Se arregla rellenándolo en la ficha del contacto; la secuencia reintenta sola.`); });
   if(DNS&&DNS.consultado!==false&&(!DNS.spf||!DNS.dmarc)) av.push(`<b>Falta ${!DNS.spf?'SPF':'DMARC'} en el dominio.</b> Sin él, Gmail y Outlook pueden mandar los correos de Amaia a spam.`);

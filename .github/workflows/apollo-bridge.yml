@@ -67,10 +67,11 @@ jobs:
           APERTURAS_KEY: ${{ secrets.APERTURAS_KEY }}
           # La fase PANEL genera la página del panel con los datos dentro y la
           # manda al receptor (?panel=1). Además deja aquí una copia cifrada
-          # con APERTURAS_KEY, que el paso de abajo sube como artefacto: así se
-          # puede recoger la página de la pasada sin pasar por el receptor
-          # (bridge/descifrar_panel.py). Cifrada porque el repositorio es
-          # público y el panel lleva nombres y correos de los ayuntamientos.
+          # (clave derivada del token de HubSpot), que el paso de abajo sube
+          # como artefacto: así se puede recoger la página de la pasada sin
+          # pasar por el receptor (bridge/descifrar_panel.py). Cifrada porque
+          # el repositorio es público y el panel lleva nombres y correos de
+          # los ayuntamientos.
           PANEL_SALIDA: ${{ runner.temp }}/panel/relanzamiento.bin
         run: python3 bridge/apollo_hubspot_bridge.py
 
