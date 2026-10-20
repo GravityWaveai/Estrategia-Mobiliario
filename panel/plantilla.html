@@ -99,13 +99,21 @@ td .who{display:block;font-size:12px;color:var(--muted)}
 .vis{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .firma{font-family:var(--display);font-weight:900;font-size:12px;line-height:1.05;letter-spacing:.02em;color:var(--band-muted);text-transform:uppercase}
 @media (prefers-reduced-motion:no-preference){.bar .fil{transition:width .5s ease}}
+.campana{margin-top:44px;padding-top:24px;border-top:4px solid var(--accent)}
+.campana>.eyebrow{margin-bottom:6px}
+h2.camp{font-size:30px;margin-bottom:10px}
+.abh{font-family:var(--display);font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:-.01em;margin:0 0 10px}
+.abh small{display:block;font-family:inherit;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted);margin-top:2px}
+.abh small a{color:inherit}
+.tiles-ab{grid-template-columns:repeat(2,1fr)}
+#ab-nota{margin:10px 0 22px}
 </style>
 
 <header class="band">
   <div class="wrap">
     <div>
       <p class="eyebrow">Mobiliario urbano · Ayuntamientos del Mediterráneo</p>
-      <h1>Relanzamiento <small>Secuencia de Amaia desde el 14 de octubre de 2026 · tope de 5 correos al día, seguimientos incluidos</small></h1>
+      <h1>Relanzamiento <small>Secuencia de Amaia desde el 14 de octubre de 2026 · tope de <span id="sub-tope">…</span> correos al día, seguimientos incluidos</small></h1>
     </div>
     <div class="estado" id="estado" aria-live="polite">
       <div id="e-seq"><span>Secuencia</span><b class="sk">…</b></div>
@@ -126,50 +134,114 @@ td .who{display:block;font-size:12px;color:var(--muted)}
       <div class="avisos" id="avisos"><div class="aviso sk">…</div></div>
     </section>
 
-    <section aria-labelledby="h-correos">
-      <h2 id="h-correos">Correos</h2>
-      <p class="sub">Lo que sale del buzón de Amaia según Apollo, acumulado desde el inicio de la campaña (15/09). «Abiertos» sale del píxel propio que lleva cada correo desde el relanzamiento: cuenta ayuntamientos distintos que han cargado el correo con las imágenes activadas, así que mide menos de lo real, nunca más.</p>
-      <div class="tiles" id="tiles">
-        <div class="tile"><div class="k">Enviados</div><div class="v sk">—</div><div class="s">correos salidos</div></div>
-        <div class="tile"><div class="k">Entregados</div><div class="v sk">—</div><div class="s">aceptados por el servidor del ayuntamiento</div></div>
-        <div class="tile"><div class="k">Abiertos</div><div class="v sk">—</div><div class="s">ayuntamientos que han abierto algún correo</div></div>
-        <div class="tile hi"><div class="k">Respondidos</div><div class="v sk">—</div><div class="s">han contestado</div></div>
-        <div class="tile"><div class="k">Rebotados</div><div class="v sk">—</div><div class="s">la dirección no existe</div></div>
-        <div class="tile"><div class="k">Pendientes</div><div class="v sk">—</div><div class="s">en la lista sin inscribir</div></div>
+    <div class="campana" id="c-outbound">
+      <p class="eyebrow">Campaña 1 · Outbound</p>
+      <h2 class="camp">Correos de Amaia a los ayuntamientos</h2>
+      <p class="sub">Apollo manda a cada ayuntamiento de la lista cinco correos a lo largo de 23 días, como mucho <b id="t-tope">…</b> correos al día en total, seguimientos incluidos. El puente mete <b id="t-nuevos">…</b> ayuntamientos nuevos por día laborable y HubSpot lleva el estado de cada uno.</p>
+
+      <section aria-labelledby="h-correos">
+        <h2 id="h-correos">Correos</h2>
+        <p class="sub">Lo que sale del buzón de Amaia según Apollo, acumulado desde el inicio de la campaña (15/09). «Abiertos» sale del píxel propio que lleva cada correo desde el relanzamiento, y solo cuenta las cargas creíbles: se descartan las del minuto del envío (el servidor del ayuntamiento baja las imágenes al recibir) y las ráfagas en que varios ayuntamientos cargan a la vez (alguien de Gravity Wave mirando los correos enviados). Ni así es una certeza: es lo más parecido a una lectura que un píxel puede medir, y quien lee con las imágenes bloqueadas no aparece nunca. Mide menos de lo real, no más.</p>
+        <div class="tiles" id="tiles">
+          <div class="tile"><div class="k">Enviados</div><div class="v sk">—</div><div class="s">correos salidos</div></div>
+          <div class="tile"><div class="k">Entregados</div><div class="v sk">—</div><div class="s">aceptados por el servidor del ayuntamiento</div></div>
+          <div class="tile"><div class="k">Abiertos</div><div class="v sk">—</div><div class="s">ayuntamientos con alguna carga creíble del píxel</div></div>
+          <div class="tile hi"><div class="k">Respondidos</div><div class="v sk">—</div><div class="s">han contestado</div></div>
+          <div class="tile"><div class="k">Rebotados</div><div class="v sk">—</div><div class="s">la dirección no existe</div></div>
+          <div class="tile"><div class="k">Pendientes</div><div class="v sk">—</div><div class="s">en la lista sin inscribir</div></div>
+        </div>
+      </section>
+
+      <div class="grid2">
+        <section class="panel" aria-labelledby="h-cadencia">
+          <h2 id="h-cadencia">Cadencia</h2>
+          <p class="sub">Cuántos ayuntamientos han recibido cada uno de los cinco correos (día 0, +5, +10, +16, +23).</p>
+          <div class="bars" id="cadencia"><div class="sk">…</div></div>
+        </section>
+        <section class="panel" aria-labelledby="h-embudo">
+          <h2 id="h-embudo">Embudo en HubSpot</h2>
+          <p class="sub">Estado de cada contacto de la campaña según el puente Apollo ↔ HubSpot.</p>
+          <div class="bars" id="embudo"><div class="sk">…</div></div>
+        </section>
       </div>
-    </section>
 
-    <div class="grid2">
-      <section class="panel" aria-labelledby="h-cadencia">
-        <h2 id="h-cadencia">Cadencia</h2>
-        <p class="sub">Cuántos ayuntamientos han recibido cada uno de los cinco correos (día 0, +5, +10, +16, +23).</p>
-        <div class="bars" id="cadencia"><div class="sk">…</div></div>
-      </section>
-      <section class="panel" aria-labelledby="h-embudo">
-        <h2 id="h-embudo">Embudo en HubSpot</h2>
-        <p class="sub">Estado de cada contacto de la campaña según el puente Apollo ↔ HubSpot.</p>
-        <div class="bars" id="embudo"><div class="sk">…</div></div>
+      <div class="grid2">
+        <section class="panel" aria-labelledby="h-aperturas">
+          <h2 id="h-aperturas">Últimas aperturas</h2>
+          <p class="sub">Cargas creíbles del píxel, con el correo al que corresponden. Solo ayuntamientos de la lista; las pruebas internas, las descargas automáticas y las ráfagas no cuentan.</p>
+          <div class="lista" id="aperturas"><div class="sk">…</div></div>
+        </section>
+        <section class="panel" aria-labelledby="h-salud">
+          <h2 id="h-salud">Salud del envío</h2>
+          <p class="sub">Lo que hace que un correo de Amaia llegue a la bandeja de entrada y no a spam. El puente consulta el DNS del dominio en cada pasada.</p>
+          <div class="lista" id="salud"><div class="sk">…</div></div>
+        </section>
+      </div>
+
+      <div class="grid2">
+        <section class="panel" aria-labelledby="h-dias">
+          <h2 id="h-dias">Inscripciones por día</h2>
+          <p class="sub">Ayuntamientos que entran en la secuencia cada día. La línea marca el relanzamiento.</p>
+          <div id="dias"><div class="sk">…</div></div>
+        </section>
+        <section class="panel" aria-labelledby="h-negocios">
+          <h2 id="h-negocios">Negocios por etapa</h2>
+          <p class="sub">Pipeline «Mobiliario Urbano» en HubSpot.</p>
+          <div class="bars" id="negocios"><div class="sk">…</div></div>
+        </section>
+      </div>
+
+      <section aria-labelledby="h-tabla">
+        <h2 id="h-tabla">Ayuntamiento a ayuntamiento</h2>
+        <p class="sub">Todos los contactos de la campaña. Pulsa un estado para filtrar; cada fila abre la ficha en HubSpot.</p>
+        <div class="filtros" id="filtros">
+          <button class="chip" aria-pressed="true" data-f="">Todos</button>
+          <button class="chip" aria-pressed="false" data-f="enviado">Enviado</button>
+          <button class="chip" aria-pressed="false" data-f="abierto">Abierto</button>
+          <button class="chip" aria-pressed="false" data-f="respondido">Respondido</button>
+          <button class="chip" aria-pressed="false" data-f="reunion_agendada">Reunión</button>
+          <button class="chip" aria-pressed="false" data-f="finalizado">Sin respuesta</button>
+          <button class="chip" aria-pressed="false" data-f="rebotado">Rebotado</button>
+          <button class="chip" aria-pressed="false" data-f="(sin)">Sin inscribir</button>
+          <label class="vis" for="q">Buscar municipio</label>
+          <input class="buscar" id="q" type="search" placeholder="Buscar municipio o correo…" autocomplete="off">
+        </div>
+        <div class="tabla"><table id="tabla">
+          <thead><tr><th>Municipio</th><th>Estado</th><th>Inscrito</th><th>Abrió</th><th>Respondió</th><th>Negocio</th><th>Ficha</th></tr></thead>
+          <tbody><tr><td colspan="7" class="sk">…</td></tr></tbody>
+        </table></div>
       </section>
     </div>
 
-    <div class="grid2">
-      <section class="panel" aria-labelledby="h-aperturas">
-        <h2 id="h-aperturas">Últimas aperturas</h2>
-        <p class="sub">Quién ha abierto qué correo, según el píxel propio. Solo ayuntamientos de la lista; las pruebas internas no cuentan.</p>
-        <div class="lista" id="aperturas"><div class="sk">…</div></div>
-      </section>
-      <section class="panel" aria-labelledby="h-salud">
-        <h2 id="h-salud">Salud del envío</h2>
-        <p class="sub">Lo que hace que un correo de Amaia llegue a la bandeja de entrada y no a spam. El puente consulta el DNS del dominio en cada pasada.</p>
-        <div class="lista" id="salud"><div class="sk">…</div></div>
-      </section>
-    </div>
+    <div class="campana" id="c-inbound">
+      <p class="eyebrow">Campaña 2 · Inbound</p>
+      <h2 class="camp">La web: del banner al formulario</h2>
+      <p class="sub">El botón «Descubre más» de la home lleva a la landing de mobiliario urbano. La landing tiene dos versiones iguales salvo en una cosa: la <b>A enseña precios</b> y la <b>B no</b>. A cada visitante le toca una al azar la primera vez y después ve siempre la misma. La pregunta que responde este bloque es cuál de las dos lleva a más formularios. Las visitas las mide nuestro receptor (etiqueta de Google Tag Manager); los clics del banner son las visitas que llegan con <code>utm_source=home&amp;utm_medium=banner</code>; los formularios son los contactos que entran en HubSpot con productos de interés, y esos pasan solos a la secuencia INBOUND de Amaia.</p>
 
-    <section aria-labelledby="h-inbound">
-      <h2 id="h-inbound">Inbound · formulario de la web</h2>
-      <p class="sub">Del banner de la home a la landing <a href="https://www.thegravitywave.com/mobiliario-urbano/" target="_blank" rel="noopener">thegravitywave.com/mobiliario-urbano</a>, de la landing al formulario, y del formulario a la secuencia INBOUND de Amaia. Las visitas las mide nuestro propio receptor (fragmento en Google Tag Manager); los clics del banner son las visitas que llegan con <code>utm_source=home&amp;utm_medium=banner</code>.</p>
+      <div class="grid2 ab">
+        <section class="panel" aria-labelledby="h-ab-a">
+          <h3 id="h-ab-a" class="abh">Test A · con precios <small><a href="https://www.thegravitywave.com/mobiliario-urbano/" target="_blank" rel="noopener">thegravitywave.com/mobiliario-urbano/</a></small></h3>
+          <div class="tiles tiles-ab" id="ab-a">
+            <div class="tile"><div class="k">Visitas</div><div class="v sk">—</div><div class="s">desde que se mide</div></div>
+            <div class="tile"><div class="k">Desde el banner</div><div class="v sk">—</div><div class="s">clics del banner que acabaron aquí</div></div>
+            <div class="tile hi"><div class="k">Formularios</div><div class="v sk">—</div><div class="s">leads que vieron esta versión</div></div>
+            <div class="tile"><div class="k">Conversión</div><div class="v sk">—</div><div class="s">formularios por visita</div></div>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="h-ab-b">
+          <h3 id="h-ab-b" class="abh">Test B · sin precios <small><a href="https://www.thegravitywave.com/mobiliario-urbano-b/" target="_blank" rel="noopener">thegravitywave.com/mobiliario-urbano-b/</a></small></h3>
+          <div class="tiles tiles-ab" id="ab-b">
+            <div class="tile"><div class="k">Visitas</div><div class="v sk">—</div><div class="s">desde que se mide</div></div>
+            <div class="tile"><div class="k">Desde el banner</div><div class="v sk">—</div><div class="s">clics del banner que acabaron aquí</div></div>
+            <div class="tile hi"><div class="k">Formularios</div><div class="v sk">—</div><div class="s">leads que vieron esta versión</div></div>
+            <div class="tile"><div class="k">Conversión</div><div class="v sk">—</div><div class="s">formularios por visita</div></div>
+          </div>
+        </section>
+      </div>
+      <p class="sub" id="ab-nota"></p>
+
       <div class="tiles" id="tiles-vis">
-        <div class="tile"><div class="k">Visitas a la landing</div><div class="v sk">—</div><div class="s">últimos 30 días</div></div>
+        <div class="tile"><div class="k">Visitas a la landing</div><div class="v sk">—</div><div class="s">A y B, últimos 30 días</div></div>
         <div class="tile hi"><div class="k">Clics del banner</div><div class="v sk">—</div><div class="s">visitas que llegan desde la home</div></div>
         <div class="tile"><div class="k">Hoy</div><div class="v sk">—</div><div class="s">visitas de hoy</div></div>
         <div class="tile"><div class="k">Formulario</div><div class="v sk">—</div><div class="s">visitas que acaban en lead</div></div>
@@ -191,43 +263,9 @@ td .who{display:block;font-size:12px;color:var(--muted)}
         <div class="tile"><div class="k">Respondieron</div><div class="v sk">—</div><div class="s">a la secuencia INBOUND</div></div>
       </div>
       <div class="lista" id="leads"><div class="sk">…</div></div>
-    </section>
-
-    <div class="grid2">
-      <section class="panel" aria-labelledby="h-dias">
-        <h2 id="h-dias">Inscripciones por día</h2>
-        <p class="sub">Ayuntamientos que entran en la secuencia cada día. La línea marca el relanzamiento.</p>
-        <div id="dias"><div class="sk">…</div></div>
-      </section>
-      <section class="panel" aria-labelledby="h-negocios">
-        <h2 id="h-negocios">Negocios por etapa</h2>
-        <p class="sub">Pipeline «Mobiliario Urbano» en HubSpot.</p>
-        <div class="bars" id="negocios"><div class="sk">…</div></div>
-      </section>
     </div>
 
-    <section aria-labelledby="h-tabla">
-      <h2 id="h-tabla">Ayuntamiento a ayuntamiento</h2>
-      <p class="sub">Todos los contactos de la campaña. Pulsa un estado para filtrar; cada fila abre la ficha en HubSpot.</p>
-      <div class="filtros" id="filtros">
-        <button class="chip" aria-pressed="true" data-f="">Todos</button>
-        <button class="chip" aria-pressed="false" data-f="enviado">Enviado</button>
-        <button class="chip" aria-pressed="false" data-f="abierto">Abierto</button>
-        <button class="chip" aria-pressed="false" data-f="respondido">Respondido</button>
-        <button class="chip" aria-pressed="false" data-f="reunion_agendada">Reunión</button>
-        <button class="chip" aria-pressed="false" data-f="finalizado">Sin respuesta</button>
-        <button class="chip" aria-pressed="false" data-f="rebotado">Rebotado</button>
-        <button class="chip" aria-pressed="false" data-f="(sin)">Sin inscribir</button>
-        <label class="vis" for="q">Buscar municipio</label>
-        <input class="buscar" id="q" type="search" placeholder="Buscar municipio o correo…" autocomplete="off">
-      </div>
-      <div class="tabla"><table id="tabla">
-        <thead><tr><th>Municipio</th><th>Estado</th><th>Inscrito</th><th>Abrió</th><th>Respondió</th><th>Negocio</th><th>Ficha</th></tr></thead>
-        <tbody><tr><td colspan="7" class="sk">…</td></tr></tbody>
-      </table></div>
-    </section>
-
-    <p class="src" id="src"><b>Fuentes.</b> Apollo: secuencia «OUTBOUND · Mobiliario Urbano — Ayuntamientos» (envíos, entregas, rebotes, cadencia). Aperturas y visitas: receptor propio en Google Apps Script (hoja «Aperturas · Mobiliario Urbano»), alimentado por el píxel de los correos y por el fragmento de Google Tag Manager de la landing. Salud del dominio: DNS público (SPF, DMARC, DKIM) más rebotes y bloqueos de Apollo; el porcentaje de la cabecera suma 25 SPF, 25 DKIM propio (10 si firma Google), 20 DMARC (10 si cubre menos del 100%), 20 rebotes bajo el 2% y 10 sin bloqueos de spam. Inbound: contactos de HubSpot con <code>productos_interes</code> y secuencia «INBOUND · Mobiliario Urbano — Lead web». HubSpot: contactos con <code>campana_apollo = mobiliario_urbano</code> y negocios del pipeline Mobiliario Urbano. <span id="src-gen"></span></p>
+    <p class="src" id="src"><b>Fuentes.</b> Apollo: secuencia «OUTBOUND · Mobiliario Urbano — Ayuntamientos» (envíos, entregas, rebotes, cadencia). Aperturas y visitas: receptor propio en Google Apps Script (hoja «Aperturas · Mobiliario Urbano»), alimentado por el píxel de los correos y por el fragmento de Google Tag Manager de la landing; la hora de envío de cada correo, para descartar las descargas automáticas, la da HubSpot. Salud del dominio: DNS público (SPF, DMARC, DKIM) más rebotes y bloqueos de Apollo; el porcentaje de la cabecera suma 25 SPF, 25 DKIM propio (10 si firma Google), 20 DMARC (10 si cubre menos del 100%), 20 rebotes bajo el 2% desde el relanzamiento (10 bajo el 4%) y 10 sin bloqueos de spam. Inbound: contactos de HubSpot con <code>productos_interes</code>, con la versión de la landing que vieron según las URL que guarda HubSpot, y secuencia «INBOUND · Mobiliario Urbano — Lead web». HubSpot: contactos con <code>campana_apollo = mobiliario_urbano</code> y negocios del pipeline Mobiliario Urbano. <span id="src-gen"></span></p>
   </div>
 </main>
 
@@ -254,6 +292,8 @@ if(!D){
 
 const A=D.apollo||{}, H=D.hubspot||{}, AP=D.aperturas||[], V=D.visitas||[], IN=D.inbound||{}, DNS=D.dns||{};
 const RELANZAMIENTO=D.relanzamiento||'2026-10-14';
+const TOPE=D.tope_esperado||8;          // correos al día acordados en Apollo (seguimientos incluidos), desde el 20/10
+const NUEVOS_DIA=D.nuevos_por_dia||2;   // ayuntamientos nuevos que inscribe el puente por día laborable
 const generado=fecha(D.generado)||new Date();
 const ahora=generado;            // «hoy» y «últimos 30 días» se miden desde el momento en que el puente generó los datos
 const hoy0=new Date(ahora); hoy0.setHours(0,0,0,0);
@@ -268,6 +308,7 @@ function tile(sel,i,v,s){ const t=$(sel).children[i]; t.querySelector('.v').text
 const cs=A.contact_statuses||{}; const enCola=(+cs.active||0)+(+cs.paused||0);
 $('#e-seq').innerHTML=`<span>Secuencia</span><b>${A.active?'Activa':'Pausada'}</b>`; $('#e-seq').className=A.active?'on':'';
 $('#e-cap').innerHTML=`<span>Tope Apollo</span><b>${A.max_emails_per_day??'—'}/día</b>`;
+$('#sub-tope').textContent=A.max_emails_per_day??'—'; $('#t-tope').textContent=A.max_emails_per_day??'—'; $('#t-nuevos').textContent=NUEVOS_DIA;
 $('#e-cola').innerHTML=`<span>En cadencia</span><b>${enCola}</b>`;
 $('#e-upd').innerHTML=`<span>Datos de</span><b>${fmtHora(generado)} · ${generado.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})}</b>`;
 $('#src-gen').textContent=`Datos generados por el puente el ${generado.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})} a las ${fmtHora(generado)} (hora de quien mira el panel). Se regeneran en cada pasada del puente; el panel publicado se refresca varias veces al día.`;
@@ -293,7 +334,7 @@ const rebRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.bounced||0),0)+in
 const pend=D.lista&&D.lista.total!=null?Math.max(0,D.lista.total-((+cs.active||0)+(+cs.paused||0)+(+cs.finished||0)+(+cs.bounced||0)+(+cs.not_sent||0))):null;
 tile('#tiles',0,enviados,'correos salidos del buzón');
 tile('#tiles',1,entregados,`${pct(entregados,enviados)} de los enviados`);
-tile('#tiles',2,abiertos,`${pct(abiertos,entregados)} de los entregados · ${AP.length} apertura(s) registradas desde el relanzamiento`);
+tile('#tiles',2,abiertos,`${pct(abiertos,entregados)} de los entregados · ${AP.length} carga(s) creíbles desde el relanzamiento${D.solo_cargas_automaticas?` · ${D.solo_cargas_automaticas} más solo con cargas automáticas o internas, no cuentan`:''}`);
 tile('#tiles',3,resp,`${pct(resp,entregados)} de los entregados · respuestas reales en el buzón${+A.unique_replied>resp?` (Apollo cuenta ${A.unique_replied}, pero solo ${resp} correo(s) con respuesta)`:''}`);
 tile('#tiles',4,reb,`${pct(reb,enviados)} de los enviados · ${rebRel} desde el relanzamiento`);
 if(pend!=null) tile('#tiles',5,pend,'en la lista, aún sin inscribir');
@@ -306,7 +347,7 @@ barras($('#cadencia'),steps.map(s=>{const k=new Set(AP.filter(x=>String(x.paso)=
   const vistos=new Set(); const filas=[];
   for(const a of ap){ const k=a.contacto+'|'+a.paso; if(vistos.has(k)) continue; vistos.add(k); const n=ap.filter(x=>x.contacto===a.contacto&&x.paso===a.paso).length; const d=fecha(a.fecha);
     filas.push(`<div class="fila"><span class="q" title="${esc(a.email||'')}">${esc(a.municipio||a.contacto)}</span><span class="d">correo ${esc(a.paso||'?')}${n>1?` · ${n} veces`:''}</span><span class="d">${d?d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+' '+fmtHora(d):''}</span></div>`); if(filas.length>=12) break; }
-  el.innerHTML=filas.join('')||'<div class="sk">Todavía ninguna apertura desde el relanzamiento.</div>';
+  el.innerHTML=filas.join('')||'<div class="sk">Todavía ninguna carga creíble del píxel desde el relanzamiento.</div>';
 })();
 
 /* ---------- salud ---------- */
@@ -342,6 +383,11 @@ const leads=(H.leads||[]);
   tile('#tiles-vis',1,banner,v30.length?`${pct(banner,v30.length)} de las visitas`:'visitas que llegan desde la home');
   tile('#tiles-vis',2,hoyN);
   tile('#tiles-vis',3,leads30,v30.length?`${pct(leads30,v30.length)} de las visitas acaban en formulario`:'visitas que acaban en lead');
+  // Test A/B de la landing: todo lo medido, no solo 30 días. `pagina` la pone el puente (A con precios, B sin precios).
+  const sinAtrib=leads.filter(l=>!l.pagina).length;
+  [['A','#ab-a'],['B','#ab-b']].forEach(([p,sel])=>{ const vs=V.filter(v=>v.pagina===p); const b=vs.filter(esBanner).length; const ls=leads.filter(l=>l.pagina===p).length;
+    tile(sel,0,vs.length,V.length?`${pct(vs.length,V.length)} de las visitas medidas`:'desde que se mide'); tile(sel,1,b,vs.length?`${pct(b,vs.length)} de sus visitas`:'clics del banner que acabaron aquí'); tile(sel,2,ls); tile(sel,3,vs.length?pct(ls,vs.length):'—'); });
+  $('#ab-nota').textContent=!V.some(v=>v.pagina)?'El reparto por versión empieza a medirse con la pasada del 20/10; las visitas anteriores no llevan versión.':(sinAtrib?`${sinAtrib} formulario(s) sin versión atribuida: HubSpot no guardó qué página vieron.`:(leads.length?'':'Todavía ningún formulario: la comparación empezará a decir algo con los primeros leads.'));
   const org={}; v30.forEach(v=>{ const k=esBanner(v)?'Banner de la home':(v.utm_source?`${v.utm_source} / ${v.utm_medium||'?'}`:(v.referente&&!/thegravitywave/.test(v.referente)?v.referente:(v.referente?'Otra página de la web':'Directo / sin referente'))); org[k]=(org[k]||0)+1; });
   barras($('#origenes'),Object.entries(org).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([lab,n])=>({lab,n,cls:lab==='Banner de la home'?'hi':''})));
   const dias=[]; for(let i=29;i>=0;i--){const d=new Date(hoy0);d.setDate(hoy0.getDate()-i);dias.push(d);} const key=d=>d.toISOString().slice(0,10);
@@ -398,9 +444,9 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
   const edad=(Date.now()-generado.getTime())/36e5;
   if(edad>6) av.push(`<b>Estos datos tienen ${Math.round(edad)} horas.</b> El puente los regenera en cada pasada; si el panel publicado no se ha refrescado, mira la última pasada en GitHub.`);
   if(!A.active) av.push(`<b>La secuencia está pausada${A.status_reason?` (${esc(A.status_reason)})`:''}.</b> No sale ningún correo hasta que alguien la active en Apollo. Los ${enCola} ayuntamientos en cadencia esperan.`);
-  if(A.max_emails_per_day!==5) av.push(`<b>El tope de Apollo es ${A.max_emails_per_day}/día, no 5.</b> Lo acordado es 5 correos al día contando seguimientos.`);
+  if(A.max_emails_per_day!==TOPE) av.push(`<b>El tope de Apollo es ${A.max_emails_per_day}/día, no ${TOPE}.</b> Lo acordado el 20/10 son ${TOPE} correos al día contando seguimientos.`);
   if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)} acumulado.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). ${rebRel?`<b>${rebRel} rebote(s) desde el relanzamiento</b> de ${envRel} enviados: conviene revisar esas direcciones.`:`Todos son de septiembre (lista antigua); desde el relanzamiento, 0 de ${envRel}.`}`);
-  if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${A.max_emails_per_day===5?'1':'alguno'} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
+  if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${NUEVOS_DIA} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
   if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
   (A.no_enviados||[]).forEach(x=>{ if(x.motivo==='snippets_missing') av.push(`<b>${esc(x.municipio||x.quien||'Un contacto')} no recibe el correo:</b> le falta el campo «municipio» en Apollo. Se arregla rellenándolo en la ficha del contacto; la secuencia reintenta sola.`); });
   if(DNS&&DNS.consultado!==false&&(!DNS.spf||!DNS.dmarc)) av.push(`<b>Falta ${!DNS.spf?'SPF':'DMARC'} en el dominio.</b> Sin él, Gmail y Outlook pueden mandar los correos de Amaia a spam.`);
@@ -409,7 +455,7 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
   if(D.visitas_desde&&(ahora.getTime()-fecha(D.visitas_desde).getTime())>7*DIA&&!V.some(v=>esBanner(v)&&fecha(v.fecha)>ahora.getTime()-7*DIA)) av.push(`<b>Ninguna visita llega etiquetada desde el banner de la home en 7 días.</b> Comprueba que el botón sigue enlazando con <code>utm_source=home&amp;utm_medium=banner</code>.`);
   if((+IN.spam||0)>0) av.push(`<b>La secuencia INBOUND tiene ${IN.spam} correo(s) bloqueados como spam</b> (de las pruebas de septiembre). Conviene mirar a qué dirección fue antes de que entren leads reales.`);
   const box=$('#avisos'); box.className='avisos'+(av.length?'':' ok');
-  box.innerHTML=av.length?av.map(x=>`<div class="aviso">${x}</div>`).join(''):'<div class="aviso">Nada que mirar: secuencia en marcha, tope en 5, rebotes bajo control.</div>';
+  box.innerHTML=av.length?av.map(x=>`<div class="aviso">${x}</div>`).join(''):`<div class="aviso">Nada que mirar: secuencia en marcha, tope en ${TOPE}, rebotes bajo control.</div>`;
 })();
 })();
 </script>

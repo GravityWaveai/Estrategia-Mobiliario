@@ -54,6 +54,11 @@ APOLLO_API_KEY = os.environ.get("APOLLO_API_KEY", "")
 ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
 OUTBOUND_ENABLED = os.environ.get("OUTBOUND_ENABLED", "1") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
+# Tope de correos al día de la secuencia OUTBOUND en Apollo (seguimientos
+# incluidos). Si está puesto, la fase TOPE lo comprueba en cada pasada y lo
+# corrige en Apollo si alguien lo ha cambiado: así el número acordado vive
+# aquí, en el workflow, y no en la memoria de nadie. 0 = no tocar.
+TOPE_APOLLO = int(os.environ.get("OUTBOUND_MAX_EMAILS_PER_DAY", "0") or 0)
 HORA_ENVIO_OUTBOUND = int(os.environ.get("OUTBOUND_ENROLL_HOUR", "8"))  # UTC
 # Receptor propio de aperturas (tracking/aperturas.gs publicado en Google).
 # Vacío = la fase APERTURAS no hace nada.
@@ -79,6 +84,9 @@ ETAPA_DESCARTADO = "5948376270"
 # «Descartado», así que el descarte automático tiene que ponerlo él mismo.
 MOTIVO_SIN_RESPUESTA = "sin_respuesta"
 VENTANA_CADENCIA = 45       # días que dura la cadencia más larga, con margen
+# Reglas para las cargas del píxel de aperturas (ver clasificar_aperturas).
+VENTANA_ENVIO_S = 180       # carga en los 3 min tras el envío = descarga automática del servidor
+VENTANA_RAFAGA_S = 90       # dos cargas a menos de 90 s = la misma ráfaga
 # Minutos que se le dan al workflow de HubSpot para crear el negocio antes de
 # que el puente lo cree él. Sin esta espera los dos crearían el mismo negocio
 # y saldrían duplicados.
@@ -652,6 +660,25 @@ def enroll_inbound(sender_id):
         raise RuntimeError(f"{errores} lead(s) no se pudieron inscribir (ver arriba)")
 
 
+def aplicar_tope_apollo():
+    """Deja max_emails_per_day de la secuencia OUTBOUND en TOPE_APOLLO."""
+    if not TOPE_APOLLO:
+        log("TOPE: sin OUTBOUND_MAX_EMAILS_PER_DAY; el tope de Apollo se deja como esté")
+        return
+    camp = apollo_secuencia(SEQ_OUTBOUND) or {}
+    actual = camp.get("max_emails_per_day")
+    if actual == TOPE_APOLLO:
+        log(f"TOPE: Apollo ya envía como mucho {TOPE_APOLLO} correos al día")
+        return
+    write(f"tope de la secuencia OUTBOUND {actual} -> {TOPE_APOLLO} correos/día",
+          lambda: apollo("PUT", f"/emailer_campaigns/{SEQ_OUTBOUND}",
+                         {"max_emails_per_day": TOPE_APOLLO}))
+    despues = (apollo_secuencia(SEQ_OUTBOUND) or {}).get("max_emails_per_day") if ENABLED else TOPE_APOLLO
+    if despues != TOPE_APOLLO:
+        raise RuntimeError(f"Apollo no ha aceptado el tope: sigue en {despues}")
+    log(f"TOPE: secuencia OUTBOUND a {TOPE_APOLLO} correos al día (antes {actual})")
+
+
 def inscritos_hoy():
     """Cuántos contactos de la campaña ha inscrito ya el puente hoy (UTC),
     según la fecha de inscripción que él mismo sella en HubSpot."""
@@ -1000,17 +1027,119 @@ def aperturas_del_receptor(desde):
     return res.get("aperturas", [])
 
 
+def hs_horas_envio(contact_id, desde):
+    """Horas a las que salió cada correo a un contacto, según los correos que
+    Apollo registra en HubSpot al enviarlos (hs_timestamp = hora de envío)."""
+    res = hs("POST", "/crm/v3/objects/emails/search", {
+        "filterGroups": [{"filters": [
+            {"propertyName": "associations.contact", "operator": "EQ", "value": str(contact_id)},
+            {"propertyName": "hs_timestamp", "operator": "GTE",
+             "value": desde.strftime("%Y-%m-%dT%H:%M:%SZ")}]}],
+        "properties": ["hs_timestamp"], "limit": 100})
+    return [t for t in (_ts((e.get("properties") or {}).get("hs_timestamp"))
+                        for e in res.get("results", [])) if t]
+
+
+def clasificar_aperturas(crudas, por_id, horas_envio):
+    """Separa las cargas del píxel que pueden ser una lectura de las que no.
+
+    `crudas`: filas del receptor, todas (pruebas incluidas). `por_id`: contactos
+    de la lista por id de Apollo. `horas_envio`: email -> [horas de envío].
+    Devuelve (creibles, descartadas): creibles = {email: [filas]};
+    descartadas = {email: {motivo: n}}.
+
+    Un píxel no dice quién lo carga, y los registros del 16 al 20/10 enseñan
+    tres patrones. Reglas, en este orden:
+    - Ráfaga: dos o más contactos distintos cargan el píxel con menos de 90 s
+      entre carga y carga. No son dos ayuntamientos a la vez: es alguien de
+      Gravity Wave mirando los correos enviados (el domingo 18/10 a las 11:07
+      cargaron cuatro ayuntamientos y el correo de prueba interno en el mismo
+      minuto; el lunes, dos con 0,4 s de diferencia). Cualquier carga junto a
+      una fila que no es de la lista (PRUEBA, DIAG, el correo interno) es
+      ráfaga también: esas filas solo pueden venir de nuestro buzón.
+    - Descarga automática: carga en los 3 minutos siguientes al envío. El
+      servidor de correo del ayuntamiento, o Gmail/Outlook, baja las imágenes
+      al recibir, sin que nadie lea nada.
+    - Lo demás es una carga creíble: aislada y minutos u horas después del
+      envío. Sigue sin ser una certeza, pero es lo más parecido a una lectura
+      que un píxel puede medir. Y quien lee con las imágenes bloqueadas no
+      aparece nunca: se mide menos de lo real, no más."""
+    filas = sorted(((t, a) for a in crudas if (t := _ts(a.get("fecha")))), key=lambda x: x[0])
+    grupos, actual = [], []
+    for t, a in filas:
+        if actual and (t - actual[-1][0]).total_seconds() > VENTANA_RAFAGA_S:
+            grupos.append(actual)
+            actual = []
+        actual.append((t, a))
+    if actual:
+        grupos.append(actual)
+    creibles, descartadas = {}, {}
+
+    def descartar(email, motivo):
+        descartadas.setdefault(email, {})
+        descartadas[email][motivo] = descartadas[email].get(motivo, 0) + 1
+
+    for g in grupos:
+        ids = {a.get("contacto") for _, a in g}
+        rafaga = len(ids) > 1 or any(i not in por_id for i in ids)
+        for t, a in g:
+            c = por_id.get(a.get("contacto"))
+            if not c or not c.get("email"):
+                continue
+            email = c["email"].lower()
+            if rafaga:
+                descartar(email, "rafaga")
+            elif any(0 <= (t - e).total_seconds() <= VENTANA_ENVIO_S
+                     for e in horas_envio.get(email) or []):
+                descartar(email, "automatica")
+            else:
+                creibles.setdefault(email, []).append(a)
+    return creibles, descartadas
+
+
+_APERTURAS = {}
+
+
+def aperturas_clasificadas(por_id):
+    """Las cargas del receptor ya clasificadas, calculadas una vez por pasada
+    (las usan APERTURAS y PANEL). Devuelve (creibles, descartadas, contactos_hs):
+    contactos_hs = email -> contacto de HubSpot de cada contacto con cargas."""
+    if "res" in _APERTURAS:
+        return _APERTURAS["res"]
+    desde = datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)
+    crudas = aperturas_del_receptor(desde)
+    emails = sorted({por_id[a["contacto"]]["email"].lower() for a in crudas
+                     if a.get("contacto") in por_id and por_id[a["contacto"]].get("email")})
+    contactos_hs = {}
+    for i in range(0, len(emails), 50):
+        for h in hs_search_contacts(
+                [{"filters": [{"propertyName": "email", "operator": "IN", "values": emails[i:i + 50]}]}],
+                ["email", "apollo_estado", FECHA_INSCRIPCION]):
+            contactos_hs[(h["properties"].get("email") or "").lower()] = h
+    horas = {email: hs_horas_envio(h["id"], desde) for email, h in contactos_hs.items()}
+    sin_hora = [e for e in emails if not horas.get(e)]
+    if sin_hora:
+        log(f"  APERTURAS: {len(sin_hora)} contacto(s) sin hora de envío en HubSpot; "
+            "a esos no se les puede descartar la descarga automática")
+    creibles, descartadas = clasificar_aperturas(crudas, por_id, horas)
+    _APERTURAS["res"] = (creibles, descartadas, contactos_hs)
+    return _APERTURAS["res"]
+
+
 def sync_opens():
     """Quién ha abierto algún correo: `apollo_estado = abierto`.
 
     Lee el receptor propio (tracking/aperturas.gs), porque Apollo solo ofrece
-    seguimiento de aperturas en planes de pago. Solo pasa de «enviado» a
-    «abierto»; nunca pisa «respondido», «reunion_agendada» ni ningún estado
-    posterior. Sirve para que el embudo distinga al que no ha abierto nada del
-    que lee y no contesta, que son dos conversaciones distintas para Amaia.
+    seguimiento de aperturas en planes de pago. Solo cuentan las cargas
+    creíbles del píxel (clasificar_aperturas): una carga automática o interna
+    no es una apertura. Pasa de «enviado» a «abierto» y, si un contacto está en
+    «abierto» sin ninguna carga creíble, lo devuelve a «enviado»; nunca pisa
+    «respondido», «reunion_agendada» ni ningún estado posterior. Sirve para
+    que el embudo distinga al que no ha abierto nada del que lee y no
+    contesta, que son dos conversaciones distintas para Amaia.
 
-    Las aperturas de los 90 segundos siguientes a la inscripción se ignoran:
-    Gmail y Apple Mail descargan las imágenes antes de que nadie lea nada."""
+    Las cargas de los 90 segundos siguientes a la inscripción se ignoran
+    también: Gmail y Apple Mail descargan las imágenes antes de que nadie lea."""
     if not APERTURAS_URL:
         log("APERTURAS: sin receptor configurado (APERTURAS_URL vacío); nada que leer")
         return
@@ -1019,31 +1148,23 @@ def sync_opens():
             "sin él el receptor no deja leer la hoja")
         return
     por_id = {c["id"]: c for c in apollo_lista_outbound().values()}
-    desde = datetime.now(timezone.utc) - timedelta(days=VENTANA_CADENCIA)
-    abiertos = {}
-    for a in aperturas_del_receptor(desde):
-        c = por_id.get(a.get("contacto"))
-        if not c or not c.get("email"):
-            continue
-        fecha = _ts(a.get("fecha"))
-        if fecha:
-            abiertos.setdefault(c["email"].lower(), []).append(fecha)
-    marcados = 0
-    for email in sorted(abiertos):
-        for h in hs_search_contacts(
-                [{"filters": [
-                    {"propertyName": "email", "operator": "EQ", "value": email},
-                    {"propertyName": "apollo_estado", "operator": "EQ", "value": "enviado"},
-                ]}],
-                ["email", "apollo_estado", FECHA_INSCRIPCION]):
-            inscrito = _ts(h["properties"].get(FECHA_INSCRIPCION))
-            reales = [f for f in abiertos[email]
-                      if not inscrito or f >= inscrito + timedelta(seconds=90)]
-            if not reales:
-                continue
+    creibles, descartadas, contactos_hs = aperturas_clasificadas(por_id)
+    marcados = revertidos = 0
+    for email, h in sorted(contactos_hs.items()):
+        estado = h["properties"].get("apollo_estado")
+        inscrito = _ts(h["properties"].get(FECHA_INSCRIPCION))
+        reales = [a for a in creibles.get(email, [])
+                  if not inscrito or _ts(a.get("fecha")) >= inscrito + timedelta(seconds=90)]
+        if reales and estado == "enviado":
             hs_stamp(h["id"], {"apollo_estado": "abierto"})
             marcados += 1
-    log(f"APERTURAS: {len(abiertos)} contacto(s) han abierto algo; {marcados} pasan a «abierto»")
+        elif not reales and estado == "abierto":
+            hs_stamp(h["id"], {"apollo_estado": "enviado"})
+            revertidos += 1
+    n_desc = sum(sum(m.values()) for m in descartadas.values())
+    log(f"APERTURAS: {len(contactos_hs)} contacto(s) con el píxel cargado; {len(creibles)} con alguna "
+        f"carga creíble; {marcados} pasan a «abierto», {revertidos} vuelven a «enviado»; "
+        f"{n_desc} carga(s) descartadas (ráfaga interna o descarga automática al recibir)")
 
 
 def hs_search_deals(filter_groups, properties):
@@ -1338,6 +1459,16 @@ def _municipio_de(contacto):
     return ((contacto.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO) or "").strip()
 
 
+def _variante(url):
+    """Variante de la landing a la que corresponde una ruta o URL: «A»
+    (/mobiliario-urbano/, con precios), «B» (/mobiliario-urbano-b/, sin
+    precios) o None si no es la landing."""
+    u = (url or "").lower()
+    if "mobiliario-urbano" not in u:
+        return None
+    return "B" if "mobiliario-urbano-b" in u else "A"
+
+
 def apollo_secuencia_detalle(sequence_id):
     """Secuencia con pasos, toques y plantillas; si Apollo no da el detalle,
     el resumen de la búsqueda (sin cadencia por paso)."""
@@ -1417,16 +1548,21 @@ def datos_panel():
                 quien = " ".join(x for x in (c.get("first_name"), c.get("last_name")) if x) or c.get("email")
                 apollo_datos["no_enviados"].append(
                     {"municipio": _municipio_de(c), "quien": quien, "motivo": st.get("failure_reason")})
-    # --- receptor: aperturas (solo contactos de la lista) y visitas
-    aperturas = []
+    # --- receptor: aperturas creíbles (solo contactos de la lista) y visitas
+    aperturas, descartadas_n, solo_automaticas = [], 0, 0
     if APERTURAS_URL and APERTURAS_KEY:
-        for a in aperturas_del_receptor(ahora - timedelta(days=VENTANA_CADENCIA)):
-            c = por_id.get(a.get("contacto"))
+        creibles, descartadas, _ = aperturas_clasificadas(por_id)
+        por_email = {(c.get("email") or "").lower(): c for c in por_id.values()}
+        for email, filas in creibles.items():
+            c = por_email.get(email)
             if not c:
                 continue
-            aperturas.append({"fecha": a.get("fecha"), "contacto": c["id"], "email": c.get("email"),
-                              "municipio": _municipio_de(c) or c.get("organization_name"),
-                              "paso": a.get("paso")})
+            for a in filas:
+                aperturas.append({"fecha": a.get("fecha"), "contacto": c["id"], "email": c.get("email"),
+                                  "municipio": _municipio_de(c) or c.get("organization_name"),
+                                  "paso": a.get("paso")})
+        descartadas_n = sum(sum(m.values()) for m in descartadas.values())
+        solo_automaticas = len([e for e in descartadas if e not in creibles])
     visitas, visitas_ok = [], False
     if APERTURAS_URL and APERTURAS_KEY:
         try:
@@ -1437,23 +1573,29 @@ def datos_panel():
             crudas = []
         ultima = {}
         for v in sorted(crudas, key=lambda v: v.get("fecha") or ""):
-            if "mobiliario-urbano" not in (v.get("pagina") or ""):
+            variante = _variante(v.get("pagina"))
+            if not variante:
                 continue
             if _es_prueba(v.get("utm_source")) or "gtm-msr" in (v.get("referente") or ""):
                 continue
-            # La etiqueta a veces se dispara dos veces en la misma carga: un
-            # mismo origen en 90 s cuenta una vez.
-            k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"), v.get("referente"))
             t = _ts(v.get("fecha"))
             if t is None:
                 continue
-            if k in ultima and (t - ultima[k]).total_seconds() < 90:
-                ultima[k] = t
+            # Un mismo origen en 90 s es una sola visita: la etiqueta a veces
+            # se dispara dos veces en la misma carga, y el reparto A/B de la
+            # landing redirige a la otra variante nada más entrar, con lo que
+            # llega a dispararse en las dos. Cuenta una, en la variante donde
+            # se queda el visitante.
+            k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"), v.get("referente"))
+            if k in ultima and (t - ultima[k][0]).total_seconds() < 90:
+                ultima[k][1]["pagina"] = variante
+                ultima[k] = (t, ultima[k][1])
                 continue
-            ultima[k] = t
-            visitas.append({"fecha": v.get("fecha"), "utm_source": v.get("utm_source") or "",
-                            "utm_medium": v.get("utm_medium") or "", "utm_campaign": v.get("utm_campaign") or "",
-                            "referente": v.get("referente") or ""})
+            v2 = {"fecha": v.get("fecha"), "pagina": variante, "utm_source": v.get("utm_source") or "",
+                  "utm_medium": v.get("utm_medium") or "", "utm_campaign": v.get("utm_campaign") or "",
+                  "referente": v.get("referente") or ""}
+            visitas.append(v2)
+            ultima[k] = (t, v2)
     # --- HubSpot: contactos de la campaña, negocios del pipeline, leads web
     contactos = []
     for h in hs_search_contacts(
@@ -1480,14 +1622,19 @@ def datos_panel():
     for h in hs_search_contacts(
             [{"filters": [{"propertyName": "productos_interes", "operator": "HAS_PROPERTY"},
                           {"propertyName": "createdate", "operator": "GTE", "value": "2026-09-15T00:00:00Z"}]}],
-            ["email", "firstname", "lastname", "productos_interes", "createdate"]):
+            ["email", "firstname", "lastname", "productos_interes", "createdate",
+             "hs_analytics_last_url", "hs_analytics_first_url"]):
         p = h.get("properties") or {}
         if _es_prueba(p.get("firstname"), p.get("lastname"), p.get("email")):
             continue
         leads.append({"id": h["id"], "email": p.get("email") or "",
                       "nombre": " ".join(x for x in (p.get("firstname"), p.get("lastname")) if x),
                       "productos": _productos_legibles(p.get("productos_interes") or ""),
-                      "fecha": p.get("createdate")})
+                      "fecha": p.get("createdate"),
+                      # Variante de la landing desde la que llegó el formulario
+                      # (A con precios / B sin precios), por las URL que
+                      # HubSpot guarda del visitante; None si no se sabe.
+                      "pagina": _variante(p.get("hs_analytics_last_url")) or _variante(p.get("hs_analytics_first_url"))})
     leads.sort(key=lambda l: l.get("fecha") or "", reverse=True)
     # --- Apollo: secuencia INBOUND
     ins = (apollo_secuencia_detalle(SEQ_INBOUND).get("emailer_campaign") or {})
@@ -1506,10 +1653,14 @@ def datos_panel():
     return {
         "generado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "relanzamiento": RELANZAMIENTO,
+        "tope_esperado": TOPE_APOLLO or None,
+        "nuevos_por_dia": CAP,
         "visitas_desde": VISITAS_DESDE if visitas_ok else None,
         "apollo": apollo_datos,
         "lista": {"total": len(indice)},
         "aperturas": aperturas,
+        "aperturas_descartadas": descartadas_n,
+        "solo_cargas_automaticas": solo_automaticas,
         "visitas": visitas,
         "hubspot": {"contactos": contactos, "negocios": negocios, "leads": leads},
         "inbound": inbound,
@@ -1627,6 +1778,7 @@ def main():
     # Primero lo que corta, luego lo que inscribe: así nunca se escribe a
     # alguien que ya ha respondido o tiene reunión.
     ok = True
+    ok &= _fase("TOPE", aplicar_tope_apollo)
     ok &= _fase("RESPUESTA", sync_replies)
     ok &= _fase("PARADA", stop_when_engaged)
     ok &= _fase("ENTRANTES", stop_on_any_inbound)
