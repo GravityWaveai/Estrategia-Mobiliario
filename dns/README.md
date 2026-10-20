@@ -4,14 +4,17 @@ Auditoría del 20/10/2026 y los cambios que faltan para que el correo de
 Gravity Wave (Gmail/Apollo, HubSpot y la web) salga autenticado al 100 %.
 El porcentaje de «salud del dominio» del panel suma 25 SPF + 25 DKIM propio
 (10 si firma Google con su clave) + 20 DMARC (10 si `pct<100`) + 20 rebotes
-+ 10 sin spam; la parte DNS vale 70 y hoy da **45**.
++ 10 sin spam; la parte DNS vale 70: daba **45** el 20/10 por la mañana y
+**55** tras los cambios de Appgile esa tarde. Los 15 que faltan son el DKIM
+de Google.
 
 ## Quién tiene las llaves
 
 | Qué | Dónde | Quién |
 | --- | --- | --- |
 | Registro del dominio (.com y .es) | GoDaddy | Titular Abora World S.L.L. / Julen Rodríguez. **El .com caduca el 21/10/2026** (RDAP del 20/10: sin renovar todavía). |
-| DNS (zona) | Cloudflare, nameservers `kristina` y `plato` | Cuenta de **Appgile** (Tomix, `tcorralb@appgile.com`). Migrado desde el cPanel de Webempresa el 7/10/2026. Gravity Wave no tiene usuario ni token. |
+| DNS del `.com` | Cloudflare, nameservers `kristina` y `plato` | Cuenta de **Appgile** (Tomix, `tcorralb@appgile.com`). Migrado desde el cPanel de Webempresa el 7/10/2026. Gravity Wave no tiene usuario ni token; los cambios se piden a Appgile y los aplican ellos. |
+| DNS del `.es` | Webempresa (cPanel → Zone Editor), nameservers `ns50171/ns50172.webempresa.eu` | `norberto@`. No se migró a Cloudflare. |
 | Hosting web y buzones del .es | Webempresa (cPanel, `213.158.86.32`) | `norberto@` |
 | Google Workspace (DKIM de Gmail) | admin.google.com | Un administrador del Workspace (Norberto o Julen). |
 | HubSpot (portal 26243090) | HubSpot → Dominios | Equipo. Ya conectado. |
@@ -25,12 +28,13 @@ del Workspace.
 | Registro | Hoy | Problema |
 | --- | --- | --- |
 | MX | Google Workspace | — Correcto. |
-| SPF | `v=spf1 ip4:213.158.86.32 ip4:51.178.3.36 include:_spf.webempresa.eu +a +mx +include:_spf.google.com ~all` | Funciona, pero lleva tres mecanismos redundantes (`ip4:213.158.86.32` y `+a` están dentro de `_spf.webempresa.eu`; `+mx` es Google, ya incluido). 7 consultas DNS de 10 posibles. |
+| SPF | `v=spf1 include:_spf.google.com include:_spf.webempresa.eu ip4:51.178.3.36 ~all` | **Hecho el 20/10** (Appgile). Antes llevaba tres mecanismos redundantes y 7 consultas; ahora 5. |
 | DKIM `google._domainkey` | **no existe** | Gmail firma con `thegravitywave-com.20251104.gappssmtp.com` (lo confirma Apollo). La firma no está alineada con el dominio: pasa DMARC solo porque SPF alinea, y se rompe en reenvíos y listas. Es lo que más resta. |
 | DKIM `default._domainkey` | existe (2048 bits) | Clave del servidor de Webempresa (cPanel). Firma lo que manda la web. Se deja. |
 | DKIM HubSpot | `hs1-26243090._domainkey` y `hs2-26243090._domainkey` → `hubspotemail.net` | Correcto: HubSpot firma con el dominio y alinea. (El puente no lo mira porque no puntúa.) |
-| DMARC | `v=DMARC1; p=quarantine; pct=5; rua=mailto:julen@thegravitywave.com` | Solo cubre el 5 % del correo. Sin `ruf`/`fo`, sin alineación explícita. |
-| TLS-RPT, MTA-STS, BIMI | no existen | Opcionales; cuentan en algunos verificadores. |
+| DMARC | `v=DMARC1; p=quarantine; pct=100; rua=…; ruf=…; fo=1; adkim=r; aspf=r` | **Hecho el 20/10** (Appgile). Antes `pct=5`. Queda pasar a `p=reject` en 2–4 semanas. |
+| TLS-RPT | `v=TLSRPTv1; rua=mailto:julen@thegravitywave.com` | **Hecho el 20/10** (Appgile). |
+| MTA-STS, BIMI | no existen | Opcionales; cuentan en algunos verificadores. |
 | `thegravitywave.es` | SPF Webempresa, DKIM cPanel, DMARC `p=none` | Los buzones del .es viven en Webempresa (`mail.thegravitywave.es`). DMARC sin política. |
 | `store.thegravitywave.com` | SPF y DKIM propios de cPanel, sin DMARC | Tienda de los QR. Hereda la DMARC del dominio raíz, bien. |
 
@@ -72,7 +76,7 @@ renovación automática está activa o renovarlo a mano.
 
 Ya conectado (verificado el 20/10). Nada que hacer.
 
-### 3. Limpiar el SPF
+### 3. Limpiar el SPF (hecho el 20/10)
 
 Sustituir el TXT actual por:
 
@@ -86,7 +90,7 @@ necesita `include` porque usa su propio dominio de sobre alineado por DKIM.
 Se mantiene `~all` (softfail): con DMARC es lo que recomienda Google; `-all`
 no suma y hace daño en reenvíos.
 
-### 4. DMARC al 100 % (20 puntos)
+### 4. DMARC al 100 % (hecho el 20/10; falta `reject`)
 
 Hoy todo el correo legítimo ya pasa DMARC (Gmail por SPF, HubSpot por
 DKIM, la web por ambos), así que subir a `pct=100` es seguro. Lo ideal es
@@ -113,13 +117,14 @@ gratuito de informes DMARC (Postmark, dmarcian, EasyDMARC…) poniendo su
 dirección en `rua` además de la nuestra.
 
 Para el `.es`, lo mismo pero empezando por `p=quarantine; pct=100`: sus
-buzones de Webempresa ya firman y alinean.
+buzones de Webempresa ya firman y alinean. Se hace en el cPanel de
+Webempresa → Zone Editor → `thegravitywave.es` → editar el TXT de
+`_dmarc` (hoy `v=DMARC1;p=none`) y poner
+`v=DMARC1; p=quarantine; pct=100; rua=mailto:julen@thegravitywave.com; fo=1`.
 
 ### 5. Extras (suben la nota en verificadores, no en Gmail/Outlook)
 
-- **TLS-RPT**: TXT en `_smtp._tls` con `v=TLSRPTv1;
-  rua=mailto:julen@thegravitywave.com`. Inofensivo, avisa si alguien no
-  consigue entregarnos por TLS.
+- **TLS-RPT**: hecho el 20/10.
 - **MTA-STS**: exige servir
   `https://mta-sts.thegravitywave.com/.well-known/mta-sts.txt` con la
   política (modo `testing` primero) y un TXT `_mta-sts` con `v=STSv1;
