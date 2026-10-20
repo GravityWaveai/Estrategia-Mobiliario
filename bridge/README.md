@@ -538,7 +538,8 @@ La fase **PANEL** corre al final de cada pasada, con HubSpot ya al día:
    la landing, sin pruebas ni vista previa de Tag Manager, y un mismo origen
    en 90 s cuenta una vez), los contactos, negocios y leads web de HubSpot
    (sin las pruebas), la secuencia INBOUND y los TXT de SPF, DMARC y DKIM del
-   dominio. El contrato del diccionario está en `panel/README.md`.
+   dominio. El contrato del diccionario está en `panel/README.md`; lo que
+   falta en el DNS y cómo ponerlo, en `dns/README.md`.
 2. `construir_panel()` mete ese JSON en `panel/plantilla.html`, en el hueco
    `const D = /*DATOS*/null;`. Lo único que hace la página es pintarlo.
 3. `publicar_panel()` manda la página y los datos al receptor con
