@@ -37,14 +37,18 @@ dato dentro, la página se ve igual en claude.ai, en el receptor
 |---|---|
 | `generado` | Fecha UTC de la pasada que generó la página |
 | `relanzamiento` | `2026-10-14`, la fecha desde la que se cuenta la cadencia actual |
+| `tope_esperado` | Correos al día acordados para Apollo (`OUTBOUND_MAX_EMAILS_PER_DAY`, 8 desde el 20/10); el panel avisa si Apollo tiene otro |
+| `nuevos_por_dia` | Ayuntamientos nuevos que inscribe el puente por día laborable (`OUTBOUND_DAILY_CAP`) |
 | `visitas_desde` | Desde cuándo mide visitas el receptor (16/10) o `null` si no respondió |
 | `apollo` | `active`, `status_reason`, `max_emails_per_day`, `contact_statuses` (active, paused, finished, bounced, not_sent), `unique_replied`, `unique_bounced`, `unique_spam_blocked`, `steps[]` (position, wait_time, delivered, bounced, replied), `pixel_ok` (las cinco plantillas llevan el píxel), `no_enviados[]` (municipio, quien, motivo) |
 | `lista.total` | Ayuntamientos en la lista OUTBOUND de Apollo |
-| `aperturas[]` | `fecha`, `contacto` (id Apollo), `email`, `municipio`, `paso`; solo contactos de la lista, últimos 45 días |
-| `visitas[]` | `fecha`, `utm_source`, `utm_medium`, `utm_campaign`, `referente`; solo la landing, sin pruebas, sin la vista previa de Tag Manager, un origen cada 90 s |
+| `aperturas[]` | Solo las cargas **creíbles** del píxel (ver `tracking/README.md`, «Qué cuenta como apertura»): `fecha`, `contacto` (id Apollo), `email`, `municipio`, `paso`; solo contactos de la lista, últimos 45 días |
+| `aperturas_descartadas` | Cargas del píxel descartadas por automáticas (3 min tras el envío) o por ráfaga interna |
+| `solo_cargas_automaticas` | Ayuntamientos que solo tienen cargas descartadas; el panel los enseña aparte y no cuentan como abiertos |
+| `visitas[]` | `fecha`, `pagina` (`A` con precios o `B` sin precios), `utm_source`, `utm_medium`, `utm_campaign`, `referente`; solo la landing, sin pruebas, sin la vista previa de Tag Manager, un origen cada 90 s (la redirección del test A/B cuenta una vez, en la versión de destino) |
 | `hubspot.contactos[]` | `id`, `mun`, `who`, `email`, `estado` (apollo_estado), `insc`, `resp` |
 | `hubspot.negocios[]` | `id`, `nombre`, `etapa` (id de etapa del pipeline), `creado` |
-| `hubspot.leads[]` | Leads del formulario web desde el 15/09: `id`, `email`, `nombre`, `productos`, `fecha` |
+| `hubspot.leads[]` | Leads del formulario web desde el 15/09: `id`, `email`, `nombre`, `productos`, `fecha`, `pagina` (`A`, `B` o `null` si HubSpot no guardó qué versión vieron) |
 | `inbound` | Secuencia INBOUND: `en_cadencia`, `terminados`, `respondieron`, `entregados`, `spam` |
 | `dns` | `consultado`, y los TXT `spf`, `dmarc`, `dkim` (`null` si no existen) |
 

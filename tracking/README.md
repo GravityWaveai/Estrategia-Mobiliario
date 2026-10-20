@@ -27,6 +27,16 @@ enlaza desde el 16/10 a
 (comprobado en la home publicada). El panel lee `?visits=1&key=…` y muestra
 visitas, clics del banner, origen y visitas por día.
 
+La landing tiene dos versiones, **A con precios** (`/mobiliario-urbano/`) y
+**B sin precios** (`/mobiliario-urbano-b/`): un script en la propia página
+sortea la versión la primera vez, la guarda en una cookie 90 días y redirige
+a la otra URL si hace falta. Como la etiqueta llega a dispararse en las dos
+páginas durante esa redirección, el puente cuenta una sola visita por origen
+en 90 segundos y se queda con la versión donde se queda el visitante
+(`pagina` = A o B en los datos del panel). Los formularios se atribuyen a
+una versión por las URL que HubSpot guarda del visitante
+(`hs_analytics_last_url` y `hs_analytics_first_url`).
+
 En marcha desde el 16/10: receptor en su versión 5, etiqueta publicada en la
 versión 64 del contenedor. La vista previa de Tag Manager dispara la
 etiqueta en su propia página (`/render`, referente `gtm-msr.appspot.com`);
@@ -83,14 +93,32 @@ secreto, el receptor contesta «clave incorrecta» y la fase lo dice.
 escritura) y dice cuál falla; añade una fila `DIAG` que el puente y el panel
 ignoran.
 
+## Qué cuenta como apertura (20/10)
+
+Un píxel solo dice que *algo* cargó la imagen del correo; no dice quién.
+Los registros del 16 al 20/10 enseñaron tres patrones, y el puente los
+separa en `clasificar_aperturas()` (`bridge/apollo_hubspot_bridge.py`):
+
+| Patrón | Qué es | Qué hace el puente |
+|---|---|---|
+| Carga en los 3 minutos siguientes al envío | El servidor de correo del ayuntamiento, o Gmail/Outlook, descarga las imágenes al recibir. Nadie ha leído nada | Se descarta («automática»). La hora de envío la da HubSpot, donde Apollo registra cada correo al enviarlo |
+| Dos o más ayuntamientos cargan con menos de 90 s entre carga y carga | Alguien de Gravity Wave mirando los correos enviados. El domingo 18/10 a las 11:07 cargaron cuatro ayuntamientos y el correo de prueba interno en el mismo minuto; el lunes, dos con 0,4 s de diferencia | Se descarta («ráfaga»). Cualquier carga junto a una fila que no es de la lista (PRUEBA, DIAG, el correo interno) es ráfaga también |
+| Carga aislada, minutos u horas después del envío | Lo más parecido a una lectura que puede medir un píxel | Cuenta como apertura creíble |
+
+Solo las creíbles ponen `apollo_estado = abierto` en HubSpot; si un
+contacto estaba en «abierto» sin ninguna carga creíble, vuelve a «enviado».
+El panel enseña las creíbles y, aparte, cuántos ayuntamientos tienen solo
+cargas automáticas o internas. Ni así es una certeza: es una estimación
+conservadora, y quien lee con las imágenes bloqueadas no aparece nunca.
+
 ## Qué mide y qué no
 
 - Mide **menos de lo real, nunca más**: un correo leído con las imágenes
   bloqueadas (Outlook en muchos ayuntamientos) no se registra. Es la misma
   limitación que tiene el tracking de Apollo o de cualquier herramienta.
 - Gmail y Apple Mail a veces descargan las imágenes antes de que nadie abra
-  el correo. El puente ignora las aperturas registradas en los **90 segundos**
-  siguientes al envío cuando conoce la hora de envío.
+  el correo. El puente ignora las cargas de los **3 minutos** siguientes al
+  envío (y las de los 90 segundos siguientes a la inscripción).
 - El píxel pasa por `script.google.com`, no por el dominio de Gravity Wave,
   así que no toca la reputación de `thegravitywave.com`.
 - No se guarda la IP del lector: Google no la expone y tampoco hace falta.

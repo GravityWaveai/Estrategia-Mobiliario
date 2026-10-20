@@ -77,6 +77,24 @@ correos ≈ **unos 2 meses** hasta vaciar la cola con este tope. Si se quiere
 ir más rápido, el número a tocar es el de Apollo, y hay que mover
 `OUTBOUND_DAILY_CAP` en la misma proporción (tope ÷ 5).
 
+### Tope a 8 (20/10), y desde entonces lo pone el puente
+
+El 20/10 se pidió subir el tope a **8 correos al día**. Desde entonces el
+número acordado vive en el workflow (`OUTBOUND_MAX_EMAILS_PER_DAY`) y la
+fase **TOPE**, la primera de cada pasada, comprueba el `max_emails_per_day`
+de la secuencia OUTBOUND y lo corrige en Apollo si no coincide (`PUT
+/emailer_campaigns/{id}`, solo ese campo: las plantillas no se tocan). Así
+no hay que acordarse de cambiarlo en dos sitios: se cambia ahí y el puente
+lo aplica en la siguiente pasada. `OUTBOUND_DAILY_CAP` pasa a `2`.
+
+La cuenta con 8: los ~70 ayuntamientos en cadencia tienen cuatro
+seguimientos cada uno por delante, unos 280 correos, que a 8 al día son
+**35 días laborables** solo de seguimientos; cada ayuntamiento nuevo son 5
+correos más en esa misma cola. Apollo no se salta la cola: cuando un correo
+no cabe en el día, lo retrasa al siguiente. Si se quiere que entren más
+ayuntamientos nuevos al día, el tope de Apollo tiene que subir en
+proporción (unos 5 correos por cada ayuntamiento nuevo al día).
+
 ### Qué pasó en septiembre y por qué el relanzamiento es distinto
 
 De los 74 correos que salieron entre el 15 y el 21/09, **73 eran el
