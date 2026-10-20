@@ -71,8 +71,9 @@ else:
 for sel in ("selector1", "selector2", "k1", "mail", "default"):
     if txt(f"{sel}._domainkey.{dom}", "v=dkim1"):
         print(f"        también firma: {sel}._domainkey")
-hs = [c for sel in ("hs1", "hs2") for c in consulta(f"{sel}._domainkey.{dom}", "CNAME")]
-print(f"{OK if hs else MEH} HubSpot {'dominio de envío conectado' if hs else 'sin CNAME hs1/hs2 en el nombre estándar: si HubSpot dio nombres con sufijo (hs1-XXXX), compruébalos en HubSpot → Dominios'}")
+PORTAL_HUBSPOT = "26243090"
+hs = [c for sel in ("hs1", "hs2") for c in consulta(f"{sel}-{PORTAL_HUBSPOT}._domainkey.{dom}", "CNAME")]
+print(f"{OK if len(hs) == 2 else MEH} HubSpot {'dominio de envío conectado (hs1/hs2-' + PORTAL_HUBSPOT + ' → hubspotemail.net)' if len(hs) == 2 else 'faltan los CNAME hs1/hs2-' + PORTAL_HUBSPOT + '._domainkey: reconectar el dominio en HubSpot → Dominios'}")
 
 # --- DMARC
 dmarc = txt(f"_dmarc.{dom}", "v=dmarc1")
