@@ -327,10 +327,11 @@ const abiertos=new Set(AP.map(x=>x.contacto)).size;
 // Rebotes desde el relanzamiento (14/10): los de septiembre venían de la lista
 // sin verificar y no dicen nada de la salud de hoy. Se suman los de los
 // seguimientos (correo 2 en adelante, todos posteriores al relanzamiento) y
-// los de los ayuntamientos inscritos desde esa fecha.
+// los de los ayuntamientos inscritos desde esa fecha. Inscrito no es enviado:
+// de esos, solo cuentan los que ya tienen su primer correo (`primer`).
 const tRel=(fecha(RELANZAMIENTO)||new Date()).getTime();
 const inscRel=(H.contactos||[]).filter(c=>c.insc&&fecha(c.insc)&&fecha(c.insc).getTime()>=tRel);
-const envRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0)+inscRel.filter(c=>c.estado&&c.estado!=='(sin)').length;
+const envRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0)+inscRel.filter(c=>'primer' in c?!!c.primer:(c.estado&&c.estado!=='(sin)')).length;
 const rebRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.bounced||0),0)+inscRel.filter(c=>c.estado==='rebotado').length;
 const pend=D.lista&&D.lista.total!=null?Math.max(0,D.lista.total-((+cs.active||0)+(+cs.paused||0)+(+cs.finished||0)+(+cs.bounced||0)+(+cs.not_sent||0))):null;
 tile('#tiles',0,enviados,'correos salidos del buzón');
@@ -429,11 +430,11 @@ const ultimaApertura={}; AP.forEach(a=>{ const e=(a.email||'').toLowerCase(); co
 function renderTabla(){
   const dealPorNombre={}; N.forEach(d=>{const n=(d.nombre||'').replace(/^Mobiliario urbano\s*[—-]\s*/i,'').trim().toLowerCase(); if(n) dealPorNombre[n]=d;});
   const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  const rows=C.map(c=>({id:c.id,mun:c.mun||'(sin municipio)',who:c.who||'',email:c.email||'',estado:c.estado||'',insc:c.insc,resp:c.resp,abrio:ultimaApertura[(c.email||'').toLowerCase()]||null,deal:dealPorNombre[(c.mun||'').toLowerCase()]||null}))
+  const rows=C.map(c=>({id:c.id,mun:c.mun||'(sin municipio)',who:c.who||'',email:c.email||'',estado:c.estado||'',cola:c.primer===null&&c.estado==='enviado',insc:c.insc,resp:c.resp,abrio:ultimaApertura[(c.email||'').toLowerCase()]||null,deal:dealPorNombre[(c.mun||'').toLowerCase()]||null}))
     .filter(r=>(!filtro||(filtro==='(sin)'?!r.estado:r.estado===filtro))&&(!q||norm(r.mun+' '+r.who+' '+r.email).includes(norm(q))))
     .sort((a,b)=>((fecha(b.insc)||0)-(fecha(a.insc)||0))||a.mun.localeCompare(b.mun,'es'));
   const lbl=Object.fromEntries(ESTADOS);
-  $('#tabla tbody').innerHTML=rows.map(r=>`<tr><td class="mun">${esc(r.mun)}<span class="who" style="font-family:var(--body);font-weight:400">${esc(r.who||r.email)}</span></td><td>${r.estado?`<span class="pill ${esc(r.estado)}">${esc(lbl[r.estado]||r.estado)}</span>`:'<span class="muted">sin inscribir</span>'}</td><td>${fmtDate(r.insc)}</td><td>${r.abrio?fmtDate(r.abrio):'—'}</td><td>${fmtDate(r.resp)}</td><td>${r.deal?esc(ETAPAS[r.deal.etapa]||'—'):'<span class="muted">—</span>'}</td><td><a href="https://app.hubspot.com/contacts/26243090/record/0-1/${esc(r.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`).join('')||`<tr><td colspan="7" class="muted">Ningún contacto con ese filtro.</td></tr>`;
+  $('#tabla tbody').innerHTML=rows.map(r=>`<tr><td class="mun">${esc(r.mun)}<span class="who" style="font-family:var(--body);font-weight:400">${esc(r.who||r.email)}</span></td><td>${r.estado?`<span class="pill ${esc(r.estado)}">${esc(r.cola?'En cola':(lbl[r.estado]||r.estado))}</span>`:'<span class="muted">sin inscribir</span>'}</td><td>${fmtDate(r.insc)}</td><td>${r.abrio?fmtDate(r.abrio):'—'}</td><td>${fmtDate(r.resp)}</td><td>${r.deal?esc(ETAPAS[r.deal.etapa]||'—'):'<span class="muted">—</span>'}</td><td><a href="https://app.hubspot.com/contacts/26243090/record/0-1/${esc(r.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`).join('')||`<tr><td colspan="7" class="muted">Ningún contacto con ese filtro.</td></tr>`;
 }
 renderTabla();
 $('#filtros').addEventListener('click',e=>{const b=e.target.closest('.chip'); if(!b) return; filtro=b.dataset.f; document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(c===b))); renderTabla();});
@@ -447,6 +448,10 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
   if(!A.active) av.push(`<b>La secuencia está pausada${A.status_reason?` (${esc(A.status_reason)})`:''}.</b> No sale ningún correo hasta que alguien la active en Apollo. Los ${enCola} ayuntamientos en cadencia esperan.`);
   if(A.max_emails_per_day!==TOPE) av.push(`<b>El tope de Apollo es ${A.max_emails_per_day}/día, no ${TOPE}.</b> Lo acordado el 20/10 son ${TOPE} correos al día contando seguimientos.`);
   if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)} acumulado.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). ${rebRel?`<b>${rebRel} rebote(s) desde el relanzamiento</b> de ${envRel} enviados: conviene revisar esas direcciones.`:`Todos son de septiembre (lista antigua); desde el relanzamiento, 0 de ${envRel}.`}`);
+  { // «Enviado» en HubSpot es inscrito en Apollo: el primer correo puede esperar en cola.
+    const esperan=inscRel.filter(c=>c.primer===null&&(c.estado==='enviado'||c.estado==='abierto')).sort((a,b)=>fecha(a.insc)-fecha(b.insc));
+    if(esperan.length) av.push(`<b>${esperan.length} ayuntamiento(s) inscritos esperan su primer correo:</b> ${esperan.map(c=>`${esc(c.mun||c.email)} (desde el ${fmtDate(c.insc)})`).join(', ')}. Apollo los tiene en cola: el tope de ${A.max_emails_per_day??TOPE} correos al día incluye los seguimientos, y mientras haya muchos pendientes los primeros correos se retrasan.`);
+  }
   if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${NUEVOS_DIA} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
   if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
   { // Sin el campo «municipio» Apollo no envía: el asunto y el texto llevan {{municipio}}.

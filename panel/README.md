@@ -46,7 +46,7 @@ dato dentro, la página se ve igual en claude.ai, en el receptor
 | `aperturas_descartadas` | Cargas del píxel descartadas por automáticas (3 min tras el envío) o por ráfaga interna |
 | `solo_cargas_automaticas` | Ayuntamientos que solo tienen cargas descartadas; el panel los enseña aparte y no cuentan como abiertos |
 | `visitas[]` | `fecha`, `pagina` (`A` con precios o `B` sin precios), `utm_source`, `utm_medium`, `utm_campaign`, `referente`; solo la landing, sin pruebas, sin la vista previa de Tag Manager, un origen cada 90 s (la redirección del test A/B cuenta una vez, en la versión de destino) |
-| `hubspot.contactos[]` | `id`, `mun`, `who`, `email`, `estado` (apollo_estado), `insc`, `resp` |
+| `hubspot.contactos[]` | `id`, `mun`, `who`, `email`, `estado` (apollo_estado), `insc`, `resp`; y `primer` en los inscritos desde el relanzamiento: hora del primer correo que Apollo registró en HubSpot, o `null` si aún espera en cola («enviado» en HubSpot quiere decir inscrito, no enviado) |
 | `hubspot.negocios[]` | `id`, `nombre`, `etapa` (id de etapa del pipeline), `creado` |
 | `hubspot.leads[]` | Leads del formulario web desde el 15/09: `id`, `email`, `nombre`, `productos`, `fecha`, `pagina` (`A`, `B` o `null` si HubSpot no guardó qué versión vieron) |
 | `inbound` | Secuencia INBOUND: `en_cadencia`, `terminados`, `respondieron`, `entregados`, `spam` |
@@ -59,8 +59,9 @@ visitas con `utm_source=home&utm_medium=banner`; salud del dominio = 25 SPF
 + 25 DKIM propio (10 si firma Google) + 20 DMARC (10 si `pct<100`) + 20
 rebotes <2 % (10 si <4 %) + 10 sin spam. Los rebotes de la salud son los
 **posteriores al relanzamiento** (seguimientos del correo 2 en adelante más
-los inscritos desde el 14/10): los de septiembre venían de la lista sin
-verificar y se enseñan aparte, como acumulado.
+los primeros correos que ya han salido a los inscritos desde el 14/10; los
+que esperan en cola no cuentan como enviados): los de septiembre venían de
+la lista sin verificar y se enseñan aparte, como acumulado.
 
 ## Cambiar la plantilla
 

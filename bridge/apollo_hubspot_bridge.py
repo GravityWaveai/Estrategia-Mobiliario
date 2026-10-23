@@ -1680,6 +1680,41 @@ def datos_panel():
                           "who": " ".join(x for x in (p.get("firstname"), p.get("lastname")) if x),
                           "email": p.get("email") or "", "estado": p.get("apollo_estado") or "",
                           "insc": p.get(FECHA_INSCRIPCION), "resp": p.get("apollo_fecha_respuesta")})
+    # Primer correo de los inscritos desde el relanzamiento. En HubSpot,
+    # «enviado» quiere decir inscrito en Apollo, no que haya salido nada: el
+    # tope diario incluye los seguimientos y los primeros correos esperan en
+    # cola (el 23/10 Torrevieja llevaba cuatro días inscrito sin el suyo).
+    # Contándolos como enviados, la tasa de rebote desde el relanzamiento
+    # salía más baja de lo que es. `primer` = hora del primer correo que
+    # Apollo registró en HubSpot tras la inscripción, o None si aún no hay.
+    rel = _ts(RELANZAMIENTO + "T00:00:00Z")
+    nuevos = {}
+    for c in contactos:
+        insc = _ts(c["insc"])
+        if c["email"] and insc and insc >= rel:
+            c["primer"] = None
+            nuevos[c["email"].lower()] = (c, insc)
+    for lote in _chunks(list(nuevos), 50):
+        after = None
+        while True:
+            body = {"filterGroups": [{"filters": [
+                        {"propertyName": "hs_email_direction", "operator": "EQ", "value": "EMAIL"},
+                        {"propertyName": "hs_email_to_email", "operator": "IN", "values": lote},
+                        {"propertyName": "hs_timestamp", "operator": "GTE",
+                         "value": RELANZAMIENTO + "T00:00:00Z"}]}],
+                    "properties": ["hs_email_to_email", "hs_timestamp"], "limit": 100}
+            if after:
+                body["after"] = after
+            res = hs("POST", "/crm/v3/objects/emails/search", body)
+            for e in res.get("results", []):
+                p = e.get("properties") or {}
+                c, insc = nuevos.get((p.get("hs_email_to_email") or "").strip().lower(), (None, None))
+                t = _ts(p.get("hs_timestamp"))
+                if c and t and t >= insc and (c["primer"] is None or t < _ts(c["primer"])):
+                    c["primer"] = t.strftime("%Y-%m-%dT%H:%M:%SZ")
+            after = res.get("paging", {}).get("next", {}).get("after")
+            if not after:
+                break
     negocios = []
     for d in hs_search_deals(
             [{"filters": [{"propertyName": "pipeline", "operator": "EQ", "value": PIPELINE}]}],
