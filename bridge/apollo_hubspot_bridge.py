@@ -1122,6 +1122,14 @@ def aperturas_clasificadas(por_id):
         log(f"  APERTURAS: {len(sin_hora)} contacto(s) sin hora de envío en HubSpot; "
             "a esos no se les puede descartar la descarga automática")
     creibles, descartadas = clasificar_aperturas(crudas, por_id, horas)
+    # Un correo que rebotó no lo ha leído nadie. Si su píxel se carga es desde
+    # nuestro propio buzón: el aviso de rebote que recibe Amaia lleva dentro el
+    # correo original, con el píxel. Pasó con Sant Lluís el 22/10: rebote a las
+    # 12:54 y carga a las 13:14, al abrir el aviso.
+    for email in [e for e in creibles
+                  if (contactos_hs.get(e, {}).get("properties") or {}).get("apollo_estado") == "rebotado"]:
+        descartadas.setdefault(email, {})
+        descartadas[email]["rebotado"] = descartadas[email].get("rebotado", 0) + len(creibles.pop(email))
     _APERTURAS["res"] = (creibles, descartadas, contactos_hs)
     return _APERTURAS["res"]
 
@@ -1537,6 +1545,7 @@ def datos_panel():
         "steps": pasos,
         "pixel_ok": pixel_ok,
         "no_enviados": [],
+        "sin_municipio": [],
     }
     # --- lista OUTBOUND: municipio por id, y los que Apollo no envía
     indice = apollo_lista_outbound()
@@ -1547,7 +1556,18 @@ def datos_panel():
                     and st.get("failure_reason") == "snippets_missing"):
                 quien = " ".join(x for x in (c.get("first_name"), c.get("last_name")) if x) or c.get("email")
                 apollo_datos["no_enviados"].append(
-                    {"municipio": _municipio_de(c), "quien": quien, "motivo": st.get("failure_reason")})
+                    {"municipio": _municipio_de(c), "organizacion": c.get("organization_name") or "",
+                     "quien": quien, "motivo": st.get("failure_reason")})
+            # En cadencia pero sin municipio: Apollo no les enviará el próximo
+            # correo ({{municipio}} vacío). Se avisa antes de que fallen. Son
+            # contactos inscritos a mano el 21 y el 28/09, sin pasar por el
+            # puente, que no deja inscribir a nadie sin municipio.
+            elif (st.get("emailer_campaign_id") == SEQ_OUTBOUND and st.get("status") in ("active", "paused")
+                    and not _municipio_de(c)):
+                quien = " ".join(x for x in (c.get("first_name"), c.get("last_name")) if x) or c.get("email")
+                apollo_datos["sin_municipio"].append(
+                    {"organizacion": c.get("organization_name") or "", "quien": quien,
+                     "paso": st.get("current_step_position")})
     # --- receptor: aperturas creíbles (solo contactos de la lista) y visitas
     aperturas, descartadas_n, solo_automaticas = [], 0, 0
     if APERTURAS_URL and APERTURAS_KEY:

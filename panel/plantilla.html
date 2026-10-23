@@ -448,7 +448,11 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
   if(enviados&&reb/enviados>=0.03) av.push(`<b>Rebotes al ${pct(reb,enviados)} acumulado.</b> Apollo avisa al 3% y pausa la secuencia sola al 4% (a partir de 200 envíos). ${rebRel?`<b>${rebRel} rebote(s) desde el relanzamiento</b> de ${envRel} enviados: conviene revisar esas direcciones.`:`Todos son de septiembre (lista antigua); desde el relanzamiento, 0 de ${envRel}.`}`);
   if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${NUEVOS_DIA} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
   if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
-  (A.no_enviados||[]).forEach(x=>{ if(x.motivo==='snippets_missing') av.push(`<b>${esc(x.municipio||x.quien||'Un contacto')} no recibe el correo:</b> le falta el campo «municipio» en Apollo. Se arregla rellenándolo en la ficha del contacto; la secuencia reintenta sola.`); });
+  { // Sin el campo «municipio» Apollo no envía: el asunto y el texto llevan {{municipio}}.
+    const lab=x=>`${esc(x.organizacion||x.municipio||'?')}${x.quien?` (${esc(x.quien)})`:''}`;
+    const nm=(A.no_enviados||[]).filter(x=>x.motivo==='snippets_missing'), sm=A.sin_municipio||[];
+    if(nm.length||sm.length) av.push(`<b>${nm.length+sm.length} contacto(s) sin el campo «municipio» en Apollo.</b> Apollo no envía un correo con ese hueco vacío. ${nm.length?`Ya no han recibido su correo: ${nm.map(lab).join(', ')}. `:''}${sm.length?`No lo recibirán cuando les toque: ${sm.map(lab).join(', ')}. `:''}Se arregla rellenando «Municipio» en su ficha de Apollo.`);
+  }
   if(DNS&&DNS.consultado!==false&&(!DNS.spf||!DNS.dmarc)) av.push(`<b>Falta ${!DNS.spf?'SPF':'DMARC'} en el dominio.</b> Sin él, Gmail y Outlook pueden mandar los correos de Amaia a spam.`);
   if(leads.length&&!leads.some(c=>fecha(c.fecha)>ahora.getTime()-30*DIA)) av.push(`<b>Ningún lead web en 30 días.</b> El formulario funciona y valida; lo que falta es tráfico que llegue hasta él.`);
   if(!leads.length) av.push(`<b>Ningún formulario real recibido desde el 15/09.</b> El formulario existe y valida; el banner de la home enlaza con UTM desde el 16/10, así que a partir de ahora se verá cuánta gente llega y cuánta rellena.`);

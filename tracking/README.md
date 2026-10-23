@@ -105,6 +105,11 @@ separa en `clasificar_aperturas()` (`bridge/apollo_hubspot_bridge.py`):
 | Dos o más ayuntamientos cargan con menos de 90 s entre carga y carga | Alguien de Gravity Wave mirando los correos enviados. El domingo 18/10 a las 11:07 cargaron cuatro ayuntamientos y el correo de prueba interno en el mismo minuto; el lunes, dos con 0,4 s de diferencia | Se descarta («ráfaga»). Cualquier carga junto a una fila que no es de la lista (PRUEBA, DIAG, el correo interno) es ráfaga también |
 | Carga aislada, minutos u horas después del envío | Lo más parecido a una lectura que puede medir un píxel | Cuenta como apertura creíble |
 
+Además, un contacto cuyo correo **rebotó** no tiene ninguna carga creíble:
+nadie lo ha leído. Si su píxel se carga es desde nuestro buzón, porque el
+aviso de rebote que recibe Amaia lleva dentro el correo original con el
+píxel (Sant Lluís, 22/10: rebote a las 12:54, carga a las 13:14).
+
 Solo las creíbles ponen `apollo_estado = abierto` en HubSpot; si un
 contacto estaba en «abierto» sin ninguna carga creíble, vuelve a «enviado».
 El panel enseña las creíbles y, aparte, cuántos ayuntamientos tienen solo
