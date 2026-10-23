@@ -180,7 +180,12 @@ FECHA_INSCRIPCION = "apollo_fecha_inscripcion"
 PROPS_NEGOCIO = {"apollo_estado", "apollo_fecha_respuesta"}
 
 
-def _req(url, method, headers, body=None):
+def _solo_lectura(url, method):
+    """GET o búsqueda (POST …/search): repetirla no cambia nada."""
+    return method == "GET" or urllib.parse.urlparse(url).path.rstrip("/").endswith("/search")
+
+
+def _req(url, method, headers, body=None, _intento=1):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
@@ -190,6 +195,17 @@ def _req(url, method, headers, body=None):
     except urllib.error.HTTPError as e:
         detail = e.read().decode()[:400]
         raise RuntimeError(f"{method} {url} -> {e.code}: {detail}") from None
+    except (TimeoutError, urllib.error.URLError) as e:
+        # HubSpot, Apollo o el receptor tardan a veces más de 60 s en una
+        # lectura y la fase entera se pierde: «The read operation timed out»
+        # tumbó PARADA el 23/10 y APERTURAS el 17/10. Una lectura se reintenta
+        # una vez; una escritura no, porque puede que sí se hiciera.
+        timeout = isinstance(e, TimeoutError) or isinstance(getattr(e, "reason", None), TimeoutError)
+        if timeout and _intento == 1 and _solo_lectura(url, method):
+            log(f"  (sin respuesta en 60 s: {method} {urllib.parse.urlparse(url).path}; se reintenta una vez)")
+            time.sleep(5)
+            return _req(url, method, headers, body, _intento=2)
+        raise
 
 
 def hs(method, path, body=None):
