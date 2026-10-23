@@ -194,12 +194,20 @@ def _req(url, method, headers, body=None, _intento=1):
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         detail = e.read().decode()[:400]
+        # 429: HubSpot (o Apollo) rechaza la petición por ir demasiado rápido
+        # y no la procesa, así que repetirla es seguro también si es una
+        # escritura. Las búsquedas de HubSpot admiten pocas por segundo y la
+        # fase APERTURAS hace una por contacto con el píxel cargado.
+        if e.code == 429 and _intento <= 3:
+            time.sleep(1.5 * _intento)
+            return _req(url, method, headers, body, _intento=_intento + 1)
         raise RuntimeError(f"{method} {url} -> {e.code}: {detail}") from None
     except (TimeoutError, urllib.error.URLError) as e:
-        # HubSpot, Apollo o el receptor tardan a veces más de 60 s en una
-        # lectura y la fase entera se pierde: «The read operation timed out»
-        # tumbó PARADA el 23/10 y APERTURAS el 17/10. Una lectura se reintenta
-        # una vez; una escritura no, porque puede que sí se hiciera.
+        # HubSpot, Apollo o el receptor tardan a veces más de 60 s y la fase
+        # entera se pierde («The read operation timed out»: APERTURAS el
+        # 17/10, PARADA el 23/10). Una lectura se reintenta una vez; una
+        # escritura no, porque puede que sí se hiciera. La de PARADA era una
+        # escritura que sobraba (ver _secuencias_vivas).
         timeout = isinstance(e, TimeoutError) or isinstance(getattr(e, "reason", None), TimeoutError)
         if timeout and _intento == 1 and _solo_lectura(url, method):
             log(f"  (sin respuesta en 60 s: {method} {urllib.parse.urlparse(url).path}; se reintenta una vez)")
@@ -860,10 +868,25 @@ def enroll_outbound(sender_id):
         f"marcados; {creados} creado(s) en HubSpot porque Apollo no los había empujado")
 
 
+def _secuencias_vivas(c):
+    """Secuencias de las que Apollo todavía puede mandarle algo al contacto.
+
+    `emailer_campaign_ids` guarda la secuencia para siempre, también después
+    de pararla. PARADA volvía a mandar la orden de parar a Salou —terminado
+    el 16/09— en cada pasada, y el 23/10 esa escritura se quedó dos veces
+    60 s sin respuesta y tumbó la fase. Si Apollo no da el estado, cuenta
+    como viva: mejor una orden de parar de más que un correo de más."""
+    estados = {}
+    for s in c.get("contact_campaign_statuses") or []:
+        estados.setdefault(s.get("emailer_campaign_id"), set()).add(s.get("status"))
+    return [i for i in c.get("emailer_campaign_ids") or []
+            if estados.get(i, {None}) != {"finished"}]
+
+
 def _apollo_sequences_of(email):
     """Secuencias en las que el contacto sigue activo, si está en Apollo."""
     c = apollo_find_by_email(email)
-    return (c, c.get("emailer_campaign_ids") or []) if c else (None, [])
+    return (c, _secuencias_vivas(c)) if c else (None, [])
 
 
 def sync_replies():
@@ -1040,7 +1063,19 @@ def aperturas_del_receptor(desde):
     res = _req(url, "GET", {"accept": "application/json"})
     if res.get("error"):
         raise RuntimeError(f"el receptor de aperturas responde: {res['error']}")
-    return res.get("aperturas", [])
+    filas = res.get("aperturas", [])
+    for a in filas:
+        # Algunos filtros de seguridad de los ayuntamientos reescriben la
+        # dirección del píxel y codifican el «&»: llega «t=<id>&p=2» entero
+        # dentro de «contacto» y el paso vacío. Sin esto, la apertura se
+        # perdía (Gavà, 23/10 a las 12:46, dos horas y media tras el correo 2).
+        c = str(a.get("contacto") or "")
+        if "&" in c:
+            base, _, resto = c.partition("&")
+            a["contacto"] = base
+            if not str(a.get("paso") or "").strip():
+                a["paso"] = (urllib.parse.parse_qs(resto).get("p") or [""])[0]
+    return filas
 
 
 def hs_horas_envio(contact_id, desde):
@@ -1214,7 +1249,7 @@ def _sacar_de_apollo(email, motivo):
     if not contacto:
         return
     for seq in (SEQ_INBOUND, SEQ_OUTBOUND):
-        if seq in (contacto.get("emailer_campaign_ids") or []):
+        if seq in _secuencias_vivas(contacto):
             write(f"sacar {email} de la secuencia — {motivo}",
                   lambda s=seq, c=contacto: apollo_stop(s, [c["id"]]))
 
