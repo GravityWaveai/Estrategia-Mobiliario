@@ -1656,16 +1656,16 @@ def datos_panel():
             # se dispara dos veces en la misma carga, y el reparto A/B de la
             # landing redirige a la otra variante nada más entrar, con lo que
             # llega a dispararse en las dos. Cuenta una, en la variante donde
-            # se queda el visitante. La redirección llega con la propia
-            # landing como referente: quien entra desde Google en A y acaba
-            # en B deja «google» en A y «thegravitywave.com» en B. Hasta el
-            # 26/10 eso contaba dos visitas (5 de 38).
+            # se queda el visitante. La redirección, y cualquier recarga o
+            # paso por otra página de la web, llegan con la propia web como
+            # referente: quien entra desde Google en A y acaba en B deja
+            # «google» en A y «thegravitywave.com» en B. Hasta el 26/10 eso
+            # contaba dos visitas.
             k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"))
             ref = v.get("referente") or ""
             previa = ultima.get(k)
             if previa and (t - previa[0]).total_seconds() < 90 and (
-                    ref == previa[1]["referente"]
-                    or ("thegravitywave.com" in ref and variante != previa[1]["pagina"])):
+                    ref == previa[1]["referente"] or "thegravitywave.com" in ref):
                 previa[1]["pagina"] = variante
                 ultima[k] = (t, previa[1])
                 continue

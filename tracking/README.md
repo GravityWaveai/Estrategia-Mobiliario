@@ -34,10 +34,10 @@ a la otra URL si hace falta. Como la etiqueta llega a dispararse en las dos
 páginas durante esa redirección, el puente cuenta una sola visita por origen
 en 90 segundos y se queda con la versión donde se queda el visitante
 (`pagina` = A o B en los datos del panel). La segunda carga llega con la
-propia landing como referente (quien entra desde Google en A y acaba en B
-deja «google» en A y «thegravitywave.com» en B), así que se junta con la
-anterior aunque el referente cambie; hasta el 26/10 contaba dos visitas
-(5 de 38). Los formularios se atribuyen a
+propia web como referente (quien entra desde Google en A y acaba en B deja
+«google» en A y «thegravitywave.com» en B), así que toda carga con la propia
+web como referente en esos 90 segundos se junta con la anterior, sea cual
+sea la versión; hasta el 26/10 contaba dos visitas. Los formularios se atribuyen a
 una versión por las URL que HubSpot guarda del visitante
 (`hs_analytics_last_url` y `hs_analytics_first_url`).
 
