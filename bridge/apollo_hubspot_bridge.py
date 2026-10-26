@@ -1656,15 +1656,22 @@ def datos_panel():
             # se dispara dos veces en la misma carga, y el reparto A/B de la
             # landing redirige a la otra variante nada más entrar, con lo que
             # llega a dispararse en las dos. Cuenta una, en la variante donde
-            # se queda el visitante.
-            k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"), v.get("referente"))
-            if k in ultima and (t - ultima[k][0]).total_seconds() < 90:
-                ultima[k][1]["pagina"] = variante
-                ultima[k] = (t, ultima[k][1])
+            # se queda el visitante. La redirección llega con la propia
+            # landing como referente: quien entra desde Google en A y acaba
+            # en B deja «google» en A y «thegravitywave.com» en B. Hasta el
+            # 26/10 eso contaba dos visitas (5 de 38).
+            k = (v.get("utm_source"), v.get("utm_medium"), v.get("utm_campaign"))
+            ref = v.get("referente") or ""
+            previa = ultima.get(k)
+            if previa and (t - previa[0]).total_seconds() < 90 and (
+                    ref == previa[1]["referente"]
+                    or ("thegravitywave.com" in ref and variante != previa[1]["pagina"])):
+                previa[1]["pagina"] = variante
+                ultima[k] = (t, previa[1])
                 continue
             v2 = {"fecha": v.get("fecha"), "pagina": variante, "utm_source": v.get("utm_source") or "",
                   "utm_medium": v.get("utm_medium") or "", "utm_campaign": v.get("utm_campaign") or "",
-                  "referente": v.get("referente") or ""}
+                  "referente": ref}
             visitas.append(v2)
             ultima[k] = (t, v2)
     # --- HubSpot: contactos de la campaña, negocios del pipeline, leads web
