@@ -332,7 +332,10 @@ const abiertos=new Set(AP.map(x=>x.contacto)).size;
 const tRel=(fecha(RELANZAMIENTO)||new Date()).getTime();
 const inscRel=(H.contactos||[]).filter(c=>c.insc&&fecha(c.insc)&&fecha(c.insc).getTime()>=tRel);
 const envRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.delivered||0)+(+x.bounced||0),0)+inscRel.filter(c=>'primer' in c?!!c.primer:(c.estado&&c.estado!=='(sin)')).length;
-const rebRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.bounced||0),0)+inscRel.filter(c=>c.estado==='rebotado').length;
+// Un «rebotado» sin primer correo no es un rebote nuestro: Apollo no llegó a
+// enviar (Escorca, 26/10: el dominio no tiene MX y la dirección está en su
+// lista global de rebotes). No cuenta, igual que no cuenta como enviado.
+const rebRel=steps.filter(s=>s.position>1).reduce((s,x)=>s+(+x.bounced||0),0)+inscRel.filter(c=>c.estado==='rebotado'&&('primer' in c?!!c.primer:true)).length;
 const pend=D.lista&&D.lista.total!=null?Math.max(0,D.lista.total-((+cs.active||0)+(+cs.paused||0)+(+cs.finished||0)+(+cs.bounced||0)+(+cs.not_sent||0))):null;
 tile('#tiles',0,enviados,'correos salidos del buzón');
 tile('#tiles',1,entregados,`${pct(entregados,enviados)} de los enviados`);
