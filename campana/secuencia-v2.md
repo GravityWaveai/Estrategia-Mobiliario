@@ -11,10 +11,10 @@ Secuencia antes: 5 pasos · 8 correos/día. Ahora: 3 pasos · 8 correos/día.
 
 | Cambio | Motivo |
 |---|---|
-| De 5 pasos a 3 | Las 6 respuestas salieron de los correos 1 y 2. Los pasos 3 y 4 llevan 77 entregados y **cero** respuestas; el 5 no ha salido nunca. Los pasos 4 y 5 se comen dos tercios del cupo diario sin devolver nada. |
+| De 5 pasos a 3 | La campaña lleva 4 respuestas reales (ver `diagnostico.md`). Lo único que produjo el paso 4 fue una baja, y el 5 no ha salido nunca. Los pasos 4 y 5 se comían dos tercios del cupo diario sin devolver nada útil. |
 | El correo 1 pide un área, no una reunión | Un técnico no reserva hueco en el calendario de un proveedor. Decir «Medio Ambiente» cuesta cinco segundos, y es el dato que de verdad hace falta. |
 | El contrato menor, en la primera frase útil | Es lo único que desbloquea a un técnico municipal: si no hace falta licitación, la conversación es posible este año. No aparecía en ningún correo. |
-| Fuera el píxel de `script.google.com` | 6 de 260 correos lo registraron. No mide nada y es señal de spam para los filtros de la administración. |
+| El píxel de aperturas **se queda** | Se quitó el 20/11 por un error de lectura y se repuso el mismo día. Ver la nota de abajo. |
 | Pie legal de seis líneas a dos | El bloque de RGPD ocupaba más que el mensaje. Sigue cumpliendo: base jurídica, identidad y baja. |
 | Asuntos planos | «{{municipio}} y el Mediterráneo: ¿tenéis algo en marcha?» suena a campaña. Un asunto administrativo pasa mejor los filtros y se parece más a lo que el técnico abre. |
 
@@ -89,12 +89,20 @@ diff declarativo: **el paso que no va en la llamada se borra**, y con él su pla
 Por eso los textos de los pasos 4 y 5 quedan copiados abajo, para poder rehacerlos.
 
 Efecto inmediato: los 43 contactos que estaban en el paso 4 y los 17 del paso 5 han
-pasado a «terminado». Ninguno de los dos pasos había dado una sola respuesta.
+pasado a «terminado». Lo único que había dado el paso 4 era una baja; el 5 no llegó a salir.
 
-También se quitó el píxel de `script.google.com` de las tres plantillas, así que
-`pixel_ok` pasa a `false` en el panel. El aviso correspondiente se reescribió para que
-no suene a avería: es una decisión, no un fallo. El contador de aperturas se queda
-congelado y lo que se mide a partir de ahora son respuestas y visitas a la landing.
+### Nota sobre el píxel de aperturas (corrección del 20/11)
+
+En la primera aplicación se quitó el píxel de `script.google.com` de las tres
+plantillas con el argumento de que «solo lo registraban 6 de 260 correos». **Era
+falso.** Esa cifra es el contador de aperturas propio de Apollo, que en el plan
+gratuito no mide nada. El píxel del equipo (`tracking/aperturas.gs`) sí funciona:
+de 93 correos entregados registra 46 aperturas creíbles, un 49 %.
+
+El píxel se repuso el mismo día en los tres pasos (`p=1`, `p=2`, `p=3`). Entre la
+retirada y la reposición pudo salir algún correo sin él; esos no se pueden medir.
+Las aperturas siguen siendo una métrica válida de esta campaña y el panel las
+sigue contando.
 
 ### Respaldo — paso 4 (se borra)
 
@@ -122,3 +130,40 @@ Asunto: *(vacío, responde al hilo)*
 > infantil en {{municipio}}, aquí me tenéis. Y si prefieres que no vuelva a
 > escribir, con un «no, gracias» me vale y lo anoto.
 > Gracias por el tiempo de todas formas.
+
+---
+
+## Propuesta v3 del correo 1 — pendiente de visto bueno
+
+No está aplicada. Cambia dos cosas respecto a la v2, y solo dos, para poder
+atribuir el resultado:
+
+1. **Saludo con nombre** cuando el contacto es una persona. La lista nueva trae
+   concejales con nombre y apellidos; «Hola Carlos,» no es lo mismo que «Hola,».
+2. **Se adelanta a la objeción que ya nos han dado.** La única respuesta de un
+   responsable del perfil fue «No tenemos presupuesto». El correo deja de pedir
+   algo para este año y se apoya en el calendario: el presupuesto de 2027.
+
+> Hola {nombre},
+>
+> Soy Amaia, de Gravity Wave. Fabricamos bancos y papeleras con el plástico de las
+> redes de pesca que retiramos del Mediterráneo. Están instalados en Calpe, en
+> Dénia y en el paseo de Benidorm —esas letras grandes del paseo son nuestras—.
+>
+> Te escribo ahora por el calendario, no porque busque nada para este año. Si en
+> {{municipio}} estáis preparando el presupuesto de 2027, me gustaría que quien
+> lleva el mobiliario urbano tenga la ficha técnica y un precio orientativo antes
+> de que se cierre. Por precio unitario entra en **contrato menor**, sin licitación.
+>
+> ¿Me dices qué técnico lo lleva, o a qué correo se lo mando?
+>
+> Un saludo,
+> Amaia Rodríguez
+> Gravity Wave S.L. · Calpe (Alicante) · 676 525 906
+
+Antes de aplicarla hay que comprobar cómo resuelve Apollo el saludo cuando el
+contacto es un buzón sin nombre. Apollo no envía un correo con una variable
+vacía —es lo que dejó sin salir los correos de siete contactos con nombre—, así
+que el saludo tiene que ir en un campo propio relleno en todos los contactos
+(«Hola Carlos,» o «Buenos días,»), o con la sintaxis condicional de Apollo
+probada primero en un envío a una dirección interna.
