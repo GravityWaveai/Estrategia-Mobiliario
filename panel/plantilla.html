@@ -456,7 +456,7 @@ $('#q').addEventListener('input',e=>{q=e.target.value.trim(); renderTabla();});
     if(esperan.length) av.push(`<b>${esperan.length} ayuntamiento(s) inscritos esperan su primer correo:</b> ${esperan.map(c=>`${esc(c.mun||c.email)} (desde el ${fmtDate(c.insc)})`).join(', ')}. Apollo los tiene en cola: el tope de ${A.max_emails_per_day??TOPE} correos al día incluye los seguimientos, y mientras haya muchos pendientes los primeros correos se retrasan.`);
   }
   if(pend>0&&!inscRel.length&&(ahora.getTime()-tRel)>2*DIA) av.push(`<b>Desde el relanzamiento no ha entrado ningún ayuntamiento nuevo en la secuencia</b> y quedan ${pend} en la lista. El puente inscribe ${NUEVOS_DIA} al día en la primera pasada a partir de las 9:00 UTC; si no entra nadie, mira la última pasada en GitHub.`);
-  if(A.pixel_ok===false) av.push(`<b>Algún correo de la secuencia no lleva el píxel de aperturas.</b> Los que salgan con esa plantilla no se podrán medir.`);
+  if(A.pixel_ok===false) av.push(`<b>Las plantillas ya no llevan el píxel de aperturas.</b> Se quitó el 20/11/2026 a propósito: solo lo registraban 6 de 260 correos y <code>script.google.com</code> es señal de spam para los filtros de la administración. El contador de aperturas se queda donde está; lo que se mide ahora son respuestas y visitas a la landing.`);
   { // Sin el campo «municipio» Apollo no envía: el asunto y el texto llevan {{municipio}}.
     const lab=x=>`${esc(x.organizacion||x.municipio||'?')}${x.quien?` (${esc(x.quien)})`:''}`;
     const nm=(A.no_enviados||[]).filter(x=>x.motivo==='snippets_missing'), sm=A.sin_municipio||[];

@@ -1,9 +1,11 @@
 # Secuencia OUTBOUND v2 — ayuntamientos
 
-Propuesta de 2026-11-20. **Todavía no aplicada en Apollo**: cambiar una secuencia
-viva con contactos en cadencia necesita el visto bueno de Amaia.
+Propuesta de 2026-11-20, **aplicada en Apollo ese mismo día** con el visto bueno de
+Amaia. La secuencia `6a9844f7d0bf520010f72cc1` tiene ya 3 pasos (días 0, 4 y 9) y el
+texto de abajo. Los 60 contactos que estaban en los pasos 4 y 5 han terminado la
+cadencia en vez de recibirlos.
 
-Secuencia actual: `6a9844f7d0bf520010f72cc1` · 5 pasos · 8 correos/día.
+Secuencia antes: 5 pasos · 8 correos/día. Ahora: 3 pasos · 8 correos/día.
 
 ## Qué cambia y por qué
 
@@ -80,16 +82,19 @@ salida fácil. Eso ya estaba bien.
 
 ---
 
-## Cómo aplicarlo
+## Cómo se aplicó
 
-`apollo_sequences_update` con los 3 pasos que se quedan y sin los dos últimos.
-Es un diff declarativo: **el paso que no va en la llamada se borra**, y con él su
-plantilla. Antes de ejecutarlo, los textos de los pasos 4 y 5 quedan copiados
-abajo para poder rehacerlos.
+`apollo_sequences_update` con los 3 pasos que se quedan y sin los dos últimos. Es un
+diff declarativo: **el paso que no va en la llamada se borra**, y con él su plantilla.
+Por eso los textos de los pasos 4 y 5 quedan copiados abajo, para poder rehacerlos.
 
-En cadencia hay hoy 43 contactos en el paso 4 y 17 en el paso 5: al quitar esos
-pasos terminan la secuencia en vez de recibirlos. Como ninguno de los dos ha
-dado una sola respuesta, es lo que queremos.
+Efecto inmediato: los 43 contactos que estaban en el paso 4 y los 17 del paso 5 han
+pasado a «terminado». Ninguno de los dos pasos había dado una sola respuesta.
+
+También se quitó el píxel de `script.google.com` de las tres plantillas, así que
+`pixel_ok` pasa a `false` en el panel. El aviso correspondiente se reescribió para que
+no suene a avería: es una decisión, no un fallo. El contador de aperturas se queda
+congelado y lo que se mide a partir de ahora son respuestas y visitas a la landing.
 
 ### Respaldo — paso 4 (se borra)
 
