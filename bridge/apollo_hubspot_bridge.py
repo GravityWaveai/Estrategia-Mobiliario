@@ -26,7 +26,9 @@ si son posteriores, para que el historial previo de un contacto que ya estaba
 en el CRM no se confunda con una reacción a esta campaña.
 
 Variables de entorno:
-  HUBSPOT_TOKEN          token de la app privada de HubSpot   (obligatorio)
+  HUBSPOT_TOKEN          token de la app privada de HubSpot   (opcional desde
+                         el 20/11/2026: sin él se saltan las fases del CRM y
+                         Apollo sigue inscribiendo y enviando)
   APOLLO_API_KEY         API key de Apollo                    (obligatorio)
   BRIDGE_ENABLED         "1" para escribir de verdad; si no, simulacro
   OUTBOUND_ENABLED       "0" para desactivar solo OUTBOUND sin tocar INBOUND
@@ -51,6 +53,12 @@ from datetime import datetime, timedelta, timezone
 
 HUBSPOT_TOKEN = os.environ.get("HUBSPOT_TOKEN", "")
 APOLLO_API_KEY = os.environ.get("APOLLO_API_KEY", "")
+# Gravity OS sustituye a HubSpot como CRM (20/11/2026). Mientras dure la
+# mudanza el token sigue valiendo, pero el día que caduque el puente no puede
+# morirse con él: lo único que no se puede parar es inscribir en Apollo, que
+# es lo que mantiene los correos saliendo. Sin token, las fases que viven de
+# HubSpot se saltan y OUTBOUND tira solo de Apollo.
+HUBSPOT_ACTIVO = bool(HUBSPOT_TOKEN)
 ENABLED = os.environ.get("BRIDGE_ENABLED") == "1"
 OUTBOUND_ENABLED = os.environ.get("OUTBOUND_ENABLED", "1") == "1"
 CAP = int(os.environ.get("OUTBOUND_DAILY_CAP", "50"))
@@ -703,14 +711,64 @@ def aplicar_tope_apollo():
     log(f"TOPE: secuencia OUTBOUND a {TOPE_APOLLO} correos al día (antes {actual})")
 
 
+_ESTADOS_SECUENCIA = None
+
+
+def apollo_estados_outbound():
+    """Todos los contactos que han pasado alguna vez por la secuencia OUTBOUND,
+    indexados por email, con la fecha en que entraron.
+
+    Apollo conserva contact_campaign_statuses aunque el contacto ya haya
+    terminado la cadencia, así que sirve para lo mismo que preguntábamos a
+    HubSpot: quién entró hoy y a quién no hay que volver a inscribir. Se trae
+    una sola vez por pasada, como la lista OUTBOUND, para no gastar el tope
+    diario de /contacts/search.
+    """
+    global _ESTADOS_SECUENCIA
+    if _ESTADOS_SECUENCIA is not None:
+        return _ESTADOS_SECUENCIA
+    indice, page = {}, 1
+    while True:
+        res = apollo_contacts(
+            page=page,
+            emailer_campaign_ids=[SEQ_OUTBOUND],
+            fields=[{"contacts": ["id", "email", "contact_campaign_statuses"]}],
+        )
+        lote = res.get("contacts", [])
+        if not lote:
+            break
+        for c in lote:
+            email = (c.get("email") or "").lower()
+            if not email:
+                continue
+            entrada = None
+            for st in c.get("contact_campaign_statuses") or []:
+                if st.get("emailer_campaign_id") == SEQ_OUTBOUND:
+                    entrada = st.get("added_at")
+                    break
+            indice[email] = entrada
+        if page >= res.get("pagination", {}).get("total_pages", 1):
+            break
+        page += 1
+    _ESTADOS_SECUENCIA = indice
+    return indice
+
+
 def inscritos_hoy():
-    """Cuántos contactos de la campaña ha inscrito ya el puente hoy (UTC),
-    según la fecha de inscripción que él mismo sella en HubSpot."""
-    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00Z")
-    return len(hs_search_contacts(
-        [{"filters": [{"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
-                      {"propertyName": FECHA_INSCRIPCION, "operator": "GTE", "value": hoy}]}],
-        ["email"]))
+    """Cuántos contactos de la campaña ha inscrito ya el puente hoy (UTC).
+
+    Con HubSpot, según la fecha de inscripción que él mismo sella allí. Sin
+    HubSpot, según la fecha en que Apollo los metió en la secuencia.
+    """
+    if HUBSPOT_ACTIVO:
+        hoy = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00Z")
+        return len(hs_search_contacts(
+            [{"filters": [{"propertyName": "campana_apollo", "operator": "EQ", "value": CAMPANA},
+                          {"propertyName": FECHA_INSCRIPCION, "operator": "GTE", "value": hoy}]}],
+            ["email"]))
+    hoy = datetime.now(timezone.utc).date().isoformat()
+    return sum(1 for entrada in apollo_estados_outbound().values()
+               if (entrada or "")[:10] == hoy)
 
 
 def enroll_outbound(sender_id):
@@ -762,19 +820,24 @@ def enroll_outbound(sender_id):
             f"NO se inscriben hasta que alguien lo rellene: " + "; ".join(sin_municipio))
 
     # No basta con que Apollo diga "sin secuencia activa": si ya se procesó
-    # antes (respondió, se descartó, rebotó...) HubSpot lo sabe aunque Apollo
+    # antes (respondió, se descartó, rebotó...) hay que saberlo aunque Apollo
     # haya limpiado el campo al terminar. Sin este filtro, un ayuntamiento ya
-    # cerrado podría reinscribirse solo y volver a recibir los 5 correos.
-    ya_procesados = {
-        h["properties"]["email"].lower()
-        for h in hs_search_contacts(
-            [{"filters": [
-                {"propertyName": "email", "operator": "IN", "values": list(candidatos)},
-                {"propertyName": "apollo_estado", "operator": "HAS_PROPERTY"},
-            ]}],
-            ["email"],
-        )
-    }
+    # cerrado podría reinscribirse solo y volver a recibir toda la cadencia.
+    # Con HubSpot lo dice apollo_estado; sin él, el historial de la secuencia
+    # que Apollo conserva en contact_campaign_statuses.
+    if HUBSPOT_ACTIVO:
+        ya_procesados = {
+            h["properties"]["email"].lower()
+            for h in hs_search_contacts(
+                [{"filters": [
+                    {"propertyName": "email", "operator": "IN", "values": list(candidatos)},
+                    {"propertyName": "apollo_estado", "operator": "HAS_PROPERTY"},
+                ]}],
+                ["email"],
+            )
+        }
+    else:
+        ya_procesados = set(apollo_estados_outbound())
     pendientes = [c["id"] for email, c in candidatos.items() if email.lower() not in ya_procesados]
     municipio_de = {email.lower(): (c.get("typed_custom_fields") or {}).get(CAMPO_APOLLO_MUNICIPIO)
                     for email, c in candidatos.items() if email.lower() not in ya_procesados}
@@ -782,7 +845,7 @@ def enroll_outbound(sender_id):
 
     log(f"OUTBOUND: {len(pendientes)} ayuntamiento(s) a inscribir hoy (tope {CAP}"
         + (f", {ya_hoy} ya inscritos hoy" if ya_hoy else "") + ")"
-        + (f", {saltados} descartado(s) por tener ya apollo_estado en HubSpot" if saltados else ""))
+        + (f", {saltados} descartado(s) por haber pasado ya por la campaña" if saltados else ""))
     if not pendientes:
         return
 
@@ -1883,23 +1946,37 @@ def _fase(nombre, fn):
 
 
 def main():
-    if not HUBSPOT_TOKEN or not APOLLO_API_KEY:
-        sys.exit("Faltan HUBSPOT_TOKEN o APOLLO_API_KEY")
+    if not APOLLO_API_KEY:
+        sys.exit("Falta APOLLO_API_KEY")
     if not ENABLED:
         log("=== SIMULACRO: no se escribe nada. Define BRIDGE_ENABLED=1 para activar. ===")
+    if not HUBSPOT_ACTIVO:
+        log("=== SIN HUBSPOT: se saltan las fases que leen o escriben en el CRM. "
+            "Apollo sigue inscribiendo y enviando, que es lo que no puede pararse. ===")
     sender_id = apollo_sender_account_id()
     # Primero lo que corta, luego lo que inscribe: así nunca se escribe a
     # alguien que ya ha respondido o tiene reunión.
     ok = True
     ok &= _fase("TOPE", aplicar_tope_apollo)
-    ok &= _fase("RESPUESTA", sync_replies)
-    ok &= _fase("PARADA", stop_when_engaged)
-    ok &= _fase("ENTRANTES", stop_on_any_inbound)
-    ok &= _fase("SIN RESPUESTA", mark_sin_respuesta)
+    # Estas cuatro viven de HubSpot. Si alguna otra acabara necesitándolo sin
+    # estar en esta lista, _fase la aísla y la pasada sigue igual.
+    for nombre, fn in (("RESPUESTA", sync_replies),
+                       ("PARADA", stop_when_engaged),
+                       ("ENTRANTES", stop_on_any_inbound),
+                       ("SIN RESPUESTA", mark_sin_respuesta)):
+        if HUBSPOT_ACTIVO:
+            ok &= _fase(nombre, fn)
+        else:
+            log(f"{nombre}: sin HubSpot, no toca")
     # Antes de inscribir a nadie: el píxel de los correos necesita que todo
     # contacto lleve tracking_id, si no Apollo no envía (variable vacía).
     ok &= _fase("TRACKING", fill_tracking_ids)
-    ok &= _fase("INBOUND", lambda: enroll_inbound(sender_id))
+    # Los leads de la web entran por el formulario de HubSpot: sin él no hay
+    # de dónde sacarlos hasta que el formulario viva en Gravity OS.
+    if HUBSPOT_ACTIVO:
+        ok &= _fase("INBOUND", lambda: enroll_inbound(sender_id))
+    else:
+        log("INBOUND: sin HubSpot, no hay formulario del que inscribir")
     # OUTBOUND inscribe como mucho CAP al día, a partir de esta hora. Hasta el
     # 19/10 solo corría en la pasada de esa hora exacta, y como GitHub se
     # salta pasadas (ese día no hubo ninguna entre las 04:54 y las 10:56 UTC)
@@ -1912,12 +1989,18 @@ def main():
     else:
         log(f"OUTBOUND: no toca todavía hoy (se inscribe en la primera pasada "
             f"a partir de las {HORA_ENVIO_OUTBOUND}:00 UTC)")
-    ok &= _fase("REBOTES", sync_bounces)
-    ok &= _fase("APERTURAS", sync_opens)
-    # Va al final: así repara también lo que se acabe de inscribir en esta
-    # misma pasada, en cuanto se le pase la gracia.
-    ok &= _fase("NEGOCIOS", repair_negocios_sin_crear)
-    # Al final del todo, con HubSpot ya actualizado en esta misma pasada.
+    # Las tres vuelcan a HubSpot lo que ha pasado en Apollo.
+    for nombre, fn in (("REBOTES", sync_bounces),
+                       ("APERTURAS", sync_opens),
+                       ("NEGOCIOS", repair_negocios_sin_crear)):
+        if HUBSPOT_ACTIVO:
+            ok &= _fase(nombre, fn)
+        else:
+            log(f"{nombre}: sin HubSpot, no toca")
+    # El panel todavía lee el CRM para su bloque de contactos y negocios. Si
+    # HubSpot desaparece antes de portarlo a Gravity OS, esta fase fallará y
+    # la pasada saldrá en rojo: es la señal de que toca portarlo, y llega
+    # después de OUTBOUND, así que los correos siguen saliendo igual.
     ok &= _fase("PANEL", build_panel)
     log("Listo." if ok else "Listo, con fallos — revisa los ### de arriba.")
     if not ok:
