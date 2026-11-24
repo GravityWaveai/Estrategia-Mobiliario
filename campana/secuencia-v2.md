@@ -1,4 +1,9 @@
-# Secuencia OUTBOUND v2 — ayuntamientos
+# Secuencia OUTBOUND: ayuntamientos
+
+> **En vigor: la v5, al final de este fichero** (dos correos, 10 al día),
+> pendiente del visto bueno de Amaia. Lo de arriba es el historial. Los textos
+> que se enviaron hasta el 24/11 se conservan tal cual, con sus guiones largos;
+> desde el 24/11 no se usa ninguno.
 
 Propuesta de 2026-11-20, **aplicada en Apollo ese mismo día** con el visto bueno de
 Amaia. La secuencia `6a9844f7d0bf520010f72cc1` tiene ya 3 pasos (días 0, 4 y 9) y el
@@ -23,7 +28,7 @@ salida fácil. Eso ya estaba bien.
 
 ---
 
-## Correo 1 — día 0 · hilo nuevo
+## Correo 1 · día 0 · hilo nuevo
 
 **Asunto:** `Mobiliario urbano en {{municipio}} — ¿quién lo lleva?`
 
@@ -44,7 +49,7 @@ salida fácil. Eso ya estaba bien.
 > Amaia Rodríguez
 > Gravity Wave S.L. · Calpe (Alicante) · 676 525 906
 
-## Correo 2 — día 4 · responde al hilo
+## Correo 2 · día 4 · responde al hilo
 
 > Hola de nuevo,
 >
@@ -61,7 +66,7 @@ salida fácil. Eso ya estaba bien.
 >
 > ¿Me dices a quién le paso la ficha técnica?
 
-## Correo 3 — día 9 · responde al hilo
+## Correo 3 · día 9 · responde al hilo
 
 > Hola,
 >
@@ -104,7 +109,7 @@ retirada y la reposición pudo salir algún correo sin él; esos no se pueden me
 Las aperturas siguen siendo una métrica válida de esta campaña y el panel las
 sigue contando.
 
-### Respaldo — paso 4 (se borra)
+### Respaldo · paso 4 (se borra)
 
 Asunto: *(vacío, responde al hilo)*
 
@@ -120,7 +125,7 @@ Asunto: *(vacío, responde al hilo)*
 > ¿Cómo vais de mantenimiento con el mobiliario actual en {{municipio}}? ¿Os está
 > dando trabajo o de momento va bien?
 
-### Respaldo — paso 5 (se borra)
+### Respaldo · paso 5 (se borra)
 
 Asunto: *(vacío, responde al hilo)*
 
@@ -133,104 +138,125 @@ Asunto: *(vacío, responde al hilo)*
 
 ---
 
-## Propuesta v3 del correo 1 — pendiente de visto bueno
+## Propuestas v3 y v4 (20 y 24/11): descartadas
 
-No está aplicada. Cambia dos cosas respecto a la v2, y solo dos, para poder
-atribuir el resultado:
+Ninguna llegó a enviarse. La v3 quedó cargada en el paso 1 de Apollo con la
+secuencia pausada; la v4 solo existió en este fichero. Las sustituye la v5. De
+ellas se conserva el saludo con nombre cuando el contacto es una persona, el
+contrato menor y el presupuesto de 2027.
 
-1. **Saludo con nombre** cuando el contacto es una persona. La lista nueva trae
-   concejales con nombre y apellidos; «Hola Carlos,» no es lo mismo que «Hola,».
-2. **Se adelanta a la objeción que ya nos han dado.** La única respuesta de un
-   responsable del perfil fue «No tenemos presupuesto». El correo deja de pedir
-   algo para este año y se apoya en el calendario: el presupuesto de 2027.
-
-> Hola {nombre},
->
-> Soy Amaia, de Gravity Wave. Fabricamos bancos y papeleras con el plástico de las
-> redes de pesca que retiramos del Mediterráneo. Están instalados en Calpe, en
-> Dénia y en el paseo de Benidorm —esas letras grandes del paseo son nuestras—.
->
-> Te escribo ahora por el calendario, no porque busque nada para este año. Si en
-> {{municipio}} estáis preparando el presupuesto de 2027, me gustaría que quien
-> lleva el mobiliario urbano tenga la ficha técnica y un precio orientativo antes
-> de que se cierre. Por precio unitario entra en **contrato menor**, sin licitación.
->
-> ¿Me dices qué técnico lo lleva, o a qué correo se lo mando?
->
-> Un saludo,
-> Amaia Rodríguez
-> Gravity Wave S.L. · Calpe (Alicante) · 676 525 906
-
-Antes de aplicarla hay que comprobar cómo resuelve Apollo el saludo cuando el
-contacto es un buzón sin nombre. Apollo no envía un correo con una variable
-vacía —es lo que dejó sin salir los correos de siete contactos con nombre—, así
-que el saludo tiene que ir en un campo propio relleno en todos los contactos
-(«Hola Carlos,» o «Buenos días,»), o con la sintaxis condicional de Apollo
-probada primero en un envío a una dirección interna.
+Sobre el saludo: Apollo no envía un correo con una variable vacía (es lo que
+dejó sin salir los correos de siete contactos con nombre). La plantilla usa la
+sintaxis condicional de Apollo,
+`{{#if first_name}}Hola {{first_name}},{{#else}}Hola,{{#endif}}`, que todavía no
+se ha visto en un envío real: el agente lee el primer correo 1 que salga.
 
 ---
 
-## v4 · con la voz de Amaia — pendiente de su visto bueno (24/11)
+## v5 · dos correos, 10 al día: pendiente del visto bueno de Amaia (24/11)
 
-Sustituye a la v3. No está aplicada: la secuencia está pausada hasta que Amaia
-lea estos textos. Están también, al lado de los anteriores, en el documento
-«Campaña ayuntamientos · Antes y ahora».
+No está aplicada: la secuencia sigue pausada hasta que Amaia lea estos textos.
+Están también, al lado de los anteriores, en el documento «Campaña
+ayuntamientos · Antes y ahora».
 
-Cómo escribe Amaia, sacado de sus correos reales: corto, directo, de tú, una
-idea por línea, preguntas concretas y «¡Gracias!» para cerrar.
+Las tres reglas que puso Amaia el 24/11:
 
-**Asunto:** `Bancos para {{municipio}} hechos con redes de pesca`
+1. Como mucho **10 correos al día** contando los seguimientos, con prioridad a
+   los nuevos: 7 nuevos y 3 seguimientos.
+2. **Ningún guion largo** en ningún texto.
+3. Naturales, como escribe ella: corto, directo, de tú, una idea por línea y
+   «¡Gracias!» para cerrar.
 
-### Correo 1 — día 0
+| Paso | Cuándo | Tope al día | A quién |
+|---|---|---|---|
+| Correo 1 | día 0, hilo nuevo | 7 | A todos |
+| Seguimiento | día 7, mismo hilo | 3 | A 3 de cada 7: primero a quien abrió el correo 1 y no contestó |
+
+El tercer correo desaparece: con 10 al día, un segundo seguimiento le quitaría
+el sitio a un ayuntamiento nuevo. Lo que pedía (el presupuesto de 2027 y que lo
+reenvíen a quien lo lleve) pasa al seguimiento único.
+
+**Asunto:** `Mobiliario urbano de {{municipio}}`
+
+### Correo 1
 
 > Hola Carlos,  *(«Hola,» si es el buzón de un departamento)*
 >
-> Soy Amaia, cofundadora de Gravity Wave. Estamos en Calpe y nos dedicamos a
-> sacar redes de pesca del Mediterráneo y convertirlas en bancos y papeleras.
+> ¿Lleváis vosotros el mobiliario urbano de {{municipio}}, los bancos y las
+> papeleras?
 >
-> Ya están en la calle en Calpe y en Dénia, y las letras grandes del paseo de
-> Benidorm también son nuestras.
+> Soy Amaia, de Gravity Wave. Los hacemos con redes de pesca que sacamos del
+> Mediterráneo. Ya están puestos en Calpe y en Dénia, y las letras grandes del
+> paseo de Benidorm también son nuestras.
 >
-> Te escribo porque {{municipio}} es de costa y creo que os puede encajar. Dos
-> cosas que me suelen preguntar los ayuntamientos:
+> No hay que pintarlos ni barnizarlos, y se pueden comprar por contrato menor.
 >
-> — No hay que pintarlo ni barnizarlo. Aguanta el salitre tal cual.
-> — Por precio unitario entra en contrato menor, sin licitación.
->
-> ¿Me dices quién lleva el mobiliario urbano en {{municipio}}? Le mando el
-> catálogo y un precio orientativo, por si os cuadra para el presupuesto de 2027.
+> Si lo lleváis vosotros, os mando el catálogo. Si lo lleva otra persona, dime
+> quién y le escribo.
 >
 > ¡Gracias!
 > Amaia
 
-### Correo 2 — día 4, mismo hilo
+80 palabras. Se contesta con un sí o con un nombre. Solo texto: sin foto, sin
+enlaces y sin adjuntos. Lleva el píxel propio de aperturas (`p=1`).
+
+### Seguimiento
 
 > Hola de nuevo,
 >
-> Te mando una foto, que se entiende mejor que explicándolo. Así quedaron las
-> letras en el paseo de Benidorm:
+> Te mando una foto para que lo veas. Así quedó nuestro material en el paseo de
+> Benidorm:
 >
-> *[foto]*
+> *[foto: `https://www.thegravitywave.com/wp-content/uploads/2026/08/letras_benidorm.jpg`]*
 >
-> Es el mismo material que usamos en los bancos. El color es el de la propia
-> red, así que no se destiñe con el sol.
+> Si os encaja para el presupuesto de 2027, te paso el catálogo y un precio
+> orientativo.
 >
-> Si me dices a quién se lo paso, le mando el catálogo y no te molesto más.
+> Y si no depende de ti, ¿se lo reenvías a quien lo lleve?
 >
-> Saludos,
+> ¡Gracias!
 > Amaia
 
-### Correo 3 — día 9, mismo hilo
+La foto va dentro del correo, alojada en la web de Gravity Wave. No es un
+adjunto. Píxel `p=2`.
 
-> Hola,
->
-> Último correo, que no quiero ser pesada.
->
-> Si el mobiliario urbano no depende de ti, ¿le reenvías este correo a quien lo
-> lleve? Y si ahora no toca, con un «no» me vale y lo apunto.
->
-> Si más adelante os planteáis renovar bancos o papeleras en {{municipio}}, aquí
-> estamos, en Calpe.
->
-> ¡Gracias por leerme!
-> Amaia
+El pie es el de dos líneas de arriba, en los dos correos.
+
+### Qué se comparte y cuándo
+
+| Cuándo | Qué |
+|---|---|
+| Correo 1 | Solo texto |
+| Seguimiento | La foto de las letras de Benidorm, dentro del correo |
+| Cuando contestan | El catálogo «GRAVITEC · Catálogo Mobiliario Urbano 2026» en PDF y un precio orientativo, que pone Amaia |
+| Nunca en frío | Adjuntos, tarifa ni precios unitarios |
+
+### En qué se apoya
+
+Datos publicados por empresas de correo en frío. Sirven para la dirección, no
+para la cifra: son casi todos de ventas entre empresas y en inglés.
+
+| Qué dicen | Fuente | Qué se ha hecho |
+|---|---|---|
+| Los correos de 100 palabras o menos, de tres o cuatro frases, son los que más respuestas reciben; los mejores bajan de 80 | [Gong](https://www.gong.io/resources/labs/does-cold-email-even-work-any-more-heres-what-the-data-says/), [Instantly](https://instantly.ai/cold-email-benchmark-report-2026), [Snov](https://snov.io/blog/cold-email-statistics/) | De 150 palabras a 80 |
+| En frío funciona mejor pedir interés que pedir una reunión | [Gong, 304.174 correos](https://www.gong.io/resources/labs/this-surprising-cold-email-cta-will-help-you-book-a-lot-more-meetings/) | Se quita el enlace a la agenda; se pregunta si lo llevan ellos |
+| Los seguimientos dan más de la mitad de las respuestas, pero cada uno rinde menos que el anterior y a partir del tercero la tasa baja | [Belkins](https://belkins.io/blog/sales-follow-up-statistics), [Hunter 2025, 31 millones de correos](https://hunter.io/the-state-of-cold-email-2025), [Woodpecker](https://woodpecker.co/cold-email-benchmark/) | De cuatro seguimientos a uno, primero a quien abrió |
+| El primer correo, en texto plano y sin enlaces ni adjuntos | [Mailshake](https://mailshake.com/blog/module-1-cold-email-landscape/), [Woodpecker](https://woodpecker.co/blog/boost-cold-email-deliverability/), [Hunter](https://hunter.io/blog/is-html-harming-your-cold-email-deliverability/) | Correo 1 solo texto |
+| Una o dos imágenes no perjudican la entrega si el correo tiene texto suficiente | [lemlist](https://www.lemlist.com/blog/images-cold-email-deliverability) | La foto, solo en el seguimiento |
+| Los asuntos de 3 a 6 palabras son los que más respuestas reciben | [Hunter](https://hunter.io/the-state-of-cold-email-2025), [Woodpecker](https://woodpecker.co/cold-email-benchmark/) | De 9 palabras a 4 |
+
+### Lo que no se sabe todavía
+
+- **Si convertirá mejor.** Nadie puede asegurarlo. La mejora de verdad está en la
+  lista, más que en el texto: la campaña anterior tuvo un 4,3 % de respuesta, que
+  es lo normal, y ninguna sirvió porque contestaba quien no podía comprar.
+- **El asunto.** El antiguo abría al 49 %. El nuevo es más claro, pero si la
+  apertura baja del 30 % se vuelve al anterior.
+- **El píxel.** Algunas de estas fuentes aconsejan quitar el seguimiento de
+  aperturas del primer correo. Se mantiene porque sin él no hay tasa de apertura
+  ni forma de elegir a quién hacer seguimiento.
+- **El contrato menor.** Amaia tiene que confirmar que un pedido normal queda
+  por debajo de 15.000 € sin IVA. Si no, se quita la frase.
+- **El teléfono.** El pie llevaba un número y la firma automática otro. Decide
+  Amaia cuál se queda.
+- **El saludo condicional**, hasta verlo en el primer envío real.

@@ -6,8 +6,8 @@ verdad publican las webs municipales (`lista/README.md`).
 
 ## La regla en una línea
 
-> **El área que compra y mantiene el mobiliario urbano —Servicios, Vía Pública,
-> Parques y Jardines, Medio Ambiente o Playas— de un municipio costero
+> **El área que compra y mantiene el mobiliario urbano (Servicios, Vía Pública,
+> Parques y Jardines, Medio Ambiente o Playas) de un municipio costero
 > mediterráneo o insular de 5.000 a 50.000 habitantes.**
 
 ## A quién se le escribe dentro del área
@@ -36,8 +36,8 @@ reenviando el correo.
 
 ## Dos contactos por municipio, no más
 
-En cada ayuntamiento entran primero dos direcciones de áreas distintas —una del
-lado de Servicios o Vía Pública y otra del lado de Medio Ambiente o Playas—. El
+En cada ayuntamiento entran primero dos direcciones de áreas distintas: una del
+lado de Servicios o Vía Pública y otra del lado de Medio Ambiente o Playas. El
 resto queda en reserva para una segunda vuelta. Tres correos iguales en la misma
 semana al mismo ayuntamiento se leen como envío masivo.
 

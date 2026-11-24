@@ -1,8 +1,9 @@
-# Agente de prospección — rutina diaria
+# Agente de prospección: rutina diaria
 
 Lo ejecuta Claude cada día laborable a las 7:17 (hora de Madrid), antes de que
 el puente inscriba a las 9:00 y de que Apollo empiece a enviar a las 10:00. Hace
-cuatro cosas, siempre en este orden: **comprobar, alimentar, buscar y contar**.
+cinco cosas, siempre en este orden: **comprobar, alimentar, elegir los
+seguimientos, buscar y contar**.
 
 Este fichero es la única fuente de instrucciones. Si algo de aquí choca con lo
 que recuerdes de otro día, manda lo que pone aquí.
@@ -23,6 +24,7 @@ cubiertos (`campana/lista/cola-prospeccion.csv`).
 | Vía de entrada | Apollo · `V2 · BUZON`, `V2 · CONCEJAL`, `V2 · TECNICO` | `6b05afecb69ae10014e36577`, `6b05ad7fe36010001090c27b`, `6b05b0451815c30018c5ece2` |
 | Prioridad | Apollo · `V2 · P1`, `V2 · P2` | `6b05ad7fe36010001090c27c`, `6b05affd7a0aab001837b151` |
 | Referidos por una respuesta | Apollo · `V2 · REFERIDO` | por nombre |
+| Recibieron el correo 1 y no el seguimiento | Apollo · `V2 · SIN SEGUIMIENTO` | por nombre |
 | Bajas | Apollo · `V2 · BAJA (no contactar)` | por nombre |
 | Campo `municipio` | Apollo, campo propio | `6a999f44b6a7d5001357d023` |
 | Cola de municipios | repositorio | `campana/lista/cola-prospeccion.csv` |
@@ -52,13 +54,24 @@ Dos cosas de método que ya han costado tiempo:
 
 Amaia pidió parar la lista antigua y no enviar a la nueva hasta leer los textos
 nuevos. La secuencia está **pausada** desde el 24/11. Mientras siga así, el
-agente no alimenta la lista de envío: solo busca contactos y lo dice en el
-parte. Cuando Amaia dé el visto bueno, antes de reactivar hay que:
+agente no alimenta la lista de envío ni elige seguimientos: solo busca contactos
+y lo dice en el parte. Cuando Amaia dé el visto bueno, antes de reactivar hay
+que:
 
-1. Aplicar los tres correos nuevos (`secuencia-v2.md`, apartado v4).
+1. Aplicar los dos correos nuevos (`secuencia-v2.md`, apartado v5) y borrar el
+   tercer paso. Tope por paso: 7 en el correo 1 y 3 en el seguimiento. Espera
+   del seguimiento: 7 días.
 2. Parar a los contactos de la lista antigua que siguen dentro de la secuencia
    (todos menos los siete con nombre inscritos el 24/11).
-3. Tener fusionado el tope nuevo: 8 ayuntamientos y 24 correos al día.
+3. Tener fusionado el tope nuevo en la rama por defecto: 7 ayuntamientos y 10
+   correos al día.
+4. El primer día no se alimenta: salen los siete con nombre que ya están
+   dentro. En la lista de envío esperan además cinco contactos del perfil que
+   el puente inscribirá el segundo día; ese día se pasan solo dos.
+
+Reglas de texto que puso Amaia el 24/11 y valen para todo lo que escriba el
+agente, partes incluidos: **ningún guion largo** y correos naturales, como
+escribe ella.
 
 ## 1 · Comprobar (antes de tocar nada)
 
@@ -85,7 +98,7 @@ parte. Cuando Amaia dé el visto bueno, antes de reactivar hay que:
    apartado «Respuestas».
 
 Si una de las comprobaciones 2, 3 o 4 falla, se salta el paso 2 (alimentar) y
-se sigue con el 3 y el 4: buscar contactos no envía nada.
+se sigue con los demás: elegir seguimientos y buscar contactos no añaden envíos.
 
 ## 2 · Alimentar la lista de envío
 
@@ -101,21 +114,61 @@ tope diario**. Así se decide aquí quién sale y en qué orden.
    últimos 30 días o que esté en bajas.
 4. Si alguno de `V2 · EN ESPERA` ya está en la lista de envío o en una
    secuencia, no cuenta: se le quita `V2 · EN ESPERA` y se pasa al siguiente.
-5. A los primeros —tantos como el tope—: añádelos a la lista de envío y a
+5. A los primeros, tantos como el tope: añádelos a la lista de envío y a
    `V2 · EN COLA`, y quítalos de `V2 · EN ESPERA`.
 
-El primer día se pasaron el doble para que haya un día de colchón. Los lunes
-se recuenta: si en la lista de envío hay más de tres días de tope esperando,
-ese día no se añade nada.
+En la lista de envío no debe esperar nadie de un día para otro: lo que se pasa
+por la mañana lo inscribe el puente ese mismo día. Antes de pasar a nadie se
+cuenta cuántos hay ya esperando en la lista de envío y se pasa solo la
+diferencia hasta el tope. Si el agente no corre un día, ese día no entra nadie
+nuevo y no pasa nada.
 
 **Sin pedir permiso.** Amaia lo dejó dicho el 24/11: los contactos del perfil
 entran en la lista de envío sin preguntarle. El agente alimenta cada mañana y lo
 cuenta en el parte; no espera un sí. La inscripción en la secuencia la sigue
 haciendo el puente, que es quien respeta el tope diario.
 
-## 3 · Buscar contactos nuevos
+## 3 · Elegir los seguimientos del día
 
-Cinco municipios al día, mientras queden pendientes en la cola. A 8 contactos
+El tope son **10 correos al día: 7 primeros correos y 3 seguimientos**. Lo fijó
+Amaia el 24/11, con prioridad a los nuevos. Como entran 7 contactos al día y
+solo hay sitio para 3 seguimientos, cada mañana se decide quién recibe el suyo.
+El seguimiento sale 7 días después del correo 1, el mismo día de la semana, así
+que cada día toca un solo grupo de siete.
+
+1. Saca el grupo de hoy: los contactos que recibieron el correo 1 hace 7 días
+   (`apollo_emailer_messages_search` con la secuencia y el paso 1, por fecha de
+   envío) y siguen activos en la secuencia. Quien contestó, rebotó o pidió la
+   baja ya está fuera.
+2. Ordénalos así:
+   1. Abrió el correo 1. Mientras HubSpot siga vivo es `apollo_estado =
+      abierto`, que escribe el puente con el píxel propio.
+   2. Persona con nombre antes que buzón.
+   3. Prioridad 1 antes que prioridad 2.
+
+   No más de uno por municipio, salvo que sobren huecos.
+3. Los tres primeros se quedan como están: Apollo les envía el seguimiento hoy.
+4. A los demás se les para en la secuencia
+   (`apollo_emailer_campaigns_remove_or_stop_contact_ids` con `mode: stop` y el
+   motivo «Sin seguimiento: tope de 10 correos al día»). **Nunca `remove`**, que
+   es irreversible. Se les añade a `V2 · SIN SEGUIMIENTO`: son la segunda vuelta
+   de más adelante.
+5. Si se juntan dos grupos (un festivo, un día sin agente), tres por grupo.
+6. Si no se sabe quién abrió (HubSpot apagado, píxel caído), se elige por los
+   criterios 2 y 3 y se dice en el parte.
+
+El tope de cada paso en Apollo (7 y 3) es el cinturón de seguridad: aunque el
+agente falle un día, no salen más de 10 correos. Ese día Apollo elige por su
+cuenta y deja cola; al día siguiente se para a quien lleve más de un día
+esperando el seguimiento y no esté entre los elegidos.
+
+La primera semana hay que comprobar en Apollo que la espera de 7 días cuenta
+días naturales. Si cuenta laborables, el grupo de hoy es el de hace 9 días y se
+corrige este apartado.
+
+## 4 · Buscar contactos nuevos
+
+Cinco municipios al día, mientras queden pendientes en la cola. A 7 contactos
 nuevos diarios la lista de espera se gasta deprisa: con menos de cinco no
 se repone.
 
@@ -164,7 +217,7 @@ se repone.
 ### Encargo para el agente de lectura
 
 ```
-Start at {WEB} — official website of the town council (Ayuntamiento / Ajuntament) of {MUNICIPIO} ({PROVINCIA}, Spain). If it redirects to a site that is not the council's, stop and say so. Using ONLY official council pages (its own domain, its sede electrónica, its transparency portal), read at most 9 pages and find:
+Start at {WEB}, the official website of the town council (Ayuntamiento / Ajuntament) of {MUNICIPIO} ({PROVINCIA}, Spain). If it redirects to a site that is not the council's, stop and say so. Using ONLY official council pages (its own domain, its sede electrónica, its transparency portal), read at most 9 pages and find:
 C = CURRENT councillors (concejal/a, regidor/a) whose delegation includes Medio Ambiente / Medi Ambient, Playas / Platges / Litoral, Parques y Jardines, Servicios (urbanos, técnicos, generales, públicos), Obras y Servicios, Mantenimiento or Vía Pública.
 T = named municipal staff of those areas (técnico/a, jefe/a de servicio or sección, ingeniero/a).
 B = the own mailbox and phone of those departments (not the general info@ / registro mailbox).
@@ -187,7 +240,7 @@ en el parte la respuesta que propone, para copiar y enviar.
 
 | Qué dice | Qué se hace |
 |---|---|
-| Da un nombre o un área («eso lo lleva Fulano», «escribid a tal correo») | Es lo que pide el correo 1 y lo mejor que puede pasar. Se crea el contacto en `V2 · REFERIDO` —**fuera de la secuencia**— y se propone el correo de Amaia para esa persona, citando a quien la remitió. |
+| Da un nombre o un área («eso lo lleva Fulano», «escribid a tal correo») | Es lo que pide el correo 1 y lo mejor que puede pasar. Se crea el contacto en `V2 · REFERIDO`, **fuera de la secuencia**, y se propone el correo de Amaia para esa persona, citando a quien la remitió. |
 | Pide la ficha, el precio o una llamada | Respuesta propuesta para el mismo hilo. Sin precios: los pone Amaia. |
 | Objeción («no hay presupuesto», «va por licitación») | Respuesta propuesta que contesta a esa objeción y pide solo quién lo lleva. |
 | «Baja» o cualquier negativa clara | El contacto a `V2 · BAJA (no contactar)`. No se vuelve a escribir a ese buzón, y a nadie más de ese ayuntamiento en 90 días. |
@@ -195,12 +248,14 @@ en el parte la respuesta que propone, para copiar y enviar.
 
 **Nunca se envía un correo.**
 
-## 4 · Contar
+## 5 · Contar
 
 Guarda la cola (`git add campana/lista/cola-prospeccion.csv`, commit y push a
 la rama de trabajo) y deja un parte de diez líneas como mucho:
 
 - Pasados a envío hoy: cuántos y de qué municipios.
+- Seguimientos de hoy: a qué municipios, con qué criterio, y a cuántos se ha
+  parado.
 - Encontrados hoy: cuántos, de qué municipios y por qué vía.
 - Respuestas nuevas, cada una con lo que se ha preparado.
 - Salud: rebote de la lista nueva y cualquier correo no enviado.
@@ -209,7 +264,10 @@ la rama de trabajo) y deja un parte de diez líneas como mucho:
 - Lo que necesite una decisión de Amaia, si hay algo.
 
 Los lunes, además, la tabla de la semana por vía de entrada: enviados,
-respondidos y qué dijeron. Es el dato que dirá si el perfil funciona.
+abiertos, respondidos y qué dijeron. Con ella se rellena la columna «Campaña
+nueva» de las siete tasas (apertura; respuesta por contactado y por apertura;
+respuesta útil por respuesta; cliente por respuesta, por apertura y por
+contactado). Es el dato que dirá si el perfil funciona.
 
 ## Lo que el agente no hace nunca
 

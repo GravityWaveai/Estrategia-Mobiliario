@@ -30,11 +30,11 @@ El correo llega y se abre. Lo que falla está entre abrir y contestar.
 
 | Tipo de buzón | Abre | Responde |
 |---|---|---|
-| Alcaldía | 67 % | — |
+| Alcaldía | 67 % | sin dato |
 | Puerta genérica (`info@`, `ajuntament@`…) | 51 % | 2 de 53 |
 | Buzón temático (medio ambiente, servicios, playas) | 46 % | 2 de 13 |
 | Contratación / registro | 41 % | 0 de 17 |
-| Persona con nombre | — | 0 de 4 |
+| Persona con nombre | sin dato | 0 de 4 |
 
 Tres conclusiones:
 
@@ -50,8 +50,8 @@ Tres conclusiones:
   había contestado. Los cuatro que sí recibieron correo son poca muestra para
   concluir nada.
 
-Y las dos respuestas con contenido son dos objeciones concretas —procedimiento
-y presupuesto— que el correo no adelantaba. La v2 ya adelanta la primera
+Y las dos respuestas con contenido son dos objeciones concretas (procedimiento
+y presupuesto) que el correo no adelantaba. La v2 ya adelanta la primera
 (contrato menor). La v3 propuesta adelanta la segunda (presupuesto de 2027).
 
 ## Qué se sostiene del plan y qué cambia
