@@ -48,19 +48,20 @@ jobs:
           # verdad es la secuencia en Apollo (pausada = no sale nada) y, para
           # todo el puente, BRIDGE_ENABLED.
           OUTBOUND_ENABLED: '1'
-          # Relanzamiento del 14/10 con la lista verificada a mano. El tope de
-          # verdad está en Apollo: la secuencia OUTBOUND tiene max_emails_per_day
-          # = 8 desde el 20/10 (antes 5), y eso cuenta TODO lo que sale
-          # (primeros correos y seguimientos). Este número solo dice cuántos
-          # ayuntamientos NUEVOS inscribe el puente por día laborable; cada uno
-          # son 5 correos más en la misma cola de Apollo, que con 70 a medio
-          # camino ya va llena. Ver bridge/README.md, «El tope diario».
-          OUTBOUND_DAILY_CAP: '2'
+          # Cuántos ayuntamientos NUEVOS inscribe el puente por día laborable.
+          # 7 desde el 24/11, pedido por Amaia: como mucho 10 correos al día
+          # contando los seguimientos, con prioridad a los nuevos (7 nuevos y
+          # 3 seguimientos). Quién entra cada día lo decide el agente de
+          # prospección, que pasa esos contactos de la lista de espera a la de
+          # envío (ver campana/agente-prospeccion.md).
+          OUTBOUND_DAILY_CAP: '7'
           # Correos al día de la secuencia OUTBOUND en Apollo, seguimientos
-          # incluidos: 8 desde el 20/10 (pedido por el usuario; antes 5). La
-          # fase TOPE lo comprueba en cada pasada y lo corrige en Apollo si
-          # no coincide. Este es el sitio donde se cambia.
-          OUTBOUND_MAX_EMAILS_PER_DAY: '8'
+          # incluidos. La fase TOPE lo comprueba en cada pasada y lo corrige en
+          # Apollo si no coincide. Este es el sitio donde se cambia.
+          # 8 desde el 20/10; 10 desde el 24/11. El reparto de 7 y 3 se fija en
+          # Apollo con el tope de cada paso: 7 en el correo 1 y 3 en el
+          # seguimiento.
+          OUTBOUND_MAX_EMAILS_PER_DAY: '10'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
           # Receptor propio de aperturas (tracking/README.md). La URL es la de
           # la aplicación web de Apps Script, termina en /exec. La clave es el

@@ -1,0 +1,178 @@
+orden,cod_ine,municipio,municipio_apollo,provincia,prioridad,web,estado,contactos,intentos,ultimo_intento,nota
+1,03011,"Alfàs del Pi, l'",l'Alfàs del Pi,Alicante,1,http://www.lalfas.es,cubierto,2,1,2026-11-20,
+2,03018,Altea,Altea,Alicante,1,https://www.altea.es/,pendiente,0,1,2026-11-20,web en JavaScript
+3,03041,Benissa,Benissa,Alicante,1,http://www.ajbenissa.es,cubierto,3,1,2026-11-20,
+4,03050,"Campello, el",el Campello,Alicante,1,https://www.elcampello.es/,cubierto,4,1,2026-11-20,
+5,03076,Guardamar del Segura,Guardamar del Segura,Alicante,1,http://www.guardamardelsegura.es,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+6,03902,Pilar de la Horadada,Pilar de la Horadada,Alicante,1,http://www.pilardelahoradada.org,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+7,03121,Santa Pola,Santa Pola,Alicante,1,http://www.santapola.es,cubierto,1,1,2026-11-20,
+8,03128,Teulada,Teulada,Alicante,1,https://www.teuladamoraira.org,pendiente,0,1,2026-11-20,sin correos publicados
+9,03139,"Vila Joiosa, la",la Vila Joiosa,Alicante,1,http://www.villajoyosa.com/,cubierto,5,1,2026-11-20,
+10,03082,Xàbia,Xàbia,Alicante,1,https://www.ajxabia.com,cubierto,1,1,2026-11-20,
+11,46082,Canet d'En Berenguer,Canet d'En Berenguer,Valencia,1,http://www.canetdenberenguer.es/,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+12,46105,Cullera,Cullera,Valencia,1,http://www.cullera.es,cubierto,3,1,2026-11-20,
+13,46181,Oliva,Oliva,Valencia,1,http://www.oliva.es/,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+14,46199,"Pobla de Farnals, la",la Pobla de Farnals,Valencia,1,http://www.lapobladefarnals.es,pendiente,0,1,2026-11-20,leída
+15,46205,Puçol,Puçol,Valencia,1,http://www.puçol.es,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+16,46238,Tavernes de la Valldigna,Tavernes de la Valldigna,Valencia,1,http://www.tavernes.es,cubierto,3,1,2026-11-20,
+17,46143,Xeraco,Xeraco,Valencia,1,http://www.xeraco.es,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+18,12004,Alcalà de Xivert,Alcalà de Xivert,Castellón,1,http://www.alcaladexivert.es,cubierto,1,1,2026-11-20,
+19,12009,Almassora,Almassora,Castellón,1,http://www.almassora.es/,pendiente,0,1,2026-11-20,web en JavaScript
+20,12011,Almenara,Almenara,Castellón,1,http://www.almenara.es,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+21,12027,Benicarló,Benicarló,Castellón,1,http://www.ajuntamentdebenicarlo.org,cubierto,2,1,2026-11-20,
+22,12028,Benicàssim,Benicàssim,Castellón,1,https://ayto.benicassim.es,cubierto,2,1,2026-11-20,
+23,12032,Borriana,Borriana,Castellón,1,https://www.burriana.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+24,12077,Moncofa,Moncofa,Castellón,1,https://moncofa.com,pendiente,0,1,2026-11-20,leída
+25,12085,Orpesa,Orpesa,Castellón,1,http://www.oropesadelmar.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador; hay personas identificadas sin correo o direcciones por confirmar
+26,12089,Peníscola,Peníscola,Castellón,1,http://peniscola.es/ http://www.peniscola.org/,cubierto,4,1,2026-11-20,
+27,12117,Torreblanca,Torreblanca,Castellón,1,http://www.torreblanca.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+28,12138,Vinaròs,Vinaròs,Castellón,1,http://www.vinaros.es,cubierto,3,1,2026-11-20,
+29,30026,Mazarrón,Mazarrón,Murcia,1,http://www.mazarron.es,cubierto,2,1,2026-11-20,
+30,30035,San Javier,San Javier,Murcia,1,https://www.sanjavier.es,cubierto,4,1,2026-11-20,
+31,30036,San Pedro del Pinatar,San Pedro del Pinatar,Murcia,1,http://ayto.sanpedrodelpinatar.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+32,30003,Águilas,Águilas,Murcia,1,https://www.ayuntamientodeaguilas.org/,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+33,07002,Alaior,Alaior,Illes Balears,1,http://www.alaior.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+34,07005,Andratx,Andratx,Illes Balears,1,http://www.andratx.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+35,07022,Felanitx,Felanitx,Illes Balears,1,http://www.ajfelanitx.net,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+36,07039,Muro,Muro,Illes Balears,1,http://www.ajmuro.net/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+37,07042,Pollença,Pollença,Illes Balears,1,http://www.ajpollenca.net/,cubierto,3,1,2026-11-20,
+38,07059,"Salines, Ses",Ses Salines,Illes Balears,1,http://www.ajsessalines.net/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+39,07050,Sant Joan de Labritja,Sant Joan de Labritja,Illes Balears,1,http://www.sant-joan.com/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+40,07051,Sant Llorenç des Cardassar,Sant Llorenç des Cardassar,Illes Balears,1,http://www.santllorenc.es,pendiente,0,1,2026-11-20,leída
+41,07052,Sant Lluís,Sant Lluís,Illes Balears,1,http://www.ajsantlluis.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+42,07054,Santa Eulària des Riu,Santa Eulària des Riu,Illes Balears,1,http://www.santaeulalia.net/,cubierto,2,1,2026-11-20,
+43,07055,Santa Margalida,Santa Margalida,Illes Balears,1,http://www.ajsantamargalida.net,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+44,07057,Santanyí,Santanyí,Illes Balears,1,http://www.ajsantanyi.net/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+45,07062,Son Servera,Son Servera,Illes Balears,1,http://www.sonservera.es,pendiente,0,1,2026-11-20,leída
+46,43004,Alcanar,Alcanar,Tarragona,1,http://www.alcanar.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+47,43012,Altafulla,Altafulla,Tarragona,1,https://www.altafulla.cat/,pendiente,0,1,2026-11-20,leída
+48,43013,"Ametlla de Mar, L'",L'Ametlla de Mar,Tarragona,1,https://ametllamar.cat,pendiente,0,1,2026-11-20,web en JavaScript
+49,43037,Calafell,Calafell,Tarragona,1,http://www.calafell.cat,pendiente,0,1,2026-11-20,leída
+50,43038,Cambrils,Cambrils,Tarragona,1,https://www.cambrils.cat,cubierto,2,1,2026-11-20,
+51,43051,Cunit,Cunit,Tarragona,1,https://cunit.cat,cubierto,2,1,2026-11-20,
+52,43901,Deltebre,Deltebre,Tarragona,1,https://deltebre.cat,cubierto,1,1,2026-11-20,
+53,43131,Roda de Berà,Roda de Berà,Tarragona,1,http://web.rodadebera.cat/,pendiente,0,1,2026-11-20,leída
+54,43136,"Ràpita, La",La Ràpita,Tarragona,1,https://larapita.cat,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+55,43153,Torredembarra,Torredembarra,Tarragona,1,http://www.torredembarra.cat/,cubierto,2,1,2026-11-20,
+56,43162,Vandellòs i l'Hospitalet de l'Infant,l'Hospitalet de l'Infant,Tarragona,1,http://www.vandellos-hospitalet.cat,cubierto,2,1,2026-11-20,
+57,43163,"Vendrell, El",El Vendrell,Tarragona,1,https://www.elvendrell.net/,cubierto,2,1,2026-11-20,
+58,43171,Vila-seca,Vila-seca,Tarragona,1,http://www.vila-seca.cat/,pendiente,0,1,2026-11-20,leída
+59,08035,Calella,Calella,Barcelona,1,https://www.calella.cat/,cubierto,1,1,2026-11-20,
+60,08040,Canet de Mar,Canet de Mar,Barcelona,1,https://canetdemar.cat,cubierto,2,1,2026-11-20,
+61,08074,Cubelles,Cubelles,Barcelona,1,http://www.cubelles.cat,cubierto,1,1,2026-11-20,
+62,08089,Gavà,Gavà,Barcelona,1,https://www.gavaciutat.cat,pendiente,0,1,2026-11-20,leída
+63,08110,Malgrat de Mar,Malgrat de Mar,Barcelona,1,https://www.ajmalgrat.cat,pendiente,0,1,2026-11-20,leída
+64,08118,"Masnou, El",El Masnou,Barcelona,1,https://www.elmasnou.cat/,cubierto,4,1,2026-11-20,
+65,08163,Pineda de Mar,Pineda de Mar,Barcelona,1,https://www.pinedademar.cat,pendiente,0,1,2026-11-20,leída
+66,08270,Sitges,Sitges,Barcelona,1,http://www.sitges.cat/,cubierto,2,1,2026-11-20,
+67,17023,Blanes,Blanes,Girona,1,http://www.blanes.cat,pendiente,0,1,2026-11-20,web en JavaScript
+68,17034,Calonge i Sant Antoni,Calonge i Sant Antoni,Girona,1,http://www.calonge.cat/,pendiente,0,1,2026-11-20,web en JavaScript
+69,17048,"Castell d'Aro, Platja d'Aro i s'Agaró",Platja d'Aro,Girona,1,http://www.platjadaro.cat,cubierto,3,1,2026-11-20,
+70,17047,Castelló d'Empúries,Castelló d'Empúries,Girona,1,http://www.castello.cat/,cubierto,1,1,2026-11-20,
+71,17095,Lloret de Mar,Lloret de Mar,Girona,1,https://www.lloret.cat/,cubierto,1,1,2026-11-20,
+72,17117,Palafrugell,Palafrugell,Girona,1,https://www.palafrugell.cat,cubierto,2,1,2026-11-20,
+73,17118,Palamós,Palamós,Girona,1,http://www.palamos.cat/,cubierto,3,1,2026-11-20,
+74,17160,Sant Feliu de Guíxols,Sant Feliu de Guíxols,Girona,1,http://www.guixols.cat/,cubierto,2,1,2026-11-20,
+75,17199,Torroella de Montgrí,Torroella de Montgrí,Girona,1,https://www.torroella-estartit.cat,pendiente,0,1,2026-11-20,leída
+76,17202,Tossa de Mar,Tossa de Mar,Girona,1,http://www.tossademar.cat,cubierto,2,1,2026-11-20,
+77,04003,Adra,Adra,Almería,1,http://www.adra.es/,cubierto,3,1,2026-11-20,
+78,04032,Carboneras,Carboneras,Almería,1,http://www.ayuntamientodecarboneras.es/,pendiente,0,1,2026-11-20,leída
+79,04035,Cuevas del Almanzora,Cuevas del Almanzora,Almería,1,http://www.cuevasdelalmanzora.es/,cubierto,1,1,2026-11-20,
+80,04064,Mojácar,Mojácar,Almería,1,http://www.mojacar.es/,pendiente,0,1,2026-11-20,leída
+81,04066,Níjar,Níjar,Almería,1,http://www.nijar.es,cubierto,1,1,2026-11-20,
+82,04075,Pulpí,Pulpí,Almería,1,http://www.pulpi.es/,pendiente,0,1,2026-11-20,leída
+83,04100,Vera,Vera,Almería,1,http://www.vera.es/,cubierto,2,1,2026-11-20,
+84,18017,Almuñécar,Almuñécar,Granada,1,http://www.almunecar.es/,cubierto,3,1,2026-11-20,
+85,18093,Gualchos,Gualchos,Granada,1,http://www.gualchos.es,pendiente,0,1,2026-11-20,leída
+86,18173,Salobreña,Salobreña,Granada,1,http://www.ayto-salobrena.es,pendiente,0,1,2026-11-20,sin correos publicados
+87,29005,Algarrobo,Algarrobo,Málaga,1,http://www.algarrobo.es,cubierto,2,1,2026-11-20,
+88,29041,Casares,Casares,Málaga,1,http://www.casares.es,pendiente,0,1,2026-11-20,leída
+89,29068,Manilva,Manilva,Málaga,1,http://www.ayto-manilva.es/,pendiente,0,1,2026-11-20,leída
+90,29075,Nerja,Nerja,Málaga,1,https://esnerja.com,pendiente,0,1,2026-11-20,leída
+91,29091,Torrox,Torrox,Málaga,1,http://www.torrox.es/,pendiente,0,1,2026-11-20,sin correos publicados
+92,35001,Agaete,Agaete,Las Palmas,1,http://www.aytoagaete.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+93,35002,Agüimes,Agüimes,Las Palmas,1,https://www.aguimes.es/,cubierto,3,1,2026-11-20,
+94,35006,Arucas,Arucas,Las Palmas,1,http://www.arucas.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+95,35009,Gáldar,Gáldar,Las Palmas,1,http://www.galdar.es/,cubierto,4,1,2026-11-20,
+96,35011,Ingenio,Ingenio,Las Palmas,1,http://ingenio.es/,pendiente,0,1,2026-11-20,leída
+97,35014,"Oliva, La",La Oliva,Las Palmas,1,http://www.laoliva.es,pendiente,0,1,2026-11-20,leída
+98,35017,Puerto del Rosario,Puerto del Rosario,Las Palmas,1,http://www.puertodelrosario.org/,cubierto,5,1,2026-11-20,
+99,35015,Pájara,Pájara,Las Palmas,1,http://www.pajara.es/,pendiente,0,1,2026-11-20,leída
+100,35030,Tuineje,Tuineje,Las Palmas,1,http://www.tuineje.es/,pendiente,0,1,2026-11-20,leída
+101,35028,Tías,Tías,Las Palmas,1,http://www.ayuntamientodetias.es/,pendiente,0,1,2026-11-20,leída
+102,35034,Yaiza,Yaiza,Las Palmas,1,http://yaiza.es/,pendiente,0,1,2026-11-20,leída
+103,38008,Breña Alta,Breña Alta,Santa Cruz de Tenerife,1,http://brenaalta.es/,pendiente,0,1,2026-11-20,leída
+104,38009,Breña Baja,Breña Baja,Santa Cruz de Tenerife,1,https://www.bbaja.es/,cubierto,1,1,2026-11-20,
+105,38019,Guía de Isora,Guía de Isora,Santa Cruz de Tenerife,1,http://www.guiadeisora.es,cubierto,2,1,2026-11-20,
+106,38022,Icod de los Vinos,Icod de los Vinos,Santa Cruz de Tenerife,1,http://icoddelosvinos.es/,cubierto,1,1,2026-11-20,
+107,38024,"Llanos de Aridane, Los",Los Llanos de Aridane,Santa Cruz de Tenerife,1,http://www.aridane.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+108,38031,"Realejos, Los",Los Realejos,Santa Cruz de Tenerife,1,http://www.losrealejos.es,pendiente,0,1,2026-11-20,web en JavaScript
+109,38037,Santa Cruz de la Palma,Santa Cruz de la Palma,Santa Cruz de Tenerife,1,http://www.santacruzdelapalma.es/,cubierto,2,1,2026-11-20,
+110,38043,Tacoronte,Tacoronte,Santa Cruz de Tenerife,1,http://www.tacoronte.es/,cubierto,2,1,2026-11-20,
+111,38048,Valverde,Valverde,Santa Cruz de Tenerife,1,http://aytovalverde.org/,cubierto,1,1,2026-11-20,
+112,03069,Finestrat,Finestrat,Alicante,2,http://www.finestrat.es,pendiente,0,1,2026-11-20,web en JavaScript
+113,46013,Alboraia,Alboraia,Valencia,2,http://www.alboraia.es,pendiente,0,1,2026-11-20,leída
+114,46164,Massamagrell,Massamagrell,Valencia,2,http://www.massamagrell.es/,pendiente,0,1,2026-11-20,leída
+115,46166,Meliana,Meliana,Valencia,2,http://www.meliana.es,pendiente,0,1,2026-11-20,leída
+116,46204,"Puig de Santa Maria, el",el Puig de Santa Maria,Valencia,2,http://www.elpuig.es/va,cubierto,2,1,2026-11-20,
+117,46235,Sueca,Sueca,Valencia,2,https://sueca.es,pendiente,0,1,2026-11-20,leída
+118,12082,Nules,Nules,Castellón,2,http://www.nules.es,cubierto,2,1,2026-11-20,
+119,30902,"Alcázares, Los",Los Alcázares,Murcia,2,http://www.losalcazares.es/,cubierto,3,1,2026-11-20,
+120,30041,"Unión, La",La Unión,Murcia,2,http://www.ayto-launion.com,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+121,07006,Artà,Artà,Illes Balears,2,https://arta.cat/,pendiente,0,1,2026-11-20,sin correos publicados
+122,07013,Campos,Campos,Illes Balears,2,http://www.ajcampos.net,cubierto,1,1,2026-11-20,
+123,07014,Capdepera,Capdepera,Illes Balears,2,http://www.ajcapdepera.net,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+124,07064,"Castell, Es",Es Castell,Illes Balears,2,http://www.aj-escastell.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+125,07015,Ciutadella de Menorca,Ciutadella de Menorca,Illes Balears,2,http://www.ajciutadella.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+126,07020,Esporles,Esporles,Illes Balears,2,https://esporles.cat,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+127,07023,Ferreries,Ferreries,Illes Balears,2,http://www.ajferreries.org,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+128,07024,Formentera,Formentera,Illes Balears,2,http://consellformentera.com/,pendiente,0,1,2026-11-20,sin correos publicados
+129,07031,Llucmajor,Llucmajor,Illes Balears,2,http://llucmajor.org/,pendiente,0,1,2026-11-20,sin correos publicados
+130,07033,Manacor,Manacor,Illes Balears,2,http://manacor.org/es,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+131,07032,Maó,Maó,Illes Balears,2,http://www.ajmao.org,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+132,07037,"Mercadal, Es",Es Mercadal,Illes Balears,2,http://www.aj-esmercadal.org/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+133,07046,Sant Antoni de Portmany,Sant Antoni de Portmany,Illes Balears,2,http://www.santantoni.net/,cubierto,2,1,2026-11-20,
+134,07048,Sant Josep de sa Talaia,Sant Josep de sa Talaia,Illes Balears,2,http://www.santjosep.org/,cubierto,4,1,2026-11-20,
+135,07061,Sóller,Sóller,Illes Balears,2,https://ajsoller.net,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+136,43014,Amposta,Amposta,Tarragona,2,http://www.amposta.cat/,pendiente,0,1,2026-11-20,leída
+137,43092,Mont-roig del Camp,Mont-roig del Camp,Tarragona,2,http://www.mont-roig.cat/,pendiente,0,1,2026-11-20,leída
+138,43905,Salou,Salou,Tarragona,2,http://www.salou.cat/,cubierto,2,1,2026-11-20,
+139,08006,Arenys de Mar,Arenys de Mar,Barcelona,2,http://www.arenysdemar.cat/,cubierto,1,1,2026-11-20,
+140,08029,Cabrera de Mar,Cabrera de Mar,Barcelona,2,https://www.cabrerademar.cat,cubierto,2,1,2026-11-20,
+141,08126,Montgat,Montgat,Barcelona,2,https://www.montgat.cat,cubierto,2,1,2026-11-20,
+142,08172,Premià de Mar,Premià de Mar,Barcelona,2,http://www.premiademar.cat/,cubierto,3,1,2026-11-20,
+143,08194,Sant Adrià de Besòs,Sant Adrià de Besòs,Barcelona,2,http://www.sant-adria.net/,pendiente,0,1,2026-11-20,leída
+144,08197,Sant Andreu de Llavaneres,Sant Andreu de Llavaneres,Barcelona,2,https://www.ajllavaneres.cat,cubierto,3,1,2026-11-20,
+145,08235,Sant Pol de Mar,Sant Pol de Mar,Barcelona,2,http://www.santpol.cat/,cubierto,2,1,2026-11-20,
+146,08264,Sant Vicenç de Montalt,Sant Vicenç de Montalt,Barcelona,2,https://www.svmontalt.cat,cubierto,3,1,2026-11-20,
+147,08219,Vilassar de Mar,Vilassar de Mar,Barcelona,2,http://www.vilassardemar.cat,pendiente,0,1,2026-11-20,leída
+148,17062,"Escala, L'",L'Escala,Girona,2,http://www.lescala.cat/,pendiente,0,1,2026-11-20,leída
+149,17152,Roses,Roses,Girona,2,http://www.roses.cat/,pendiente,0,1,2026-11-20,leída
+150,17181,Santa Cristina d'Aro,Santa Cristina d'Aro,Girona,2,https://santacristina.cat,pendiente,0,1,2026-11-20,leída
+151,04049,Garrucha,Garrucha,Almería,2,http://www.garrucha.es/,pendiente,0,1,2026-11-20,leída
+152,18006,Albuñol,Albuñol,Granada,2,http://www.albunol.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+153,35020,"Aldea de San Nicolás, La",La Aldea de San Nicolás,Las Palmas,2,http://laaldeasanicolas.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+154,35003,Antigua,Antigua,Las Palmas,2,http://ayto-antigua.es/,cubierto,2,1,2026-11-20,
+155,35010,Haría,Haría,Las Palmas,2,http://www.ayuntamientodeharia.com/,pendiente,0,1,2026-11-20,web en JavaScript
+156,35012,Mogán,Mogán,Las Palmas,2,http://www.mogan.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+157,35013,Moya,Moya,Las Palmas,2,http://www.villademoya.es/,cubierto,1,1,2026-11-20,
+158,35018,San Bartolomé,San Bartolomé,Las Palmas,2,http://www.sanbartolome.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+159,35023,Santa María de Guía de Gran Canaria,Santa María de Guía,Las Palmas,2,http://santamariadeguia.es/,cubierto,2,1,2026-11-20,
+160,35024,Teguise,Teguise,Las Palmas,2,http://www.teguise.es,pendiente,0,1,2026-11-20,leída
+161,35029,Tinajo,Tinajo,Las Palmas,2,http://www.tinajo.es,pendiente,0,1,2026-11-20,leída
+162,38004,Arafo,Arafo,Santa Cruz de Tenerife,2,http://www.arafo.es/,pendiente,0,1,2026-11-20,web en JavaScript
+163,38005,Arico,Arico,Santa Cruz de Tenerife,2,http://www.ayuntamientodearico.com/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+164,38011,Candelaria,Candelaria,Santa Cruz de Tenerife,2,http://www.candelaria.es/,cubierto,2,1,2026-11-20,
+165,38018,"Guancha, La",La Guancha,Santa Cruz de Tenerife,2,http://www.laguancha.es/,pendiente,0,1,2026-11-20,leída
+166,38020,Güímar,Güímar,Santa Cruz de Tenerife,2,http://www.guimar.es/,pendiente,0,1,2026-11-20,leída
+167,38025,"Matanza de Acentejo, La",La Matanza de Acentejo,Santa Cruz de Tenerife,2,http://www.matanceros.es/,pendiente,0,1,2026-11-20,leída
+168,38026,"Orotava, La",La Orotava,Santa Cruz de Tenerife,2,https://www.laorotava.es/,cubierto,1,1,2026-11-20,
+169,38028,Puerto de la Cruz,Puerto de la Cruz,Santa Cruz de Tenerife,2,https://www.puertodelacruz.es/,cubierto,2,1,2026-11-20,
+170,38032,"Rosario, El",El Rosario,Santa Cruz de Tenerife,2,http://www.ayuntamientoelrosario.org/,pendiente,0,1,2026-11-20,web en JavaScript
+171,38035,San Miguel de Abona,San Miguel de Abona,Santa Cruz de Tenerife,2,http://www.sanmigueldeabona.es/,pendiente,0,1,2026-11-20,web en JavaScript
+172,38036,San Sebastián de la Gomera,San Sebastián de la Gomera,Santa Cruz de Tenerife,2,https://www.sansebastiangomera.org/,pendiente,0,1,2026-11-20,leída
+173,38039,Santa Úrsula,Santa Úrsula,Santa Cruz de Tenerife,2,http://www.santaursula.es/,pendiente,0,1,2026-11-20,leída
+174,38040,Santiago del Teide,Santiago del Teide,Santa Cruz de Tenerife,2,https://www.santiagodelteide.es/,cubierto,2,1,2026-11-20,
+175,38041,"Sauzal, El",El Sauzal,Santa Cruz de Tenerife,2,http://www.elsauzal.es/,pendiente,0,1,2026-11-20,leída
+176,38051,"Victoria de Acentejo, La",La Victoria de Acentejo,Santa Cruz de Tenerife,2,http://www.lavictoriadeacentejo.es/,cubierto,1,1,2026-11-20,
+177,38053,Villa de Mazo,Villa de Mazo,Santa Cruz de Tenerife,2,http://www.villademazo.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
