@@ -42,19 +42,19 @@ La rutina del agente está escrita paso a paso en `agente-prospeccion.md`.
 
 ## El ritmo
 
-| | Hoy | En cuanto se fusione la rama | Siguiente escalón |
-|---|---|---|---|
-| Ayuntamientos nuevos al día | 2 | 4 | 6 |
-| Correos al día, seguimientos incluidos | 8 | 14 | 20 |
-| Contactos nuevos por semana | 10 | 20 | 30 |
+| | Hasta el 24/11 | Desde el visto bueno de Amaia |
+|---|---|---|
+| Ayuntamientos nuevos al día | 2 | **8** |
+| Correos al día, seguimientos incluidos | 8 | hasta **24** |
+| Contactos nuevos por semana | 10 | 40 |
 
-El salto a 6 y 20 se da cuando la lista nueva lleve al menos 40 correos
-enviados con el rebote por debajo del 4 %. Las direcciones salen de webs
-oficiales, pero no están validadas una a una: por eso se sube en dos pasos.
+Lo pidió Amaia el 24/11: empezar de cero con la lista nueva, a 8 correos nuevos
+al día más los seguimientos. El volumen sube solo: 8 el primer día, 16 a partir
+del quinto y 24 a partir del noveno, cuando ya corren los tres pasos. La primera
+ola (113 contactos) sale en tres semanas.
 
-Con 150 contactos ya leídos y el agente añadiendo unos cinco al día, a 4
-diarios hay lista para más de dos meses; a 6, el universo de 177 municipios
-queda recorrido hacia finales de enero.
+La lista antigua queda parada. La secuencia está pausada hasta que Amaia lea los
+textos nuevos; el tope nuevo necesita además que la rama se fusione.
 
 ## Las dos semanas que importan
 

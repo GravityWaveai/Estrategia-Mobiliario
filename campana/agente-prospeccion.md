@@ -48,6 +48,18 @@ Dos cosas de método que ya han costado tiempo:
   700 palabras por contacto. Por eso los lotes son pequeños y las búsquedas
   piden solo los campos que hacen falta (`fields`).
 
+## Estado a 24/11: secuencia pausada
+
+Amaia pidió parar la lista antigua y no enviar a la nueva hasta leer los textos
+nuevos. La secuencia está **pausada** desde el 24/11. Mientras siga así, el
+agente no alimenta la lista de envío: solo busca contactos y lo dice en el
+parte. Cuando Amaia dé el visto bueno, antes de reactivar hay que:
+
+1. Aplicar los tres correos nuevos (`secuencia-v2.md`, apartado v4).
+2. Parar a los contactos de la lista antigua que siguen dentro de la secuencia
+   (todos menos los siete con nombre inscritos el 24/11).
+3. Tener fusionado el tope nuevo: 8 ayuntamientos y 24 correos al día.
+
 ## 1 · Comprobar (antes de tocar nada)
 
 1. **La secuencia está activa.** `apollo_emailer_messages_search` con la
@@ -103,9 +115,11 @@ haciendo el puente, que es quien respeta el tope diario.
 
 ## 3 · Buscar contactos nuevos
 
-Tres municipios al día, mientras queden pendientes en la cola.
+Cinco municipios al día, mientras queden pendientes en la cola. A 8 contactos
+nuevos diarios la lista de espera se gasta deprisa: con menos de cinco no
+se repone.
 
-1. De `cola-prospeccion.csv`, los tres primeros con `estado = pendiente`,
+1. De `cola-prospeccion.csv`, los cinco primeros con `estado = pendiente`,
    ordenados por `intentos` y después por `orden`. Así los que fallan pasan al
    final en vez de bloquear la cola. Con tres intentos fallidos se dejan.
 2. Para cada uno, lee la web oficial. Dos herramientas, y se usan las dos:

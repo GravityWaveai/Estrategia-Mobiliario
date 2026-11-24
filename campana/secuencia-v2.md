@@ -167,3 +167,70 @@ vacía —es lo que dejó sin salir los correos de siete contactos con nombre—
 que el saludo tiene que ir en un campo propio relleno en todos los contactos
 («Hola Carlos,» o «Buenos días,»), o con la sintaxis condicional de Apollo
 probada primero en un envío a una dirección interna.
+
+---
+
+## v4 · con la voz de Amaia — pendiente de su visto bueno (24/11)
+
+Sustituye a la v3. No está aplicada: la secuencia está pausada hasta que Amaia
+lea estos textos. Están también, al lado de los anteriores, en el documento
+«Campaña ayuntamientos · Antes y ahora».
+
+Cómo escribe Amaia, sacado de sus correos reales: corto, directo, de tú, una
+idea por línea, preguntas concretas y «¡Gracias!» para cerrar.
+
+**Asunto:** `Bancos para {{municipio}} hechos con redes de pesca`
+
+### Correo 1 — día 0
+
+> Hola Carlos,  *(«Hola,» si es el buzón de un departamento)*
+>
+> Soy Amaia, cofundadora de Gravity Wave. Estamos en Calpe y nos dedicamos a
+> sacar redes de pesca del Mediterráneo y convertirlas en bancos y papeleras.
+>
+> Ya están en la calle en Calpe y en Dénia, y las letras grandes del paseo de
+> Benidorm también son nuestras.
+>
+> Te escribo porque {{municipio}} es de costa y creo que os puede encajar. Dos
+> cosas que me suelen preguntar los ayuntamientos:
+>
+> — No hay que pintarlo ni barnizarlo. Aguanta el salitre tal cual.
+> — Por precio unitario entra en contrato menor, sin licitación.
+>
+> ¿Me dices quién lleva el mobiliario urbano en {{municipio}}? Le mando el
+> catálogo y un precio orientativo, por si os cuadra para el presupuesto de 2027.
+>
+> ¡Gracias!
+> Amaia
+
+### Correo 2 — día 4, mismo hilo
+
+> Hola de nuevo,
+>
+> Te mando una foto, que se entiende mejor que explicándolo. Así quedaron las
+> letras en el paseo de Benidorm:
+>
+> *[foto]*
+>
+> Es el mismo material que usamos en los bancos. El color es el de la propia
+> red, así que no se destiñe con el sol.
+>
+> Si me dices a quién se lo paso, le mando el catálogo y no te molesto más.
+>
+> Saludos,
+> Amaia
+
+### Correo 3 — día 9, mismo hilo
+
+> Hola,
+>
+> Último correo, que no quiero ser pesada.
+>
+> Si el mobiliario urbano no depende de ti, ¿le reenvías este correo a quien lo
+> lleve? Y si ahora no toca, con un «no» me vale y lo apunto.
+>
+> Si más adelante os planteáis renovar bancos o papeleras en {{municipio}}, aquí
+> estamos, en Calpe.
+>
+> ¡Gracias por leerme!
+> Amaia

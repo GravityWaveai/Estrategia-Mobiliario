@@ -51,18 +51,18 @@ jobs:
           # Cuántos ayuntamientos NUEVOS inscribe el puente por día laborable.
           # Cada uno son 3 correos (días 0, 4 y 9) en la cola de Apollo, así
           # que este número por tres tiene que caber en el tope de abajo.
-          # Subido de 2 a 4 el 24/11 con la lista del perfil nuevo: quien decide
-          # QUIÉN entra cada día es el agente de prospección, que pasa esos
-          # contactos de la lista de espera a la de envío (ver
-          # campana/agente-prospeccion.md). Siguiente escalón previsto: 6 y 20
-          # si el rebote de las direcciones nuevas sigue por debajo del 4 %.
-          OUTBOUND_DAILY_CAP: '4'
+          # 8 desde el 24/11, pedido por Amaia: «8 correos diarios más los
+          # seguimientos», empezando de cero con la lista del perfil nuevo.
+          # Quién entra cada día lo decide el agente de prospección, que pasa
+          # esos contactos de la lista de espera a la de envío (ver
+          # campana/agente-prospeccion.md).
+          OUTBOUND_DAILY_CAP: '8'
           # Correos al día de la secuencia OUTBOUND en Apollo, seguimientos
           # incluidos. La fase TOPE lo comprueba en cada pasada y lo corrige en
           # Apollo si no coincide. Este es el sitio donde se cambia.
-          # 8 desde el 20/10; 14 desde el 24/11 (4 nuevos x 3 pasos, más holgura
-          # para los seguimientos que aún arrastra la lista antigua).
-          OUTBOUND_MAX_EMAILS_PER_DAY: '14'
+          # 8 desde el 20/10; 24 desde el 24/11: 8 primeros correos y hasta 16
+          # seguimientos. Se llega a 24 solo, a partir del noveno día.
+          OUTBOUND_MAX_EMAILS_PER_DAY: '24'
           OUTBOUND_ENROLL_HOUR: ${{ vars.OUTBOUND_ENROLL_HOUR || '8' }}
           # Receptor propio de aperturas (tracking/README.md). La URL es la de
           # la aplicación web de Apps Script, termina en /exec. La clave es el
