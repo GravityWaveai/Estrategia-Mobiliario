@@ -58,8 +58,9 @@ día, 4 de cada 7 contactos reciben un solo correo. Por eso los 3 no se reparten
 al azar: van primero a quien abrió el correo 1 y no contestó. Los otros 4 quedan
 apartados para una segunda vuelta.
 
-La lista antigua queda parada. La secuencia está pausada hasta que Amaia lea los
-textos nuevos; el tope nuevo necesita además que la rama se fusione.
+Amaia dio el visto bueno el 24/11: ese día se aplicaron los textos, se paró a
+los contactos de la lista antigua que seguían dentro de la secuencia, se fusionó
+el tope nuevo y se reactivó la secuencia.
 
 ## Las dos semanas que importan
 
@@ -120,7 +121,8 @@ sola cosa, el texto o el perfil, y se vuelve a medir.
 | El agente no corre un día | No entra nadie nuevo y Apollo elige los 3 seguimientos por su cuenta | El tope por paso en Apollo (7 y 3) impide pasar de 10; el agente lo ordena al día siguiente |
 | HubSpot se apaga | El panel deja de actualizarse | Los envíos no dependen de él desde el 20/11 (pendiente de fusionar) |
 | Demasiados correos al mismo ayuntamiento | Dos personas del mismo sitio comentan que les ha llegado lo mismo | Dos por municipio y de áreas distintas; el resto, a reserva. Un solo seguimiento por municipio |
-| El asunto nuevo se abre menos que el antiguo | Apertura por debajo del 30 % | Se vuelve al asunto anterior, que abría al 49 % |
+| El asunto nuevo se abre menos de lo esperado | El correo 1 lo abre menos del 30 % la primera semana | Se vuelve al asunto original |
+| La foto del correo 1 perjudica la entrega | Suben el rebote o los no enviados | Se quita del correo 1 y se deja solo en el seguimiento |
 
 ## Después de los 177
 

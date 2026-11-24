@@ -50,24 +50,32 @@ Dos cosas de método que ya han costado tiempo:
   700 palabras por contacto. Por eso los lotes son pequeños y las búsquedas
   piden solo los campos que hacen falta (`fields`).
 
-## Estado a 24/11: secuencia pausada
+## Estado: en marcha desde el 24/11
 
-Amaia pidió parar la lista antigua y no enviar a la nueva hasta leer los textos
-nuevos. La secuencia está **pausada** desde el 24/11. Mientras siga así, el
-agente no alimenta la lista de envío ni elige seguimientos: solo busca contactos
-y lo dice en el parte. Cuando Amaia dé el visto bueno, antes de reactivar hay
-que:
+Amaia dio el visto bueno el 24/11. Ese día se aplicó la v5 (`secuencia-v2.md`):
+dos correos, tope de 7 en el correo 1 y de 3 en el seguimiento, 10 al día en
+total, seguimiento a los 7 días. Se paró a los 22 contactos de la lista antigua
+que seguían dentro y se fusionó el tope nuevo en la rama por defecto.
 
-1. Aplicar los dos correos nuevos (`secuencia-v2.md`, apartado v5) y borrar el
-   tercer paso. Tope por paso: 7 en el correo 1 y 3 en el seguimiento. Espera
-   del seguimiento: 7 días.
-2. Parar a los contactos de la lista antigua que siguen dentro de la secuencia
-   (todos menos los siete con nombre inscritos el 24/11).
-3. Tener fusionado el tope nuevo en la rama por defecto: 7 ayuntamientos y 10
-   correos al día.
-4. El primer día no se alimenta: salen los siete con nombre que ya están
-   dentro. En la lista de envío esperan además cinco contactos del perfil que
-   el puente inscribirá el segundo día; ese día se pasan solo dos.
+Arranque: dentro de la secuencia había 8 contactos esperando el correo 1 (los
+siete con nombre y un buzón de Medio Ambiente) y en la lista de envío otros 4
+del perfil. Con eso se cubren los dos primeros días: **se empieza a alimentar
+cuando en la lista de envío queden menos de 7 sin inscribir**, y siempre
+pasando solo la diferencia.
+
+Cuatro cosas que vigilar los primeros días, además de la rutina:
+
+1. **El saludo.** La plantilla usa la sintaxis condicional de Apollo y no se ha
+   visto en un envío real. Hay que leer el primer correo 1 enviado a una persona
+   («Hola Nombre,») y el primero enviado a un buzón («Hola,»). Si sale en
+   crudo, se pausa la secuencia y se avisa.
+2. **La espera de 7 días**: naturales o laborables (ver el apartado 3).
+3. **La apertura del correo 1.** El asunto es nuevo:
+   «¿Mobiliario urbano en {{municipio}}?». Si el primer lunes ha abierto menos
+   del 30 % de quienes lo recibieron, se avisa y se propone volver al original,
+   «{{municipio}} y el Mediterráneo: ¿tenéis algo en marcha?».
+4. **La foto.** El correo 1 lleva la foto de Benidorm. Si el rebote o los
+   correos no enviados suben respecto a la lista antigua, se dice en el parte.
 
 Reglas de texto que puso Amaia el 24/11 y valen para todo lo que escriba el
 agente, partes incluidos: **ningún guion largo** y correos naturales, como

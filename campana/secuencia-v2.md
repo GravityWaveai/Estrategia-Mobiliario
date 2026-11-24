@@ -1,7 +1,7 @@
 # Secuencia OUTBOUND: ayuntamientos
 
 > **En vigor: la v5, al final de este fichero** (dos correos, 10 al día),
-> pendiente del visto bueno de Amaia. Lo de arriba es el historial. Los textos
+> aplicada el 24/11 con el visto bueno de Amaia. Lo de arriba es el historial. Los textos
 > que se enviaron hasta el 24/11 se conservan tal cual, con sus guiones largos;
 > desde el 24/11 no se usa ninguno.
 
@@ -153,11 +153,12 @@ se ha visto en un envío real: el agente lee el primer correo 1 que salga.
 
 ---
 
-## v5 · dos correos, 10 al día: pendiente del visto bueno de Amaia (24/11)
+## v5 · dos correos, 10 al día: aplicada el 24/11
 
-No está aplicada: la secuencia sigue pausada hasta que Amaia lea estos textos.
-Están también, al lado de los anteriores, en el documento «Campaña
-ayuntamientos · Antes y ahora».
+Aplicada en Apollo el 24/11. Amaia dio el visto bueno ese día con dos cambios:
+la foto de Benidorm también en el correo 1 y un asunto elegido por los datos de
+apertura. Los textos están también, al lado de los anteriores, en el documento
+«Campaña ayuntamientos · Antes y ahora».
 
 Las tres reglas que puso Amaia el 24/11:
 
@@ -176,7 +177,16 @@ El tercer correo desaparece: con 10 al día, un segundo seguimiento le quitaría
 el sitio a un ayuntamiento nuevo. Lo que pedía (el presupuesto de 2027 y que lo
 reenvíen a quien lo lleve) pasa al seguimiento único.
 
-**Asunto:** `Mobiliario urbano de {{municipio}}`
+**Asunto:** `¿Mobiliario urbano en {{municipio}}?`
+
+Por qué este: el estudio más grande que hay sobre asuntos en frío (Belkins, 5,5
+millones de correos de 2024) da la apertura más alta a tres rasgos, y este los
+reúne: personalizado con algo del destinatario (46 % frente a 35 %), en forma
+de pregunta (46 %, el tipo que más abre) y de 2 a 4 palabras (46 %; a partir de
+7 baja al 39 % y con 9 al 35 %). El asunto original, «{{municipio}} y el
+Mediterráneo: ¿tenéis algo en marcha?», tenía los dos primeros pero entre 8 y 11
+palabras. Su 49 % no sirve para comparar: es por contacto y sumando hasta cinco
+correos, no por correo.
 
 ### Correo 1
 
@@ -187,7 +197,9 @@ reenvíen a quien lo lleve) pasa al seguimiento único.
 >
 > Soy Amaia, de Gravity Wave. Los hacemos con redes de pesca que sacamos del
 > Mediterráneo. Ya están puestos en Calpe y en Dénia, y las letras grandes del
-> paseo de Benidorm también son nuestras.
+> paseo de Benidorm también son nuestras:
+>
+> *[foto: `https://www.thegravitywave.com/wp-content/uploads/2026/08/letras_benidorm.jpg`]*
 >
 > No hay que pintarlos ni barnizarlos, y se pueden comprar por contrato menor.
 >
@@ -197,17 +209,18 @@ reenvíen a quien lo lleve) pasa al seguimiento único.
 > ¡Gracias!
 > Amaia
 
-80 palabras. Se contesta con un sí o con un nombre. Solo texto: sin foto, sin
-enlaces y sin adjuntos. Lleva el píxel propio de aperturas (`p=1`).
+80 palabras. Se contesta con un sí o con un nombre. Lleva la foto de Benidorm
+dentro del correo (la pidió Amaia el 24/11), sin enlaces y sin adjuntos, y el
+píxel propio de aperturas (`p=1`).
 
 ### Seguimiento
 
 > Hola de nuevo,
 >
-> Te mando una foto para que lo veas. Así quedó nuestro material en el paseo de
-> Benidorm:
+> Te vuelvo a mandar la foto, por si no la viste. Así quedó nuestro material en
+> el paseo de Benidorm:
 >
-> *[foto: `https://www.thegravitywave.com/wp-content/uploads/2026/08/letras_benidorm.jpg`]*
+> *[la misma foto]*
 >
 > Si os encaja para el presupuesto de 2027, te paso el catálogo y un precio
 > orientativo.
@@ -217,8 +230,8 @@ enlaces y sin adjuntos. Lleva el píxel propio de aperturas (`p=1`).
 > ¡Gracias!
 > Amaia
 
-La foto va dentro del correo, alojada en la web de Gravity Wave. No es un
-adjunto. Píxel `p=2`.
+La foto va dentro del correo, alojada en la web de Gravity Wave, sin enlace. No
+es un adjunto. Píxel `p=2`.
 
 El pie es el de dos líneas de arriba, en los dos correos.
 
@@ -226,8 +239,8 @@ El pie es el de dos líneas de arriba, en los dos correos.
 
 | Cuándo | Qué |
 |---|---|
-| Correo 1 | Solo texto |
-| Seguimiento | La foto de las letras de Benidorm, dentro del correo |
+| Correo 1 | Texto y la foto de las letras de Benidorm, dentro del correo |
+| Seguimiento | La misma foto, otra vez |
 | Cuando contestan | El catálogo «GRAVITEC · Catálogo Mobiliario Urbano 2026» en PDF y un precio orientativo, que pone Amaia |
 | Nunca en frío | Adjuntos, tarifa ni precios unitarios |
 
@@ -241,17 +254,22 @@ para la cifra: son casi todos de ventas entre empresas y en inglés.
 | Los correos de 100 palabras o menos, de tres o cuatro frases, son los que más respuestas reciben; los mejores bajan de 80 | [Gong](https://www.gong.io/resources/labs/does-cold-email-even-work-any-more-heres-what-the-data-says/), [Instantly](https://instantly.ai/cold-email-benchmark-report-2026), [Snov](https://snov.io/blog/cold-email-statistics/) | De 150 palabras a 80 |
 | En frío funciona mejor pedir interés que pedir una reunión | [Gong, 304.174 correos](https://www.gong.io/resources/labs/this-surprising-cold-email-cta-will-help-you-book-a-lot-more-meetings/) | Se quita el enlace a la agenda; se pregunta si lo llevan ellos |
 | Los seguimientos dan más de la mitad de las respuestas, pero cada uno rinde menos que el anterior y a partir del tercero la tasa baja | [Belkins](https://belkins.io/blog/sales-follow-up-statistics), [Hunter 2025, 31 millones de correos](https://hunter.io/the-state-of-cold-email-2025), [Woodpecker](https://woodpecker.co/cold-email-benchmark/) | De cuatro seguimientos a uno, primero a quien abrió |
-| El primer correo, en texto plano y sin enlaces ni adjuntos | [Mailshake](https://mailshake.com/blog/module-1-cold-email-landscape/), [Woodpecker](https://woodpecker.co/blog/boost-cold-email-deliverability/), [Hunter](https://hunter.io/blog/is-html-harming-your-cold-email-deliverability/) | Correo 1 solo texto |
-| Una o dos imágenes no perjudican la entrega si el correo tiene texto suficiente | [lemlist](https://www.lemlist.com/blog/images-cold-email-deliverability) | La foto, solo en el seguimiento |
-| Los asuntos de 3 a 6 palabras son los que más respuestas reciben | [Hunter](https://hunter.io/the-state-of-cold-email-2025), [Woodpecker](https://woodpecker.co/cold-email-benchmark/) | De 9 palabras a 4 |
+| El primer correo, sin enlaces ni adjuntos | [Mailshake](https://mailshake.com/blog/module-1-cold-email-landscape/), [Woodpecker](https://woodpecker.co/blog/boost-cold-email-deliverability/), [Hunter](https://hunter.io/blog/is-html-harming-your-cold-email-deliverability/) | Ni enlaces ni adjuntos en ninguno de los dos |
+| Una o dos imágenes no perjudican la entrega si el correo tiene texto suficiente | [lemlist](https://www.lemlist.com/blog/images-cold-email-deliverability) | Una sola foto por correo, con 80 palabras de texto |
+| Abren más los asuntos personalizados (46 % frente a 35 %), en forma de pregunta (46 %) y de 2 a 4 palabras (46 %) | [Belkins, 5,5 millones de correos](https://belkins.io/blog/b2b-cold-email-subject-line-statistics), [Yesware](https://www.yesware.com/blog/cold-email-subject-lines/) | Asunto de 4 palabras, con el municipio y en pregunta |
 
 ### Lo que no se sabe todavía
 
 - **Si convertirá mejor.** Nadie puede asegurarlo. La mejora de verdad está en la
   lista, más que en el texto: la campaña anterior tuvo un 4,3 % de respuesta, que
   es lo normal, y ninguna sirvió porque contestaba quien no podía comprar.
-- **El asunto.** El antiguo abría al 49 %. El nuevo es más claro, pero si la
-  apertura baja del 30 % se vuelve al anterior.
+- **El asunto.** Sigue el patrón que más abre en los estudios, pero no está
+  medido con ayuntamientos. Si en la primera semana abre el correo 1 menos del
+  30 % de quienes lo reciben, se vuelve al original.
+- **La foto en el correo 1.** Muchos ayuntamientos usan programas de correo que
+  no cargan las imágenes hasta que el usuario lo pide: verán el texto y un
+  hueco con la descripción de la foto. Tampoco cargará el píxel, así que la
+  apertura medida se queda corta, como hasta ahora.
 - **El píxel.** Algunas de estas fuentes aconsejan quitar el seguimiento de
   aperturas del primer correo. Se mantiene porque sin él no hay tasa de apertura
   ni forma de elegir a quién hacer seguimiento.
