@@ -54,7 +54,7 @@ orden,cod_ine,municipio,municipio_apollo,provincia,prioridad,web,estado,contacto
 53,43131,Roda de Berà,Roda de Berà,Tarragona,1,http://web.rodadebera.cat/,pendiente,0,1,2026-11-20,leída
 54,43136,"Ràpita, La",La Ràpita,Tarragona,1,https://larapita.cat,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
 55,43153,Torredembarra,Torredembarra,Tarragona,1,http://www.torredembarra.cat/,cubierto,2,1,2026-11-20,
-56,43162,Vandellòs i l'Hospitalet de l'Infant,Vandellòs i l'Hospitalet de l'Infant,Tarragona,1,http://www.vandellos-hospitalet.cat,cubierto,2,1,2026-11-20,
+56,43162,Vandellòs i l'Hospitalet de l'Infant,l'Hospitalet de l'Infant,Tarragona,1,http://www.vandellos-hospitalet.cat,cubierto,2,1,2026-11-20,
 57,43163,"Vendrell, El",El Vendrell,Tarragona,1,https://www.elvendrell.net/,cubierto,2,1,2026-11-20,
 58,43171,Vila-seca,Vila-seca,Tarragona,1,http://www.vila-seca.cat/,pendiente,0,1,2026-11-20,leída
 59,08035,Calella,Calella,Barcelona,1,https://www.calella.cat/,cubierto,1,1,2026-11-20,

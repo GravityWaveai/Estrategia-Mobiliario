@@ -18,10 +18,10 @@ cubiertos (`campana/lista/cola-prospeccion.csv`).
 | Secuencia | Apollo | `6a9844f7d0bf520010f72cc1` |
 | Lista de envío (el puente inscribe desde aquí) | Apollo · `OUTBOUND - MOBILIARIO URBANO` | `6a983205f242c800107386c8` |
 | Lista de espera (leídos y dados por buenos) | Apollo · `V2 · EN ESPERA` | `6b05ad7fe36010001090c27a` |
-| Reserva (tercer contacto y siguientes de un municipio) | Apollo · `V2 · RESERVA` | por nombre |
+| Reserva (tercer contacto y siguientes de un municipio) | Apollo · `V2 · RESERVA` | `6b05afe23f10330014ba9177` |
 | Ya pasados a envío | Apollo · `V2 · EN COLA` | `6b05af812376ca0010c7052a` |
-| Vía de entrada | Apollo · `V2 · BUZON`, `V2 · CONCEJAL`, `V2 · TECNICO` | por nombre |
-| Prioridad | Apollo · `V2 · P1`, `V2 · P2` | por nombre |
+| Vía de entrada | Apollo · `V2 · BUZON`, `V2 · CONCEJAL`, `V2 · TECNICO` | `6b05afecb69ae10014e36577`, `6b05ad7fe36010001090c27b`, `6b05b0451815c30018c5ece2` |
+| Prioridad | Apollo · `V2 · P1`, `V2 · P2` | `6b05ad7fe36010001090c27c`, `6b05affd7a0aab001837b151` |
 | Referidos por una respuesta | Apollo · `V2 · REFERIDO` | por nombre |
 | Bajas | Apollo · `V2 · BAJA (no contactar)` | por nombre |
 | Campo `municipio` | Apollo, campo propio | `6a999f44b6a7d5001357d023` |
@@ -40,6 +40,10 @@ Dos cosas de método que ya han costado tiempo:
 - **Las llamadas a Apollo se hacen desde la conversación principal.** Un
   subagente que intenta usar Apollo se queda esperando un permiso que nadie ve
   a las siete de la mañana. Los subagentes solo leen webs.
+- **Nombres de organización cortos.** Apollo rechazó dos tandas enteras por
+  un contacto con «Ayuntamiento de Vandellòs i l'Hospitalet de l'Infant». Con
+  «Ajuntament de Vandellòs» entró. Si una tanda falla con «Failed to create
+  contacts», el culpable suele ser un solo contacto: se parte la tanda.
 - **Las respuestas de Apollo al crear o editar contactos son enormes**, unas
   700 palabras por contacto. Por eso los lotes son pequeños y las búsquedas
   piden solo los campos que hacen falta (`fields`).
