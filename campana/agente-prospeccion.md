@@ -63,6 +63,17 @@ del perfil. Con eso se cubren los dos primeros días: **se empieza a alimentar
 cuando en la lista de envío queden menos de 7 sin inscribir**, y siempre
 pasando solo la diferencia.
 
+**La prueba del primer correo.** El 24/11 la secuencia se activó con el tope
+del paso 1 en 1, para que saliera un solo correo y poder leerlo antes de abrir
+el resto. Si al empezar la rutina el tope del paso 1 sigue en 1
+(`apollo_emailer_campaigns_show`):
+
+- Si el correo de prueba ya salió y se lee bien (comprobación 3), sube el tope
+  del paso 1 a 7 con `apollo_sequences_update`, enviando los dos pasos enteros
+  tal como los devuelve `apollo_emailer_campaigns_show` y sin tocar los textos.
+- Si salió en crudo, pausa la secuencia y avisa.
+- Si todavía no ha salido ninguno, déjalo en 1 y vuelve a mirar a media mañana.
+
 Cuatro cosas que vigilar los primeros días, además de la rutina:
 
 1. **El saludo.** La plantilla usa la sintaxis condicional de Apollo y no se ha
