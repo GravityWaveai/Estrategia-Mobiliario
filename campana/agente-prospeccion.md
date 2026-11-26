@@ -53,33 +53,33 @@ Dos cosas de método que ya han costado tiempo:
 ## Estado: en marcha desde el 24/11
 
 Amaia dio el visto bueno el 24/11. Ese día se aplicó la v5 (`secuencia-v2.md`):
-dos correos, tope de 7 en el correo 1 y de 3 en el seguimiento, 10 al día en
-total, seguimiento a los 7 días. Se paró a los 22 contactos de la lista antigua
+dos correos, 7 nuevos y 3 seguimientos al día, 10 en total, seguimiento a los
+7 días. Se paró a los 22 contactos de la lista antigua
 que seguían dentro y se fusionó el tope nuevo en la rama por defecto.
 
-Arranque: dentro de la secuencia había 8 contactos esperando el correo 1 (los
-siete con nombre y un buzón de Medio Ambiente) y en la lista de envío otros 4
-del perfil. Con eso se cubren los dos primeros días: **se empieza a alimentar
-cuando en la lista de envío queden menos de 7 sin inscribir**, y siempre
-pasando solo la diferencia.
+**Lo que enseñó el arranque (24 a 26/11).** El tope del paso 1 se bajó a 1
+para probar con un solo correo y Apollo dejó toda la cola aplazada día y medio:
+cuando un paso llega a su tope, los correos que sobran quedan aplazados y Apollo
+no los vuelve a mirar hasta que cambia el tope o se reactiva la secuencia. Dos
+reglas desde entonces:
 
-**La prueba del primer correo.** El 24/11 la secuencia se activó con el tope
-del paso 1 en 1, para que saliera un solo correo y poder leerlo antes de abrir
-el resto. Si al empezar la rutina el tope del paso 1 sigue en 1
-(`apollo_emailer_campaigns_show`):
+- **El tope del paso 1 es 10 y no se baja.** Los 7 nuevos al día los limita el
+  puente al inscribir, no Apollo. El tope del seguimiento sigue en 3 y el de la
+  secuencia en 10.
+- **En la cola del paso 1 no debe haber más correos que hueco para hoy.** Por
+  eso se alimenta contando lo que ya hay programado (apartado 2).
 
-- Si el correo de prueba ya salió y se lee bien (comprobación 3), sube el tope
-  del paso 1 a 7 con `apollo_sequences_update`, enviando los dos pasos enteros
-  tal como los devuelve `apollo_emailer_campaigns_show` y sin tocar los textos.
-- Si salió en crudo, pausa la secuencia y avisa.
-- Si todavía no ha salido ninguno, déjalo en 1 y vuelve a mirar a media mañana.
+Las llamadas que escriben en Apollo (crear contactos, listas, parar a alguien,
+tocar la secuencia) pueden quedarse esperando una aprobación si Amaia no está
+delante, y entonces la rutina se para ahí. Por eso van **al final**, después de
+guardar la cola y de dejar escrito el parte.
 
 Cuatro cosas que vigilar los primeros días, además de la rutina:
 
-1. **El saludo.** La plantilla usa la sintaxis condicional de Apollo y no se ha
-   visto en un envío real. Hay que leer el primer correo 1 enviado a una persona
-   («Hola Nombre,») y el primero enviado a un buzón («Hola,»). Si sale en
-   crudo, se pausa la secuencia y se avisa.
+1. **El saludo.** Los dos primeros correos (25/11, a dos buzones) salieron
+   bien: asunto con el municipio, «Hola,» y ninguna variable en crudo. Falta
+   leer el primero enviado a una persona («Hola Nombre,»). Si sale en crudo, se
+   avisa y se pide pausar la secuencia.
 2. **La espera de 7 días**: naturales o laborables (ver el apartado 3).
 3. **La apertura del correo 1.** El asunto es nuevo:
    «¿Mobiliario urbano en {{municipio}}?». Si el primer lunes ha abierto menos
@@ -138,8 +138,10 @@ tope diario**. Así se decide aquí quién sale y en qué orden.
 
 En la lista de envío no debe esperar nadie de un día para otro: lo que se pasa
 por la mañana lo inscribe el puente ese mismo día. Antes de pasar a nadie se
-cuenta cuántos hay ya esperando en la lista de envío y se pasa solo la
-diferencia hasta el tope. Si el agente no corre un día, ese día no entra nadie
+cuenta lo que ya está pendiente de salir: los correos del paso 1 que Apollo
+tiene programados (`scheduled` menos los seguimientos) más los contactos de la
+lista de envío que el puente aún no ha inscrito. Se pasa solo lo que falte
+hasta 7; si ya hay 7 o más, ese día no se pasa a nadie. Si el agente no corre un día, ese día no entra nadie
 nuevo y no pasa nada.
 
 **Sin pedir permiso.** Amaia lo dejó dicho el 24/11: los contactos del perfil
@@ -194,7 +196,9 @@ se repone.
 1. De `cola-prospeccion.csv`, los cinco primeros con `estado = pendiente`,
    ordenados por `intentos` y después por `orden`. Así los que fallan pasan al
    final en vez de bloquear la cola. Con tres intentos fallidos se dejan.
-2. Para cada uno, lee la web oficial. Dos herramientas, y se usan las dos:
+2. Para cada uno, lee la web oficial. Dos herramientas, y se usan las dos. El
+   rastreador entra en webs que al lector le devuelven un error 503, así que va
+   primero; el lector, para las que el rastreador no entiende:
    - El rastreador, que es rápido y no gasta:
      `python3 campana/lista/rastrear_contactos.py rastrear --solo COD_INE` y
      luego `candidatos`. Borra antes `exports/rastreo/COD_INE.json` si existe.

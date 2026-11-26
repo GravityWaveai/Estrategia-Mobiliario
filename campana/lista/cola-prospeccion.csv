@@ -1,24 +1,24 @@
 orden,cod_ine,municipio,municipio_apollo,provincia,prioridad,web,estado,contactos,intentos,ultimo_intento,nota
 1,03011,"Alfàs del Pi, l'",l'Alfàs del Pi,Alicante,1,http://www.lalfas.es,cubierto,2,1,2026-11-20,
-2,03018,Altea,Altea,Alicante,1,https://www.altea.es/,pendiente,0,1,2026-11-20,web en JavaScript
+2,03018,Altea,Altea,Alicante,1,https://www.altea.es/,pendiente,0,2,2026-11-25,web en JavaScript: ni el rastreador ni el lector la leen; llamar
 3,03041,Benissa,Benissa,Alicante,1,http://www.ajbenissa.es,cubierto,3,1,2026-11-20,
 4,03050,"Campello, el",el Campello,Alicante,1,https://www.elcampello.es/,cubierto,4,1,2026-11-20,
-5,03076,Guardamar del Segura,Guardamar del Segura,Alicante,1,http://www.guardamardelsegura.es,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
-6,03902,Pilar de la Horadada,Pilar de la Horadada,Alicante,1,http://www.pilardelahoradada.org,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+5,03076,Guardamar del Segura,Guardamar del Segura,Alicante,1,http://www.guardamardelsegura.es,pendiente,0,2,2026-11-25,un concejal de Obras con correo; los de Medio Ambiente y de Servicios tienen el enlace de correo cruzado: confirmar por teléfono
+6,03902,Pilar de la Horadada,Pilar de la Horadada,Alicante,1,http://www.pilardelahoradada.org,pendiente,0,2,2026-11-25,web caída (503) el 25/11
 7,03121,Santa Pola,Santa Pola,Alicante,1,http://www.santapola.es,cubierto,1,1,2026-11-20,
-8,03128,Teulada,Teulada,Alicante,1,https://www.teuladamoraira.org,pendiente,0,1,2026-11-20,sin correos publicados
+8,03128,Teulada,Teulada,Alicante,1,https://www.teuladamoraira.org,pendiente,0,2,2026-11-25,la web de la cola ya no es del ayuntamiento (redirige a una guía turística): buscar la oficial
 9,03139,"Vila Joiosa, la",la Vila Joiosa,Alicante,1,http://www.villajoyosa.com/,cubierto,5,1,2026-11-20,
 10,03082,Xàbia,Xàbia,Alicante,1,https://www.ajxabia.com,cubierto,1,1,2026-11-20,
-11,46082,Canet d'En Berenguer,Canet d'En Berenguer,Valencia,1,http://www.canetdenberenguer.es/,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+11,46082,Canet d'En Berenguer,Canet d'En Berenguer,Valencia,1,http://www.canetdenberenguer.es/,pendiente,0,2,2026-11-25,"concejales de Medi Ambient y de Manteniment identificados, sin correo publicado: llamar"
 12,46105,Cullera,Cullera,Valencia,1,http://www.cullera.es,cubierto,3,1,2026-11-20,
 13,46181,Oliva,Oliva,Valencia,1,http://www.oliva.es/,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
 14,46199,"Pobla de Farnals, la",la Pobla de Farnals,Valencia,1,http://www.lapobladefarnals.es,pendiente,0,1,2026-11-20,leída
-15,46205,Puçol,Puçol,Valencia,1,http://www.puçol.es,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+15,46205,Puçol,Puçol,Valencia,1,http://www.puçol.es,pendiente,0,2,2026-11-26,web caída (503) el 26/11; tampoco entra el rastreador
 16,46238,Tavernes de la Valldigna,Tavernes de la Valldigna,Valencia,1,http://www.tavernes.es,cubierto,3,1,2026-11-20,
-17,46143,Xeraco,Xeraco,Valencia,1,http://www.xeraco.es,pendiente,0,1,2026-11-20,leída; hay personas identificadas sin correo o direcciones por confirmar
+17,46143,Xeraco,Xeraco,Valencia,1,http://www.xeraco.es,pendiente,0,2,2026-11-26,redirige a otro dominio (.eu) sin confirmar; un solo correo y no es del perfil
 18,12004,Alcalà de Xivert,Alcalà de Xivert,Castellón,1,http://www.alcaladexivert.es,cubierto,1,1,2026-11-20,
-19,12009,Almassora,Almassora,Castellón,1,http://www.almassora.es/,pendiente,0,1,2026-11-20,web en JavaScript
-20,12011,Almenara,Almenara,Castellón,1,http://www.almenara.es,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
+19,12009,Almassora,Almassora,Castellón,1,http://www.almassora.es/,cubierto,2,2,2026-11-25,"referido por una respuesta del 25/11: dos buzones del área, fuera de la secuencia; les escribe Amaia"
+20,12011,Almenara,Almenara,Castellón,1,http://www.almenara.es,pendiente,0,2,2026-11-26,web caída (503) el 26/11; tampoco entra el rastreador
 21,12027,Benicarló,Benicarló,Castellón,1,http://www.ajuntamentdebenicarlo.org,cubierto,2,1,2026-11-20,
 22,12028,Benicàssim,Benicàssim,Castellón,1,https://ayto.benicassim.es,cubierto,2,1,2026-11-20,
 23,12032,Borriana,Borriana,Castellón,1,https://www.burriana.es/,pendiente,0,1,2026-11-20,sin acceso desde el rastreador
