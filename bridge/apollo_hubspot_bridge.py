@@ -819,6 +819,14 @@ def enroll_outbound(sender_id):
         log(f"OUTBOUND: {len(sin_municipio)} contacto(s) de la lista SIN municipio en Apollo, "
             f"NO se inscriben hasta que alguien lo rellene: " + "; ".join(sin_municipio))
 
+    # Con la lista agotada no hay nada que comprobar en HubSpot: un filtro IN
+    # sin valores lo rechaza con un 400 («filters are invalid») y la pasada
+    # salía en rojo aunque el resto del puente fuera bien (25-27/11).
+    if not candidatos:
+        log("OUTBOUND: 0 ayuntamiento(s) a inscribir hoy: la lista de envío de Apollo "
+            "no tiene a nadie fuera de secuencia; hay que añadir ayuntamientos a la lista")
+        return
+
     # No basta con que Apollo diga "sin secuencia activa": si ya se procesó
     # antes (respondió, se descartó, rebotó...) hay que saberlo aunque Apollo
     # haya limpiado el campo al terminar. Sin este filtro, un ayuntamiento ya
